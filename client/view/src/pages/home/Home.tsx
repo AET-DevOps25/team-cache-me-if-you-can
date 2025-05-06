@@ -1,10 +1,11 @@
 import Navigator from '../../nav/Navigator';
-import { useState } from 'react';
+import Group from '../group/Group';
 
 export default function Home() {
-    const [submit, setSubmit] = useState(false);
-
     return (
-        <Navigator />
+        <>
+            <Navigator />
+            <Group />
+        </>
     );
 }

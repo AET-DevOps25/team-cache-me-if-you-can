@@ -6,11 +6,14 @@ export default function Navigator() {
   const [username, setUsername] = useState(null);
   const navigate = useNavigate();
 
-  async function logout() {
+  function getUsername() {
+    //TODO: get authentication info from api
+  }
+
+  function logout() {
     navigate('/');
     setUsername(null);
   }
-
 
   return (
     <div className="Nav">
