@@ -1,0 +1,10 @@
+CREATE DATABASE IF NOT EXISTS files_database;
+CREATE DATABASE IF NOT EXISTS user_database;
+
+CREATE USER IF NOT EXISTS 'files'@'%' IDENTIFIED BY 'Files123!';
+GRANT ALL PRIVILEGES ON files_database.* TO 'files'@'%';
+
+CREATE USER IF NOT EXISTS 'user'@'%' IDENTIFIED BY 'User123!';
+GRANT ALL PRIVILEGES ON user_database.* TO 'user'@'%';
+
+FLUSH PRIVILEGES;
