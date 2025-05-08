@@ -15,8 +15,6 @@ All students know the struggle of juggling endless platforms, apps, forums to ge
 - **File Upload & Processing**: Users can upload lecture slides (PDF or PPTX), notes, and PDFs which will be indexed for retrieval.
 - **Chat with GenAI Assistant**: Students ask questions in natural language and receive answers grounded in the uploaded materials.
 - **Search & History**: Users can browse previous questions and responses in group-specific or personal threads.
-- **Notifications**: Group members get notified of new messages, uploads, or AI summaries before exams. POTENTIALLY WILL REMOVE THIS!
-
 ---
 
 ### 🎯 Intended Users
@@ -50,9 +48,6 @@ Lukas uploads his personal notes and slides into a private group. A week before 
 
 #### Scenario 3: Group Q&A History
 Before the final, a group of students revisits questions asked earlier in the semester, like _“Explain the difference between deadlock prevention and avoidance.”_ All answers are archived and searchable by keywords.
-
-#### Scenario 4: Alerts and Notifications
-The system notifies users when someone uploads new content or if the AI assistant detects an upcoming exam (from file names or keywords) and offers a summary. MIGHT REMOVE THIS
 
 ---
 
