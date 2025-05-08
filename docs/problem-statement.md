@@ -27,14 +27,17 @@ All students know the struggle of juggling endless platforms, apps, forums to ge
 
 ---
 
-### 🧠 How will you integrate GenAI meaningfully?
+### 🧠 GenAI integration
 
-- **LangChain (Python)** will be used to build a dedicated microservice that powers the AI assistant.
-- The AI service will:
-    - Provide **context-aware answers** based on specific study group content, not generic internet data.
-    - Allow functionality like summarization of lecture PDFs or generating quiz questions for revision.
-    - ADD MORE TECHY PART AND REVISE THIS A BIT
+- A lightweight Python micro‑service built with **LangChain** handles retrieval‑augmented generation (RAG) for the study‑group assistant.  
+- All course artefacts — PDFs, slides, office docs, and even scanned handwritten pages — pass through an **OCR + normalisation** pipeline, are embedded, and stored in a **Weaviate** vector database.  
+- At query time LangChain performs similarity search on this private corpus, injects the matches into the prompt, and the LLM produces an answer strictly grounded in the uploaded material.  
+- **Exposed API endpoints support:**  
+  - context‑aware Q&A  
+  - automatic lecture‑note summarisation  
+  - on‑demand quiz generation for revision  
 
+This keeps responses focused on the group’s own content, with no dependency on generic web data.
 ---
 
 ### 📘 User Scenarios
