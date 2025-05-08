@@ -26,8 +26,7 @@ jobs:
       - name: Run ESLint on changed files
         working-directory: ./client
         run: |
-          # Get changed files compared to previous commit
-          changed_files=$(git diff --name-only --diff-filter=ACMRT HEAD^ HEAD | grep -E '\.(js|jsx|ts|tsx)$' || true)
+          changed_files=$(git diff --name-only --diff-filter=ACMRT HEAD^ HEAD | grep -E '\.(js|jsx|ts|tsx)$' | sed 's|^client/||' || true)
 
           if [ -n "$changed_files" ]; then
             echo "Running ESLint on changed files:"
