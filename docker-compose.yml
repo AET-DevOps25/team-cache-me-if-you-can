@@ -1,4 +1,31 @@
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./client/build:/usr/share/nginx/html
+    depends_on:
+      - gateway
+      - user
+      - files
+
+  react-app:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./client/src:/app/src
+      - ./client/public:/app/public
+    # later for production
+    # environment:
+    #   - NODE_ENV=production
+    # depends_on:
+    #   - nginx
+
   user:
     build:
       context: ./server/user
@@ -46,19 +73,24 @@ services:
     env_file: "environment/.env.docker.mysql"
     environment:
       MYSQL_ROOT_PASSWORD: StrongRootPass123!
-      MYSQL_DATABASE: my_database  # Must match your init script
+      MYSQL_DATABASE: my_database # Must match your init script
     command:
       - --lower-case-table-names=1
       - --socket=/tmp/mysql.sock
       - --pid-file=/tmp/mysql.pid
       - --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: [ "CMD",
-              "mysqladmin", "ping",
-              "-h", "127.0.0.1",
-              "-u", "root",
-              "-p${MYSQL_ROOT_PASSWORD}"
-      ]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
