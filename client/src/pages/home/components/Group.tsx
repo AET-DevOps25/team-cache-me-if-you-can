@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "./group.css";
 
 export default function Group() {
@@ -19,7 +19,6 @@ export default function Group() {
   }
 
   function onGroupSelect(name: string) {
-    //TODO: go to the group page
     navigate(`/group/${name}`);
   }
 
