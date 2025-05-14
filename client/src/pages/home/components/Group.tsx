@@ -7,15 +7,26 @@ export default function Group() {
     id: number;
     name: string;
   }> | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  function getGroups() {
+  async function getAllGroups() {
     setGroups([
       { id: 1, name: "Biology 101" },
       { id: 2, name: "Computer Science" },
       { id: 3, name: "Psychology" },
     ]);
-    //TODO: get groups from api
+    //TODO: get all groups in no authentication info
+  }
+
+  async function getMyGroups() {
+    setGroups([{ id: 1, name: "Biology 101" }]);
+    //TODO: get groups if user logged in
+  }
+
+  async function getUserName() {
+    //TODO: get authentication info
+    setUserName(null);
   }
 
   function onGroupSelect(name: string) {
@@ -23,8 +34,22 @@ export default function Group() {
   }
 
   useEffect(() => {
-    getGroups();
-  }, []);
+    const fetchData = async () => {
+      await getUserName();
+
+      if (userName) {
+        await getMyGroups();
+      } else {
+        await getAllGroups();
+      }
+    };
+
+    fetchData();
+  });
+
+  if (!groups && !userName) {
+    return <p>Loding...</p>;
+  }
 
   return (
     <div className="groups-container">
