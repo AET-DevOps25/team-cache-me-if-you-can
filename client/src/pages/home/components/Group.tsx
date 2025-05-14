@@ -34,11 +34,13 @@ export default function Group() {
       <div className="groups-tiles-container">
         {groups ? (
           groups.map((group) => (
-            <div
-              key={group.id}
-              className="group-tile"
-              onClick={() => onGroupSelect(group.name)}
-            />
+            <div key={group.id} className="group-item">
+              <div
+                className="group-tile"
+                onClick={() => onGroupSelect(group.name)}
+              />
+              <h3>{group.name}</h3>
+            </div>
           ))
         ) : (
           <p>Join a Group!</p>
