@@ -1,0 +1,110 @@
+@startuml
+!theme materia
+
+package "User Account Services" as P_Account {
+usecase UC_AccountActions as "Manage Account Lifecycle"
+note right of UC_AccountActions
+    Entry for registration, login,
+    and profile management.
+end note
+usecase UC_Register as "Register New Account"
+usecase UC_Login as "Log In to System"
+usecase UC_ManageProfile as "Manage User Profile"
+}
+
+package "Study Group Formation & Selection" as P_GroupFormation {
+usecase UC_CreateGroup as "Create New Study Group"
+usecase UC_JoinGroup as "Join Existing Study Group"
+usecase UC_ListGroups as "Access My Study Groups"
+note top of UC_ListGroups
+    Gateway to all in-group functionalities.
+    Successful access establishes the
+    'Active Group Context'.
+end note
+}
+
+actor Student as S
+actor Tutor as T
+
+usecase UC_ActiveGroupContext as "Be in Active Group Context" <<Abstract>>
+hide UC_ActiveGroupContext
+
+package "Active Group Workspace Features" as P_Workspace {
+usecase UC_UseWorkspace as "Utilize Group Workspace"
+note left of UC_UseWorkspace
+    Student's main interaction point
+    for all group workspace tools
+    after selecting a group.
+end note
+usecase UC_ManageSelectedGroup as "Manage Group Settings & Members"
+usecase UC_Upload as "Upload Study Materials"
+usecase UC_ViewMaterials as "View Uploaded Materials"
+usecase UC_EngageAI as "Engage GenAI Study Assistant"
+usecase UC_AskAI as "Ask Contextual Question (AI)"
+usecase UC_SummarizeAI as "Request Summarization (AI)"
+usecase UC_QuizAI as "Generate Revision Quiz (AI)"
+usecase UC_SearchHistory as "Search Q&A / Activity History"
+}
+
+package "Tutor-Specific Group Functions" as P_TutorFunc {
+usecase UC_OverseeAndUtilizeGroup as "Oversee & Utilize Group (Tutor)"
+note left of UC_OverseeAndUtilizeGroup
+    Tutor's main interaction point
+    for workspace tools and specific
+    monitoring/posting functions.
+end note
+usecase UC_MonitorProgress as "Monitor Group Progress & Q&A"
+usecase UC_PostOfficialResources as "Post Announcements or Curated FAQs"
+}
+
+S -- UC_AccountActions
+S -- UC_CreateGroup
+S -- UC_JoinGroup
+S -- UC_ListGroups
+
+T -- UC_AccountActions
+T -- UC_JoinGroup
+T -- UC_ListGroups
+
+S -- UC_UseWorkspace
+T -- UC_OverseeAndUtilizeGroup
+
+UC_Register .up.|> UC_AccountActions
+UC_Login .up.|> UC_AccountActions
+UC_ManageProfile .up.|> UC_AccountActions
+
+
+UC_ManageSelectedGroup .up.|> UC_UseWorkspace
+UC_Upload .up.|> UC_UseWorkspace
+UC_ViewMaterials .up.|> UC_UseWorkspace
+UC_EngageAI .up.|> UC_UseWorkspace
+UC_SearchHistory .up.|> UC_UseWorkspace
+
+UC_ManageSelectedGroup .up.|> UC_OverseeAndUtilizeGroup
+UC_Upload .up.|> UC_OverseeAndUtilizeGroup
+UC_ViewMaterials .up.|> UC_OverseeAndUtilizeGroup
+UC_EngageAI .up.|> UC_OverseeAndUtilizeGroup
+UC_SearchHistory .up.|> UC_OverseeAndUtilizeGroup
+UC_MonitorProgress .up.|> UC_OverseeAndUtilizeGroup
+UC_PostOfficialResources .up.|> UC_OverseeAndUtilizeGroup
+
+
+UC_AskAI .up.|> UC_EngageAI
+UC_SummarizeAI .up.|> UC_EngageAI
+UC_QuizAI .up.|> UC_EngageAI
+
+
+UC_ManageProfile .up.> UC_Login
+
+
+UC_CreateGroup .up.> UC_Login
+UC_JoinGroup .up.> UC_Login
+UC_ListGroups .up.> UC_Login
+
+
+UC_ActiveGroupContext .up.> UC_ListGroups
+
+
+UC_UseWorkspace .up.> UC_ActiveGroupContext
+UC_OverseeAndUtilizeGroup .up.> UC_ActiveGroupContext
+@enduml
