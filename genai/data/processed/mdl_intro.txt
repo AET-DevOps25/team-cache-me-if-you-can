@@ -1,0 +1,1251 @@
+29.04.2025
+Multi-Modal Deep Learning
+Lecture Series | Summer 2025
+Institute for AI and Informatics in Medicine
+
+/ 70
+MDL - INTRODUCTION
+ABOUT US — CHAIR FOR AI IN HEALTHCARE AND MEDICINE (AIM LAB)
+2
+https://www.linkedin.com/company/tum-aim-lab
+https://bsky.app/profile/aim-lab.bsky.social
+
+/ 70
+MDL - INTRODUCTION
+ABOUT US
+3
+Dr. Martin Menten 
+Group Leader
+Philip Müller 
+PhD Student
+Florian Hölzl 
+PhD Student
+David Mildenberger 
+PhD Student
+Prof. Daniel Rückert 
+Institute Director
+
+/ 70
+MDL - INTRODUCTION
+STRUCTURE OF THIS COURSE
+4
+Tuesdays 10:30-12:00 
+• Tutorial (~45 min) 
+• Lecture (~45 min) 
+Tuesdays 14:00-15:30 
+• Lecture (~60 min) 
+• Q&A Session (~30 min) 
+This week: only lectures 
+Exercises / Q&A starting next week 
+
+/ 70
+MDL - INTRODUCTION
+STRUCTURE OF THIS COURSE
+5
+Homework Assignments 
+• Homework assignment provided ~weekly (published after the lecture) 
+• Non-graded 
+• Solutions discussed in tutorial (the week after) 
+• “on-paper” problems, some short coding exercises, or paper readings 
+Tutorial 
+• Solutions for homework assignments will be presented 
+• Discussion of the solutions (or the paper) 
+• Preparation of assignment highly recommended but not mandatory 
+
+/ 70
+MDL - INTRODUCTION
+STRUCTURE OF THIS COURSE
+6
+Q&A Sessions 
+• Questions can be asked in Moodle or in the session 
+• Questions can be about any topics of the current week or any prior week 
+(no discussion of future topics) 
+• We provide additional answers/explanations/help
+
+/ 70
+MDL - INTRODUCTION
+STRUCTURE OF THIS COURSE
+7
+Exam 
+• course’s grade = 100% based on exam grade (no graded hand-ins or “Notenbonus”) 
+• 90 minutes written exam 
+• similar to homework assignments 
+• understanding not remembering, e.g. 
+- NOT: draw the remembered architecture 
+- INSTEAD: why do you need this component / what would happen without it 
+or 
+- NOT: list all possible algorithms for … 
+- INSTEAD: you are given this problem, which of A or B would you use and why
+
+/ 70
+MDL - INTRODUCTION
+LEARNING GOALS
+8
+Understanding the core principles and tools required for multimodal deep learning 
+• Looking at deep learning from a multimodal perspective 
+• Understanding properties of different data/modalities 
+• Understanding properties of different uni-modal deep learning architectures 
+• Understanding building blocks (e.g. model components, loss functions) 
+• Combining different modalities 
+Multimodal Deep Learning is a fast-moving field 
+❌ We don’t want you to memorize methods that may be outdated soon 
+✓ We want you to understand the core principles  
+✓ We want you to draw connections between deep learning practices 
+(some of which you may already know) 
+✓ Based on that, we will show some examples from current literature
+
+/ 70
+MDL - INTRODUCTION
+LEARNING GOALS
+9
+Goals of the Q&A Sessions 
+• Provide an opportunity for further discussion of topics / connections btw topics 
+• Questions / topics for further discussion (asked via Moodle) 
+- We will then try to answer them or provide further explanations in the nex QA session 
+- You do not have to actively participate in the discussion, even if you asked the question 
+online (but we of course welcome any activate participation)
+
+/ 70
+MDL - INTRODUCTION
+LEARNING GOALS
+10
+This is an advanced Deep Learning lecture!
+We assume that students know the basics of Deep Learning
+
+(and we highly recommend that students have already taken an introductory course)
+
+/ 70
+MDL - INTRODUCTION
+SUMMARY OF BLOCKS
+11
+1. Data types, representations, and feature spaces 
+- Structure, symmetries, and other properties of modalities and feature spaces 
+2. Architectures for different modalities 
+- Encoder and decoder architecture and their properties 
+3. Training signals 
+- Loss functions for different modalities and multimodal training 
+- Supervised, self-supervised and unsupervised training 
+4. Multimodal pipelines 
+- Multimodal architectures
+
+/ 70
+MDL - INTRODUCTION
+OVERVIEW OF THE WEEKS (PLANNED)
+12
+• Week 1 (29.04., today, morning): Introduction, Manifold Hypothesis, Pipelines 
+• Week 1 (29.04., today, afternoon): Structure and types of data 
+• Week 2 (06.05.): Features, Encodings, and Embeddings 
+• Week 3 (13.05.): DL on Sets, Tuples, Sequences, and Signals  
+• Week 4 (20.05.) — only afternoon: DL on Sets, Tuples, Sequences, and Signals (cont.) 
+• Week 5 (27.05.): Group-equivariant DL 
+• Week 6 (03.06.): DL on Graphs 
+• Week 7 (10.06.) — no lecture 
+• Week 8 (17.06.): Implicit Neural Representations (INRs) 
+• Week 9 (24.06.): Loss Functions and Self-supervised Learning (SSL) 
+• Week 10 (01.07.): SSL (cont.) and Parameter-Efficient Fine-Tuning (PEFT) 
+• Week 11 (08.07.): Multimodal Pipelines and Architectures 
+• Week 12 (15.07.): Multimodal Pipelines and Architectures (cont.) 
+• Week 13 (22.07.) — no lecture
+
+/ 70
+MDL - INTRODUCTION
+COMPARISON OF OUR OFFERED COURSES
+13
+AI in Medicine I and II
+Multimodal Deep 
+Learning
+(this course)
+Applied Deep 
+Learning in Medicine 
+(practical)
+Our Seminars
+(varying)
+Semester
+AIIM I: WiSe
+AIIM II: SoSe 
+SoSe
+WiSe and SoSe
+WiSe and SoSe
+ECTS
+5
+5
+10
+5
+What you learn
+Covering several 
+medical AI topics
+Deep,  
+more theoretical,  
+focus on methods
+Practical experience 
+on real research 
+projects
+Reading and 
+understanding recent 
+research papers
+Medical application 
+focus
+yes
+no
+yes
+yes
+
+Multimodal
+Deep 
+Learning
+
+/ 70
+MDL - INTRODUCTION
+WHAT IS MULTI-MODAL DEEP LEARNING
+15
+Deep Learning 
+with 
+Multiple Modalities
+more on that later
+what is a modality?
+
+/ 70
+MDL - INTRODUCTION
+16
+WHAT IS A MODALITY?
+Term from human-computer interaction: 
+Single independent channel of input/output between computer and human 
+Meaning in machine learning: 
+Type of data used as input (conditioning) or output (prediction) of a model 
+Not to be confused with 
+• model / multi-model: a pipeline / system consisting of multiple models 
+• mode: property of a probability distribution (most likely value) 
+
+/ 70
+MDL - INTRODUCTION
+17
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• Images 
+Depth Images
+Thermal Images
+X-Ray Scanner
+(Medical)
+Histopathology
+(Microscopy, Medical)
+Maro-Pathology
+(Medical)
+“Natural Images”
+(Web Images)
+
+/ 70
+MDL - INTRODUCTION
+18
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• 3D Images 
+MRI Scanner
+(Medical)
+PET Scanner
+(Medical)
+CT Scanner
+(Medical)
+
+/ 70
+MDL - INTRODUCTION
+19
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• Audio and other signals / times series                             
+-
+Voice (different languages) 
+-
+Environmental Sounds 
+-
+Music 
+-
+ECG (Medical) 
+-
+EEG (Medical) 
+-
+Sensory data or other time series 
+(electronics, mechanical, finance, geology, …) 
+
+/ 70
+MDL - INTRODUCTION
+20
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• Videos 
+“Natural Videos”
+(Web Videos)
+Egocentric Videos
+Depth Videos
+2D Ultrasound
+(Medical)
+
+/ 70
+MDL - INTRODUCTION
+21
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• 3D Videos 
+3D Ultrasound
+(Medical)
+
+/ 70
+MDL - INTRODUCTION
+22
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• Text 
+-
+Books / documents 
+-
+Chats 
+-
+Medical Texts (e.g. discharge summaries) 
+
+/ 70
+MDL - INTRODUCTION
+23
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• Graphs 
+-
+Geometric Meshes (e.g. 3D Models 
+-
+Molecule structures 
+-
+Social graphs (e.g. social networks) 
+-
+Population graphs 
+Geometric Meshes
+(e.g. 3D Models)
+
+/ 70
+MDL - INTRODUCTION
+24
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• Sequences 
+-
+DNA/RNA 
+-
+Amino-Acid sequence 
+-
+Paths (Robotics / Navigation)
+
+/ 70
+MDL - INTRODUCTION
+25
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• Tabular Data 
+-
+Questionnaires 
+-
+(Medical Health) Records 
+-
+Derived information of any kind 
+-
+… 
+
+/ 70
+MDL - INTRODUCTION
+26
+WHAT IS A MODALITY?  - EXAMPLES
+Common modalities: 
+• Point Clouds 
+-
+LiDAR Scanner 
+(d)
+(b)
+(c)
+(a)
+(e)
+(f)
+
+/ 70
+MDL - INTRODUCTION
+27
+WHAT IS A MODALITY?  - EXAMPLES
+Other (output) modalities: 
+•
+Classification Labels (typically as output) 
+•
+Regression Targets (typically as output) 
+•
+Bounding Boxes (typically as output) 
+•
+Segmentation Masks (typically as output)
+
+/ 70
+MDL - INTRODUCTION
+28
+WHAT IS A MODALITY?  - EXAMPLES
+Common input modalities: 
+• Images 
+• Video 
+• Text 
+• Audio / Signals / Time Series 
+• Graphs / Sequences 
+• Tabular Data 
+• Point Clouds 
+Common output modalities: 
+• Classification labels 
+• Regression targets 
+• Bounding boxes 
+• Segmentation masks 
+• Text
+Notes: 
+• Any of the listed modalities could be used as input and output 
+• Finer distinctions are possible: e.g. different types of images = different modalities
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: WHY DO WE NEED MORE THAN ONE MODALITY?
+29
+• Information Completeness 
+- different modalities carry different information 
+- a single modality may not contain everything relevant 
+• Source of Supervision 
+- different modalities from the same sample correlate 
+- paired modalities can be used as training signals 
+• Flexibility 
+- sometimes data is only available in one modality - sometimes in another 
+- we want to be able to use whatever data we get 
+• Interaction 
+- some tasks require associating several modalities to be solved 
+• Conversion 
+- sometimes we want to convert one modality into another
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+30
+• Image Captioning 
+(Image-to-Text Generation) 
+- Describe an image 
+- Input: Image 
+- Output: Text 
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+31
+• Text-to-Image Generation 
+- Generate an image based on a textual 
+description 
+- Input: Text 
+- Output: Image
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+32
+• Text-to-Speech Generation 
+- Generate speech based on a textual 
+input 
+- Input: Text 
+- Output: Speech (Audio)
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+33
+• Visual Question Answering (VQA) / Visual Reasoning 
+- Answer a question about an image 
+- Input: Image + Text 
+- Output: Text or Classification labels 
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+34
+• Cross-modal Retrieval 
+- Search images based on a textual 
+query 
+- Input: Image + Text 
+- Output: Similarity score (regression)
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+35
+• Image Classification 
+- Classify an image 
+- Input: Image 
+- Output: Classification labels
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+36
+• Object Detection 
+- Detect objects in an image and generate 
+bounding boxes for them 
+- Input: Image 
+- Output: Set of bounding boxes
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+37
+• Semantic Segmentation 
+- Generate segmentation masks for an 
+image 
+- Input: Image 
+- Output: Segmentation mask
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+38
+• Visual Grounding / Referring Expressions 
+- Localize relevant parts in an image to which a given textual phrase refers 
+- Input: Image + Phrase 
+- Output: Set of bounding boxes
+
+/ 70
+MDL - INTRODUCTION
+MOTIVATION: EXAMPLE APPLICATIONS
+39
+Why the distinction single vs. multimodal? 
+• “classifical” pipelines  
+- one modality (e.g. images) is much harder to process than the other (e.g. class labels) 
+• “multimodal” pipelines 
+- require to think more about how to process/combine/convert different modalities 
+BUT 
+All machine learning models can be considered multimodal! 
+• Inputs and outputs of machine learning models are different 
+➡Even classification labels can be considered (output modalities) 
+➡Even image-to-image pipelines predict one type of image given another  
+Let’s look at deep learning from a multimodal point of view!
+
+Multi-Modal Deep 
+Learning 
+Pipelines
+
+/ 70
+MDL - INTRODUCTION
+MULTIMODAL DEEP LEARNING PIPELINES
+41
+Machine Learning Pipeline 
+• Learn a parameterized function 
+with parameters  
+• Given an input , predict the output  
+by applying  on  
+Important Aspects 
+• How do we get from  to  inside  
+=> forward pass 
+• How do we learn the parameters  given a training dataset 
+=> backward pass
+fθ
+θ
+x
+y
+fθ
+x
+x
+y
+fθ
+θ
+Input
+(Condition)
+Output
+(Prediction)
+Model
+let’s focus on this first
+
+/ 70
+MDL - INTRODUCTION
+PROBLEM: CURSE OF DIMENSIONALITY
+42
+• Input data space 
+ = space of all possible inputs 
+•
+ is often very high-dimensional 
+- e.g. 
+ (pixel intensities) for color images of size HxW 
+➡ 2,795,520 dims for 728x1280 images 
+• Number of possible inputs scales exponentially with dimension 
+- e.g. with 1byte per color channel  
+➡ 
+ => too large to compute 
+➡ (even for small resolutions: 
+) 
+It is impossible to get a dataset covering a significant fraction of the input data space! 
+How is it possible to train a model on such an input space?
+ℝD
+ℝD
+ℝD = ℝ3×H×W
+2563×728×1280
+2563×256×256 > 10473,479
+
+/ 70
+MDL - INTRODUCTION
+THE MANIFOLD HYPOTHESIS
+43
+Key assumption 
+High dimensional data resides in a (much) lower dimensional space that is locally Euclidean 
+Image source: https://arxiv.org/pdf/2309.08247 
+
+/ 70
+MDL - INTRODUCTION
+THE MANIFOLD HYPOTHESIS
+44
+• Images are in a high dimensional image space 
+ of pixel intensities 
+• Semantic meaning (“where does he look to”) is in a low dimensional 1-D space 
+ 
+(e.g. negative = looks right, zero = looks forward, positive = looks left) 
+ℝ3×728×1280
+ℝ
+Image source: https://arxiv.org/pdf/2309.08247 
+
+/ 70
+MDL - INTRODUCTION
+THE MANIFOLD HYPOTHESIS
+45
+The (input) data space 
+ = space of all possible inputs 
+• High dimensional (e.g. one dim per pixel) 
+• Eucledian (all possible combinations of inputs)
+ℝD
+
+/ 70
+MDL - INTRODUCTION
+THE MANIFOLD HYPOTHESIS
+46
+The (input) data space 
+ = space of all possible inputs 
+• high dimensional (e.g. one dim per pixel) 
+• Eucledian (all possible combinations of inputs) 
+➡ most of the possible 
+ are meaningless noise 
+The (input) data manifold 
+ = space of “realistic” inputs 
+• lies in data space (subset of all possible inputs) 
+• “realistic” inputs are very close or on this manifold (
+) 
+• (typically) low dimensional: 
+ 
+➡ we only need to consider inputs from this manifold 
+ and ignore any other possible inputs
+ℝD
+x ∈ℝD
+ℳ⊂ℝD
+x ∈ℳ
+dim(ℳ) = m ≪D
+Data manifold ℳ⊂ℝD
+
+/ 70
+MDL - INTRODUCTION
+THE MANIFOLD HYPOTHESIS
+47
+The (input) data manifold 
+ = space of “realistic” inputs 
+• lies in data space (subset of all possible inputs) 
+• “realistic” inputs are very close or on this manifold (
+) 
+• (typically) low dimensional: 
+ 
+➡ we only need to consider inputs from this manifold 
+ and ignore any other possible inputs 
+The coordinate space 
+ = position on the data manifold 
+ 
+• each data point 
+ can be mapped onto a point in 
+ 
+• position/distances in coordinate space are “semantically” more meaningful 
+➡ working on coordinate space simplifies processing 
+Side note:  
+There are many coordinate systems for a data manifold 
+, 
+some produce geometrically distorted coordinate spaces
+ℳ⊂ℝD
+x ∈ℳ
+dim(ℳ) = m ≪D
+U ⊂ℝm
+ℳ
+x ∈ℳ
+z ∈U
+ℳ
+Data manifold ℳ⊂ℝD
+Coordinate space U ⊂ℝm
+
+/ 70
+MDL - INTRODUCTION
+THE MANIFOLD HYPOTHESIS
+48
+Coordinate space 
+: 
+Position on this line
+= “where does he look to”
+U ⊂ℝ
+
+/ 70
+MDL - INTRODUCTION
+MANIFOLDS: SOME EXAMPLES
+49
+Data space 
+: 
+Position in the the universe
+ℝD = ℝ3
+Data manifold 
+: 
+Surface of the earth
+ℳ⊂ℝ3
+Coordinate space 
+: 
+2D-map of the earth
+U ⊂ℝ2
+
+/ 70
+MDL - INTRODUCTION
+MANIFOLDS: SOME MORE EXAMPLES
+50
+Data space ℝD = ℝ3
+Data manifold 
+: 
+Surface on the curved band
+ℳ⊂ℝ3
+Coordinate space 
+: 
+2D-map of band 
+or alternatively: 
+1D space of color
+U ⊂ℝ2
+=> distance in 3D space does not tell much about distance on the manifold
+
+/ 70
+MDL - INTRODUCTION
+MANIFOLDS: SOME MORE EXAMPLES
+51
+Data space ℝD = ℝ3
+Data manifold 
+: 
+Surface on the curved band
+(whole is not part of manifold)
+ℳ⊂ℝ3
+Coordinate space 
+: 
+2D-map of band 
+=> whole it not part of 
+U ⊂ℝ2
+U
+
+/ 70
+MDL - INTRODUCTION
+BACK TO DEEP LEARNING: HOW DO WE GET FROM X TO Y
+52
+Instead of thinking about the forward pass like this: 
+think about it as two steps
+Input
+(Condition)
+Output
+(Prediction)
+Model
+Input
+(Condition)
+Output
+(Prediction)
+Encoder
+Decoder
+
+/ 70
+MDL - INTRODUCTION
+BACK TO DEEP LEARNING: HOW DO WE GET FROM X TO Y
+53
+Input
+(Condition)
+Output
+(Prediction)
+Encoder
+Decoder
+this is the coordinate space of the input data manifold
+(also called hidden feature space / latent space)
+
+/ 70
+MDL - INTRODUCTION
+UNFOLDING THE INPUT: HOW DO WE GET FROM X TO Y
+54
+How do we get from  to ? 
+The Encoder 
+ 
+in practice  is actually 
+  
+but its values are not expected to be meaningful for 
+ (or far from 
+) 
+and it is not expected to output a 
+ (or far from 
+)
+x
+z
+fθ: ℳ→U
+fθ
+fθ: ℝD →ℝm
+x ∉ℳ
+ℳ
+z ∉U
+U
+Input
+(Condition)
+Encoder
+Data manifold ℳ⊂ℝD
+Coordinate space U ⊂ℝm
+
+/ 70
+MDL - INTRODUCTION
+WHAT ABOUT THE OUTPUT SPACE
+55
+How do we get from  to ?
+
+
+Realistic values of  also lie on a manifold, the output data manifold 
+ 
+BUT typically 
+output manifold 
+ input manifold 
+and 
+z
+y
+y
+ℳ′￼⊂ℝD′
+ℳ′￼≠ℳ
+D′￼≠D
+Outpu data manifold ℳ′￼⊂ℝD′
+
+/ 70
+Input (B) and output (C) are both 
+directly or indirectly derived from reality (A) 
+• directly A → B and A → C  
+• indirectly A → B → C 
+(C derived from B, see figure) 
+MDL - INTRODUCTION
+WHAT ABOUT THE OUTPUT SPACE
+56
+A red sphere next to 
+a blue cone.
+A
+B
+C
+zimg
+ztext
+“Reality” space
+Input space
+Output space
+
+/ 70
+Input (B) and output (C) are both 
+directly or indirectly derived from reality (A) 
+• directly A → B and A → C  
+• indirectly A → B → C 
+(C derived from B, see figure) 
+Input data manifold 
+ and output data manifold 
+ 
+are related 
+• Subsets of 
+ and 
+ can be projected onto each other 
+• Their coordinate space 
+ and 
+ can be overlapping
+(if we choose the right coordinate spaces, i.e. architectures/training) 
+➡ We can use a shared coordinate space 
+
+
+(we are only interested in 
+ => from now on we assume 
+ and use 
+ to denote it)
+ℳ
+ℳ′
+ℳ
+ℳ′
+U
+U′
+U ∩U′
+U ∩U′
+U = U′
+U
+MDL - INTRODUCTION
+WHAT ABOUT THE OUTPUT SPACE
+57
+A red sphere next to 
+a blue cone.
+A
+B
+C
+zimg
+ztext
+“Reality” space
+Input space
+Output space
+Input  
+coordinate space  
+U ⊂ℝm
+Output  
+coordinate space  
+U′￼⊂ℝm′
+U ∩U′￼
+
+/ 70
+MDL - INTRODUCTION
+WHAT ABOUT THE OUTPUT SPACE
+58
+How do we get from  to ? 
+The Decoder 
+ 
+in practice 
+ is actually 
+  
+but its values are not expected to be meaningful for 
+ (or far from 
+) 
+and it is not expected to output a 
+ (or far from 
+)
+z
+y
+gϕ: U →ℳ′
+gϕ
+gϕ: ℝm →ℝD′
+z ∉U
+U
+y ∉ℳ′
+ℳ′
+Output
+(Prediction)
+Decoder
+Coordinate space U ⊂ℝm
+Output data manifold ℳ′￼⊂ℝD′
+ℝD′
+
+/ 70
+MDL - INTRODUCTION
+BACK TO DEEP LEARNING: HOW DO WE GET FROM X TO Y
+59
+Input
+(Condition)
+Output
+(Prediction)
+Encoder
+Decoder
+Coordinate space U ⊂ℝm
+Output data manifold ℳ′￼⊂ℝD′
+Input data manifold ℳ⊂ℝD
+ℝD′
+
+/ 70
+MDL - INTRODUCTION
+LOW-DIMENSIONAL MODALITIES: CLASSIFICATION
+60
+• Some modalities have high semantic content and low dimensionality: 
+ 
+- e.g. binary class labels (also a modality): only 2 possible values 
+• Hidden features are still useful 
+- Meaningful distances + linearity
+(hidden features can be easier to combine, e.g. using mean) 
+- Reasoning capacity due to more dimensions 
+(a single class may correlate with several aspects) 
+- Combination/conversion to other modalities 
+• Decoder is rather shallow (small MLP or Linear) 
+- Extract the relevant content from the hidden features
+(hidden features contain much more information than needed)
+dim(y) < dim(z)
+Input
+(e.g. image)
+Output
+(e.g. classes)
+Encoder
+Decoder
+more on low-dimensional and discrete modalities in later lectures 
+
+/ 70
+MDL - INTRODUCTION
+THE HIDDEN FEATURE SPACE: IN PRACTICE
+61
+• Specific forms of hidden features 
+- can be fixed size, e.g. single vector or feature map 
+- can be dynamically sized, e.g. sequence of vectors 
+=> architecture-dependent 
+=> not necessarily “perfect” representation of data manifold 
+• Symmetries of the data manifold and hidden features 
+- Different points on the data manifold may map to the same hidden feature 
+=> more on that in the upcoming lectures 
+• Accessibility of semantic information 
+- extraction of “usefull information” from hidden features can be more or less complex 
+- sometimes linear projections are enough to uncover classes / features
+
+/ 70
+MDL - INTRODUCTION
+HOW TO TRANSFORM BETWEEN DATA SPACE AND HIDDEN FEATURE SPACE
+62
+Deep learning as a series of (non-linear) transformations 
+to unfold the manifold 
+Encoder
+Data Space = 2D, Manifold = 1D (+ color)
+
+/ 70
+MDL - INTRODUCTION
+THE HIDDEN FEATURE SPACE
+63
+Encoder
+Decoder
+There isn’t just a single hidden feature space 
+INSTEAD 
+There is a spectrum of “semantic level” when going from input to output
+
+/ 70
+MDL - INTRODUCTION
+MULTIMODAL DEEP LEARNING PIPELINES
+64
+Machine Learning Pipeline 
+• Learn a parameterized function 
+with parameters  
+• Given an input , predict the output  
+by applying  on  
+Important Aspects 
+• How do we get from  to  inside  
+=> forward pass 
+• How do we learn the parameters  given a training dataset 
+=> backward pass
+fθ
+θ
+x
+y
+fθ
+x
+x
+y
+fθ
+θ
+Input
+(Condition)
+Output
+(Prediction)
+Model
+this is still missing
+we just looked at this
+
+/ 70
+MDL - INTRODUCTION
+TRAINING SIGNALS: THE BACKWARD PASS
+65
+• Training signals flow from output to input 
+- loss functions provide the initial signal for the output prediction 
+- backpropagation moves the signal backward through the transformations 
+• Some training signals are more complex 
+- for generative data, there isn’t a unique solution (e.g. GANs, VAE, diffusion models) 
+- sometimes another input modality provides a training signal (e.g. CLIP) 
+- sometimes the input modality provides it’s own training signal (self-supervision) 
+- sometimes we have no explicit training signal (weakly/unsupervised training)
+this will be covered in later lectures
+
+/ 70
+MDL - INTRODUCTION
+DIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES
+66
+
+/ 70
+MDL - INTRODUCTION
+DIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES
+67
+Translation Pipeline 
+• Converting one modality (e.g. images) into another modality (e.g. text) 
+• Forward Pass 
+1. Encoder : Encode input  into hidden features 
+(  may contain features from different encoder layers) 
+2. Decoder 
+: Decode hidden features  into output 
+(  may be used in different decoder layers) 
+• Training: Conditional likelihood 
+  
+• Examples: 
+- Image Captioning 
+- Text-to-Image 
+- Image Classification 
+- …
+fθ
+x
+z
+z
+gϕ
+z
+y
+z
+p(y|x)
+Input
+(e.g. image)
+Output
+(e.g. text)
+Encoder
+Decoder
+
+/ 70
+MDL - INTRODUCTION
+DIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES
+68
+Alignment Pipeline (“CLIP”) 
+• Projecting two (or more) modalities into a shared embedding space 
+• Forward Pass 
+1. Encode (image) input 
+ into hidden space 
+ using 
+ 
+2. Encode (text) input 
+ into hidden space 
+ using 
+:
+(encoders may use different architectures but 
+ and 
+ have same dim) 
+• Training: Maximize similarity between 
+ and 
+ 
+               for paired samples
+               (e.g. using contrastive learning) 
+• Examples: 
+- Cross-modal retrieval 
+- Pre-training 
+- …
+xI
+zI
+fI
+θ
+xT
+zT
+fT
+ϕ
+zI
+zT
+zI
+zT
+Input 1
+(e.g. image)
+Encoder 1
+Input 2
+(e.g. text)
+Encoder 2
+Alignment
+
+/ 70
+MDL - INTRODUCTION
+DIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES
+69
+Fusion Pipeline 
+• Combine multiple input modalities to predict and output modality 
+• Forward Pass 
+1. Encoder : Encode input  into semantic (hidden) features 
+(  may contain features from different encoder layers) 
+2. Decoder 
+: Decode semantic features  into output 
+(  may be used in different decoder layers) 
+• Training: Conditional likelihood 
+  
+• Examples: 
+- Visual Question Answering 
+- Chat with interleaved images 
+- …
+fθ
+x
+z
+z
+gϕ
+z
+y
+z
+p(y|x)
+Input 1
+(e.g. image)
+Output
+(e.g. text)
+Multimodal
+Encoder
+Decoder
+Input 2
+(e.g. text)
+
+/ 70
+MDL - INTRODUCTION
+DIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES
+70
+• Encoder(s) / Decoder(s) may or may not share weights and/or architectures 
+• Hidden features may be a single vector or a more complex state from the encoders 
+• Interaction/fusion of different modalities may differ between architectures 
+• Different pipelines may be combined (e.g. use alignment pre-training to initialize encoder)
+Input 1
+(e.g. image)
+Encoder 1
+Input 2
+(e.g. text)
+Encoder 2
+Alignment
+Input 1
+(e.g. image)
+Output
+(e.g. text)
+Multimodal
+Encoder
+Decoder
+Input 2
+(e.g. text)
+Input
+(e.g. image)
+Output
+(e.g. text)
+Encoder
+Decoder
+Alignment
+Translation
+Fusion
+
+/ 70
+MDL - INTRODUCTION
+RECAP
+71
+• Why multi-modal deep learning? 
+- What is a modality? 
+- Why do we need multiple modalities? 
+• From input to output 
+- Hidden features and transformations 
+- The Manifold hypothesis 
+• Overview of multi-modal deep learning pipelines 
+- Translation, Alignment, Fusion
+
+/ 70
+MDL - INTRODUCTION
+SUMMARY OF BLOCKS
+72
+1. Data types, representations, and feature spaces — what are , , and  
+- Structure, symmetries, and other properties of modalities and feature spaces 
+2. Architectures for different modalities — what are 
+ and 
+ 
+- Encoder and decoder architecture and their properties 
+3. Training signals — how to learn   and  
+- Loss functions for different modalities and multimodal training 
+- Supervised, self-supervised and unsupervised training 
+4. Multimodal pipelines — bringing everything together 
+- Multimodal architectures
+x y
+z
+fθ(x)
+gϕ(z)
+θ
+ϕ
+
+/ 70
+MDL - INTRODUCTION
+FURTHER READINGS AND RESOURCES
+73
+• Paul Pu Liang, Amir Zadeh, Louis-Philippe Morency.
+Foundations & Trends in Multimodal Machine Learning:
+Principles, Challenges, and Open Questions (2022)
+https://arxiv.org/pdf/2209.03430 
+• Yonghyeon Lee. A Geometric Perspective on Autoencoders (2023)
+https://arxiv.org/pdf/2309.08247 
+• Christopher Olah. Neural Networks, Manifolds, and Topology (2014)
+http://colah.github.io/posts/2014-03-NN-Manifolds-Topology/ 
+• Brian Keng. Manifolds: A Gentle Introduction (2018)
+https://bjlkeng.io/posts/manifolds/

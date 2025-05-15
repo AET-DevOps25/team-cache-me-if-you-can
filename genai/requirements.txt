@@ -1,0 +1,38 @@
+# Core AI and LangChain
+langchain
+langchain-openai # Or other LLM providers like langchain-community for GPT4All
+langchain-weaviate # For Weaviate integration
+langchain-text-splitters
+langchain-community # For various utilities and integrations
+
+# LLM SDKs (choose as needed)
+openai # If using OpenAI
+# sentence_transformers # For local embeddings, if not using OpenAI embeddings
+
+# Vector Store
+weaviate-client
+
+# Web Framework (FastAPI recommended)
+fastapi
+uvicorn[standard] # ASGI server for FastAPI
+
+# Document Processing
+pypdf2 # For PDF text extraction
+python-pptx # For PowerPoint text extraction
+# unstructured # Comprehensive library for various document types, consider this
+# beautifulsoup4 # For HTML parsing, if applicable
+
+# Configuration
+python-dotenv
+
+# Utilities
+# httpx # For making async HTTP requests if the AI service needs to call external APIs
+
+# Testing
+pytest
+pytest-asyncio # For testing async code with FastAPI
+httpx # For testing API endpoints
+
+# Linters & Formatters (optional, but recommended for team collaboration)
+# ruff
+# black 
