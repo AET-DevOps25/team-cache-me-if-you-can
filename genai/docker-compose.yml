@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env # Instructs Docker Compose to load variables from .env file
+    environment:
+      # WEAVIATE_URL is expected to be in the .env file
+      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080} 
+      # Add other variables that should come from .env using ${VAR_NAME}
+    depends_on:
+      - weaviate
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  weaviate:
+    image: semitechnologies/weaviate:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    env_file:
+      - .env # Instructs Docker Compose to load variables from .env file for Weaviate as well
+    environment:
+      QUERY_DEFAULTS_LIMIT: ${WEAVIATE_QUERY_DEFAULTS_LIMIT:-25}
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: ${WEAVIATE_AUTH_ANONYMOUS_ENABLED:-true}
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate' # This is usually fixed for the image
+      DEFAULT_VECTORIZER_MODULE: ${WEAVIATE_DEFAULT_VECTORIZER_MODULE:-none}
+      ENABLE_MODULES: ${WEAVIATE_ENABLE_MODULES:-text2vec-openai} # Example, adjust as needed
+      # If using text2vec-openai, OPENAI_APIKEY should be in your .env file
+      OPENAI_APIKEY: ${OPENAI_APIKEY}
+
+volumes:
+  weaviate_data: 
