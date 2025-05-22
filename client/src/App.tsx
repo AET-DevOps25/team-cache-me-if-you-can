@@ -1,6 +1,7 @@
 import GroupInfo from "./pages/group_info/GroupInfo";
 import Home from "./pages/home/Home";
 import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 const router = createBrowserRouter([
@@ -15,6 +16,10 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
   },
 ]);
 

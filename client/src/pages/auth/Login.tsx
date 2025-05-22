@@ -128,7 +128,10 @@ export default function Login() {
             <div className="switch-mode">
               <p className="switch-text">
                 Don't have an account?{" "}
-                <button onClick={() => navigate("/")} className="switch-button">
+                <button
+                  onClick={() => navigate("/register")}
+                  className="switch-button"
+                >
                   Sign up
                 </button>
               </p>
