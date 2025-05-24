@@ -1,17 +1,19 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, User, Lock } from "lucide-react";
+import { Eye, EyeOff, User, Lock, School } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigator from "../../nav/Navigator";
 import "./Register.css";
 
 interface RegisterFormData {
   name: string;
+  university: string;
   password: string;
   confirmPassword: string;
 }
 
 interface RegisterFormErrors {
   name?: string;
+  university?: string;
   password?: string;
   confirmPassword?: string;
 }
@@ -24,6 +26,7 @@ interface RegisterProps {
 const Register: React.FC<RegisterProps> = () => {
   const [formData, setFormData] = useState<RegisterFormData>({
     name: "",
+    university: "",
     password: "",
     confirmPassword: "",
   });
@@ -142,6 +145,28 @@ const Register: React.FC<RegisterProps> = () => {
                   className={`form-input ${errors.name ? "input-error" : ""}`}
                   placeholder="Enter your full name"
                   autoComplete="name"
+                />
+              </div>
+              {errors.name && <p className="error-message">{errors.name}</p>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="name" className="form-label">
+                University
+              </label>
+              <div className="input-wrapper">
+                <School className="input-icon" />
+                <input
+                  type="text"
+                  id="university"
+                  name="university"
+                  value={formData.university}
+                  onChange={handleInputChange}
+                  className={`form-input ${
+                    errors.university ? "input-error" : ""
+                  }`}
+                  placeholder="Enter your university"
+                  autoComplete="university"
                 />
               </div>
               {errors.name && <p className="error-message">{errors.name}</p>}

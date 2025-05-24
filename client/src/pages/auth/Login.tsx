@@ -60,7 +60,9 @@ export default function Login() {
 
           <div className="login-form">
             <div className="form-group">
-              <label className="form-label">Username</label>
+              <label htmlFor="name" className="form-label">
+                Username
+              </label>
               <div className="input-wrapper">
                 <User className="input-icon" />
                 <input
