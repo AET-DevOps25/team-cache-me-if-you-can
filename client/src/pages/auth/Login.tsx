@@ -1,17 +1,17 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, User, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigator from "../../nav/Navigator";
 import "./login.css";
 
 interface LoginFormData {
-  email: string;
+  username: string;
   password: string;
 }
 
 export default function Login() {
   const [formData, setFormData] = useState<LoginFormData>({
-    email: "",
+    username: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -40,9 +40,9 @@ export default function Login() {
     if (isValid) {
       navigate("/");
     } else {
-      alert("email or password is not right!");
+      alert("username or password is not right!");
       setFormData({
-        email: "",
+        username: "",
         password: "",
       });
       setIsLoading(false);
@@ -60,19 +60,17 @@ export default function Login() {
 
           <div className="login-form">
             <div className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email Address
-              </label>
+              <label className="form-label">Username</label>
               <div className="input-wrapper">
-                <Mail className="input-icon" />
+                <User className="input-icon" />
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
                   onChange={handleInputChange}
-                  placeholder="Enter your email"
-                  autoComplete="email"
+                  placeholder="Enter your username"
+                  autoComplete="username"
                 />
               </div>
             </div>

@@ -1,19 +1,17 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, User, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigator from "../../nav/Navigator";
 import "./Register.css";
 
 interface RegisterFormData {
   name: string;
-  email: string;
   password: string;
   confirmPassword: string;
 }
 
 interface RegisterFormErrors {
   name?: string;
-  email?: string;
   password?: string;
   confirmPassword?: string;
 }
@@ -26,7 +24,6 @@ interface RegisterProps {
 const Register: React.FC<RegisterProps> = () => {
   const [formData, setFormData] = useState<RegisterFormData>({
     name: "",
-    email: "",
     password: "",
     confirmPassword: "",
   });
@@ -36,11 +33,6 @@ const Register: React.FC<RegisterProps> = () => {
     useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const validatePassword = (
     password: string
@@ -74,13 +66,6 @@ const Register: React.FC<RegisterProps> = () => {
       newErrors.name = "User name is required";
     } else if (formData.name.trim().length < 2) {
       newErrors.name = "Name must be at least 2 characters";
-    }
-
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
     }
 
     // Password validation
@@ -160,26 +145,6 @@ const Register: React.FC<RegisterProps> = () => {
                 />
               </div>
               {errors.name && <p className="error-message">{errors.name}</p>}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email Address
-              </label>
-              <div className="input-wrapper">
-                <Mail className="input-icon" />
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={`form-input ${errors.email ? "input-error" : ""}`}
-                  placeholder="Enter your email"
-                  autoComplete="email"
-                />
-              </div>
-              {errors.email && <p className="error-message">{errors.email}</p>}
             </div>
 
             <div className="form-group">
