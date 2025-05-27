@@ -44,12 +44,12 @@
 .find-groups-form input[type="text"]:focus {
   outline: none;
   border-color: #007bff;
-  background-color: #ffffff;
   box-shadow: 0 0 0 0.1875rem rgba(0, 123, 255, 0.1);
 }
 
 .find-groups-form input[type="text"]:hover {
-  border-color: #c0c0c0;
+  border-color: #007bff;
+  background-color: #f0f8ff;
 }
 
 .find-form-submit-btn {
