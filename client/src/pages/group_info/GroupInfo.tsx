@@ -5,7 +5,7 @@ import "./group_info.css";
 
 export default function GroupInfo() {
   const { groupName } = useParams();
-  const [activeTab, setActiveTab] = useState("Group Name");
+  const [activeTab, setActiveTab] = useState("Group Info");
 
   const tabs = ["Group Info", "Materials", "Chats", "AI Bot"];
   return (
@@ -32,7 +32,7 @@ export default function GroupInfo() {
           <div className="content-area">
             <h2 className="group-title">{groupName}</h2>
             <div className="tab-content">
-              {activeTab === "Group Name" && (
+              {activeTab === "Group Info" && (
                 <p>Group information and settings for {groupName}</p>
               )}
               {activeTab === "Materials" && (
