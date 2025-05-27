@@ -179,7 +179,11 @@ export function Create({
         <button
           type="submit"
           className="form-submit-btn"
-          disabled={isCreating || !createFormData.name.trim()}
+          disabled={
+            isCreating ||
+            !createFormData.name.trim() ||
+            !createFormData.university.trim()
+          }
         >
           {isCreating ? "Creating..." : "Create Group"}
         </button>

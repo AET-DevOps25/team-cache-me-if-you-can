@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./group.css";
+import { Find } from "./Find";
 import { Create } from "./Create";
 import defaultImg from "../../../local_img/default.jpg";
 
@@ -35,10 +36,6 @@ export default function Group() {
     setUserName(null);
   }
 
-  function onGroupSelect(name: string) {
-    navigate(`/group/${name}`);
-  }
-
   useEffect(() => {
     const fetchData = async () => {
       await getUserName();
@@ -51,7 +48,7 @@ export default function Group() {
     };
 
     fetchData();
-  });
+  }, [userName]);
 
   if (!groups && !userName) {
     return <p>Loding...</p>;
@@ -65,7 +62,9 @@ export default function Group() {
       <div className="groups-actions">
         <button
           className="groups-button groups-button-margin"
-          onClick={() => setActiveView("create")}
+          onClick={() =>
+            setActiveView(activeView === "create" ? "groups" : "create")
+          }
         >
           {activeView === "create" ? "back" : "create"}
         </button>
@@ -88,7 +87,7 @@ export default function Group() {
               <div key={group.id} className="group-item">
                 <div
                   className="group-image"
-                  onClick={() => onGroupSelect(group.name)}
+                  onClick={() => navigate(`/group/${group.name}`)}
                 >
                   <img src={group.imageUrl} alt="group image"></img>
                 </div>
@@ -107,11 +106,7 @@ export default function Group() {
       ) : (
         <div className="groups-form">
           {/* Find Groups Form */}
-          <form>
-            <input type="text" placeholder="Search Groups" />
-            <button type="submit">Search</button>
-          </form>
-          {/* Search results would go here */}
+          <Find />
         </div>
       )}
     </div>
