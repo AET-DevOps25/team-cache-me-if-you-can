@@ -12,7 +12,7 @@ export default function Group() {
     imageUrl: string;
   }> | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"groups" | "create" | "find">(
+  const [activeView, setActiveView] = useState<"groups" | "create" | "search">(
     "groups"
   );
   const navigate = useNavigate();
@@ -72,10 +72,10 @@ export default function Group() {
         <button
           className="groups-button"
           onClick={() =>
-            setActiveView(activeView === "find" ? "groups" : "find")
+            setActiveView(activeView === "search" ? "groups" : "search")
           }
         >
-          {activeView === "find" ? "back" : "find"}
+          {activeView === "search" ? "back" : "search"}
         </button>
       </div>
 

@@ -18,7 +18,7 @@ export function Create({
   setActiveView,
   setGroups,
 }: {
-  setActiveView: (view: "groups" | "create" | "find") => void;
+  setActiveView: (view: "groups" | "create" | "search") => void;
   setGroups: React.Dispatch<React.SetStateAction<GroupData[] | null>>;
 }) {
   const [isCreating, setIsCreating] = useState(false);
