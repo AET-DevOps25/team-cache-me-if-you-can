@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./group.css";
+import { Create } from "./Create";
 import defaultImg from "../../../local_img/default.jpg";
 
 export default function Group() {
@@ -62,29 +63,20 @@ export default function Group() {
 
       {/* Action Buttons */}
       <div className="groups-actions">
-        {activeView !== "create" && (
-          <button
-            className="groups-button groups-button-margin"
-            onClick={() => setActiveView("create")}
-          >
-            create
-          </button>
-        )}
-        {activeView === "create" && (
-          <button
-            className="groups-button groups-button-margin"
-            onClick={() => setActiveView("groups")}
-          >
-            back
-          </button>
-        )}
+        <button
+          className="groups-button groups-button-margin"
+          onClick={() => setActiveView("create")}
+        >
+          {activeView === "create" ? "back" : "create"}
+        </button>
+
         <button
           className="groups-button"
           onClick={() =>
             setActiveView(activeView === "find" ? "groups" : "find")
           }
         >
-          find
+          {activeView === "find" ? "back" : "find"}
         </button>
       </div>
 
@@ -110,11 +102,7 @@ export default function Group() {
       ) : activeView === "create" ? (
         <div className="groups-form">
           {/* Create Group Form */}
-          <form>
-            <input type="text" placeholder="Group Name" />
-            <input type="file" accept="image/*" />
-            <button type="submit">Create</button>
-          </form>
+          <Create setActiveView={setActiveView} setGroups={setGroups} />
         </div>
       ) : (
         <div className="groups-form">
