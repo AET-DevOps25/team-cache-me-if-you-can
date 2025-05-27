@@ -10,6 +10,9 @@ export default function Group() {
     imageUrl: string;
   }> | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<"groups" | "create" | "find">(
+    "groups"
+  );
   const navigate = useNavigate();
 
   async function getAllGroups() {
@@ -59,28 +62,70 @@ export default function Group() {
 
       {/* Action Buttons */}
       <div className="groups-actions">
-        <button className="groups-button groups-button-margin">create</button>
-        <button className="groups-button">find</button>
+        {activeView !== "create" && (
+          <button
+            className="groups-button groups-button-margin"
+            onClick={() => setActiveView("create")}
+          >
+            create
+          </button>
+        )}
+        {activeView === "create" && (
+          <button
+            className="groups-button groups-button-margin"
+            onClick={() => setActiveView("groups")}
+          >
+            back
+          </button>
+        )}
+        <button
+          className="groups-button"
+          onClick={() =>
+            setActiveView(activeView === "find" ? "groups" : "find")
+          }
+        >
+          find
+        </button>
       </div>
 
       {/* Groups Container */}
-      <div className="groups-img-container">
-        {groups ? (
-          groups.map((group) => (
-            <div key={group.id} className="group-item">
-              <div
-                className="group-image"
-                onClick={() => onGroupSelect(group.name)}
-              >
-                <img src={group.imageUrl} alt="group image"></img>
+      {activeView === "groups" ? (
+        <div className="groups-img-container">
+          {groups ? (
+            groups.map((group) => (
+              <div key={group.id} className="group-item">
+                <div
+                  className="group-image"
+                  onClick={() => onGroupSelect(group.name)}
+                >
+                  <img src={group.imageUrl} alt="group image"></img>
+                </div>
+                <h3>{group.name}</h3>
               </div>
-              <h3>{group.name}</h3>
-            </div>
-          ))
-        ) : (
-          <p>Join a Group!</p>
-        )}
-      </div>
+            ))
+          ) : (
+            <p>Join a Group!</p>
+          )}
+        </div>
+      ) : activeView === "create" ? (
+        <div className="groups-form">
+          {/* Create Group Form */}
+          <form>
+            <input type="text" placeholder="Group Name" />
+            <input type="file" accept="image/*" />
+            <button type="submit">Create</button>
+          </form>
+        </div>
+      ) : (
+        <div className="groups-form">
+          {/* Find Groups Form */}
+          <form>
+            <input type="text" placeholder="Search Groups" />
+            <button type="submit">Search</button>
+          </form>
+          {/* Search results would go here */}
+        </div>
+      )}
     </div>
   );
 }
