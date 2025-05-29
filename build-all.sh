@@ -5,6 +5,7 @@ set -e  # Exit on first error
 echo "Building user service..."
 cd ./server/user
 ./gradlew clean build -x test
+./gradlew test -Dspring.profiles.active=test
 cd ../../
 
 echo "Building gateway service..."

@@ -58,34 +58,27 @@ public class AuthService {
                 .build();
     }
 
+    // AuthService.java
     public AuthResponse authenticate(AuthRequest request) {
-        // Input validation remains the same
-
-        try {
-            // Authenticate will trigger UserDetailsService load
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
-                            request.getPassword()
-                    )
-            );
-
-            // Get user from authentication principal
-            User user = (User) authentication.getPrincipal();
-
-            // Generate token using already loaded user
-            var jwtToken = jwtService.generateToken(user);
-        // In AuthService.java
-            logger.info("Generated token: {}", jwtToken); // Add this after generating token
-            return AuthResponse.builder()
-                    .message("Login successful")
-                    .username(user.getUsername())
-                    .token(jwtToken)
-                    .university(user.getUniversity())
-                    .build();
-
-        } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("Invalid username or password");
+        if (request.getUsername() == null || request.getPassword() == null) {
+            throw new InvalidRequestException("Username and password are required");
         }
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getUsername(),
+                        request.getPassword()
+                )
+        );
+
+        // Get UserDetails instead of domain User
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String token = jwtService.generateToken(userDetails);
+
+        return AuthResponse.builder()
+                .message("Login successful")
+                .username(userDetails.getUsername())
+                .token(token)
+                .build();
     }
 }

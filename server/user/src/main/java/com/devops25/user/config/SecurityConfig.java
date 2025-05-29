@@ -44,11 +44,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(UserDetailsService uds) {
-        var dao = new DaoAuthenticationProvider();
-        dao.setUserDetailsService(uds);
-        dao.setPasswordEncoder(passwordEncoder());
-        return dao;
+    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService) {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
     }
 
     @Bean
