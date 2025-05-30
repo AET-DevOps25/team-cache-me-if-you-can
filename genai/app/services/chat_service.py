@@ -82,18 +82,10 @@ class ChatService:
                     logger.debug(f"Attempting to retrieve documents with filter for group_id: {group_id}")
 
                 source_documents = await self.rag_system.retriever.aget_relevant_documents(query_text, **retriever_kwargs)
-                logger.debug(
-                    f"Retrieved {len(source_documents)} source documents for query '{
-                        query_text
-                    }'."
-                )
+                logger.debug(f"Retrieved {len(source_documents)} source documents for query '{query_text}'.")
 
-            # 3. Format sources for the response
             retrieved_sources_formatted: List[ChatResponseSource] = []
             for doc in source_documents:
-                # Assuming 'source_filename', 'doc_id', 'page_number' are in doc.metadata
-                # Adjust these keys based on your actual document metadata
-                # structure
                 retrieved_sources_formatted.append(
                     ChatResponseSource(
                         document_id=str(doc.metadata.get("doc_id", doc.metadata.get("id", "unknown"))),
