@@ -1,14 +1,13 @@
 import logging
 import sys
-from app.config import settings # To get LOG_LEVEL and ENVIRONMENT
+from app.config import settings  # To get LOG_LEVEL and ENVIRONMENT
+
 
 def setup_logging():
     """Configures logging for the application."""
     log_level = settings.LOG_LEVEL.upper()
     numeric_level = getattr(logging, log_level, logging.INFO)
 
-    # Base configuration
-    # For production, you might want to use a JSON formatter for structured logging.
     log_format = "%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(funcName)s:%(lineno)d - %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
 
@@ -16,7 +15,9 @@ def setup_logging():
         level=numeric_level,
         format=log_format,
         datefmt=date_format,
-        handlers=[logging.StreamHandler(sys.stdout)] # Log to stdout, suitable for containers
+        handlers=[
+            logging.StreamHandler(sys.stdout)
+        ],  # Log to stdout, suitable for containers
     )
 
     # Adjust logging levels for noisy libraries if needed
@@ -25,9 +26,6 @@ def setup_logging():
     # logging.getLogger("uvicorn.access").setLevel(logging.WARNING) # Can be very verbose
 
     logger = logging.getLogger(settings.APP_NAME)
-    logger.info(f"Logging configured with level: {log_level} in {settings.ENVIRONMENT} environment.")
-
-    # Example of how to get a logger elsewhere in the app:
-    # import logging
-    # logger = logging.getLogger(__name__)
-    # logger.info("This is an info message from my_module.") 
+    logger.info(
+        f"Logging configured with level: {log_level} in {settings.ENVIRONMENT} environment."
+    )
