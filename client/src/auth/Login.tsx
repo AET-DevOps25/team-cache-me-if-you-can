@@ -1,13 +1,10 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Navigator from "../../nav/Navigator";
+import Navigator from "../nav/Navigator";
 import "./login.css";
-
-interface LoginFormData {
-  username: string;
-  password: string;
-}
+import { LoginFormData } from "../models/LoginFormData";
+import { useAuth } from "./AuthProvider";
 
 export default function Login() {
   const [formData, setFormData] = useState<LoginFormData>({
@@ -17,13 +14,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
+  const auth = useAuth();
 
   const validateAuth = async (formData: LoginFormData): Promise<boolean> => {
-    // TODO: fetch authentication data from server
-    if (!formData) {
-      return false;
-    }
-    return true;
+    return auth.loginAction(formData);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {

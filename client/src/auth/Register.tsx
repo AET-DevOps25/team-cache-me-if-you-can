@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, User, Lock, School } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Navigator from "../../nav/Navigator";
+import Navigator from "../nav/Navigator";
 import "./Register.css";
 
 interface RegisterFormData {

@@ -1,7 +1,8 @@
 import GroupInfo from "./pages/group_info/GroupInfo";
 import Home from "./pages/home/Home";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
+import Login from "./auth/Login";
+import Register from "./auth/Register";
+import AuthProvider from "./auth/AuthProvider";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 const router = createBrowserRouter([
@@ -25,9 +26,9 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <div className="App">
+    <AuthProvider>
       <RouterProvider router={router} />
-    </div>
+    </AuthProvider>
   );
 }
 
