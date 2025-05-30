@@ -1,18 +1,19 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, User, Lock, School } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { message } from "antd";
 import Navigator from "../nav/Navigator";
 import "./Register.css";
 
 interface RegisterFormData {
-  name: string;
+  username: string;
   university: string;
   password: string;
   confirmPassword: string;
 }
 
 interface RegisterFormErrors {
-  name?: string;
+  username?: string;
   university?: string;
   password?: string;
   confirmPassword?: string;
@@ -20,12 +21,12 @@ interface RegisterFormErrors {
 
 interface RegisterProps {
   onSwitchToLogin?: () => void;
-  onRegisterSuccess?: (name: string, email: string) => void;
+  onRegisterSuccess?: (username: string, email: string) => void;
 }
 
 const Register: React.FC<RegisterProps> = () => {
   const [formData, setFormData] = useState<RegisterFormData>({
-    name: "",
+    username: "",
     university: "",
     password: "",
     confirmPassword: "",
@@ -36,6 +37,7 @@ const Register: React.FC<RegisterProps> = () => {
     useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   const validatePassword = (
     password: string
@@ -65,10 +67,10 @@ const Register: React.FC<RegisterProps> = () => {
     const newErrors: RegisterFormErrors = {};
 
     // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = "User name is required";
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
+    if (!formData.username.trim()) {
+      newErrors.username = "User name is required";
+    } else if (formData.username.trim().length < 2) {
+      newErrors.username = "Name must be at least 2 characters";
     }
 
     // Password validation
@@ -114,7 +116,40 @@ const Register: React.FC<RegisterProps> = () => {
     }
 
     setIsLoading(true);
-    //TODO: post registration data to server
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password,
+          university: formData.university,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.message === "Username already exists") {
+          setErrors({ ...errors, username: data.message });
+        } else {
+          message.error(data.message || "Registration failed");
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      message.success(data.message || "Registration successful");
+      navigate("/");
+    } catch (error) {
+      console.error("Registration error:", error);
+      message.error("An error occurred during registration");
+    } finally {
+      setIsLoading(false);
+    }
 
     navigate("/");
     setIsLoading(false);
@@ -140,14 +175,18 @@ const Register: React.FC<RegisterProps> = () => {
                   type="text"
                   id="name"
                   name="name"
-                  value={formData.name}
+                  value={formData.username}
                   onChange={handleInputChange}
-                  className={`form-input ${errors.name ? "input-error" : ""}`}
+                  className={`form-input ${
+                    errors.username ? "input-error" : ""
+                  }`}
                   placeholder="Enter your full name"
                   autoComplete="name"
                 />
               </div>
-              {errors.name && <p className="error-message">{errors.name}</p>}
+              {errors.username && (
+                <p className="error-message">{errors.username}</p>
+              )}
             </div>
 
             <div className="form-group">
@@ -169,7 +208,9 @@ const Register: React.FC<RegisterProps> = () => {
                   autoComplete="university"
                 />
               </div>
-              {errors.name && <p className="error-message">{errors.name}</p>}
+              {errors.username && (
+                <p className="error-message">{errors.username}</p>
+              )}
             </div>
 
             <div className="form-group">
