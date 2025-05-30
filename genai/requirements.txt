@@ -1,8 +1,8 @@
 # Core AI and LangChain
-langchain
-langchain-openai # Or other LLM providers like langchain-community for GPT4All
-langchain-weaviate # For Weaviate integration
-langchain-text-splitters
+langchain>=0.1.0
+langchain-openai>=0.1.0 # Or other LLM providers like langchain-community for GPT4All
+langchain-weaviate>=0.0.4 # For Weaviate integration (requires weaviate-client v4)
+langchain-text-splitters>=0.0.1
 langchain-community # For various utilities and integrations
 
 # LLM SDKs (choose as needed)
@@ -10,20 +10,25 @@ openai # If using OpenAI
 # sentence_transformers # For local embeddings, if not using OpenAI embeddings
 
 # Vector Store
-weaviate-client
+weaviate-client>=4.5.0 # Upgrading to v4.x for compatibility with recent langchain-weaviate
 
 # Web Framework (FastAPI recommended)
-fastapi
-uvicorn[standard] # ASGI server for FastAPI
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0 # ASGI server for FastAPI
+python-multipart>=0.0.5 # For FastAPI file uploads
 
 # Document Processing
-pypdf2 # For PDF text extraction
-python-pptx # For PowerPoint text extraction
+pypdf2>=3.0.0 # For PDF text extraction
+python-pptx>=0.6.0 # For PowerPoint text extraction
+python-docx>=1.0.0
+pymupdf>=1.20.0 # For advanced PDF extraction
 # unstructured # Comprehensive library for various document types, consider this
 # beautifulsoup4 # For HTML parsing, if applicable
 
 # Configuration
-python-dotenv
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
 
 # Utilities
 # httpx # For making async HTTP requests if the AI service needs to call external APIs
@@ -36,3 +41,8 @@ httpx # For testing API endpoints
 # Linters & Formatters (optional, but recommended for team collaboration)
 # ruff
 # black 
+
+# Langchain Core and OpenAI
+langchain-core>=0.1.0
+
+# Add any other specific libraries your project needs 

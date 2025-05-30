@@ -17,4 +17,4 @@ setup(
         "langchain-community",
         "weaviate-client",
     ],
-) 
+)

@@ -377,3 +377,6 @@ sketch
 # gitignore template for Vue.js projects
 #
 # Recommended template: Node.gitignore
+
+# Local Weaviate data
+genai/weaviate_data/

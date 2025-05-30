@@ -5,6 +5,7 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
+
 class DocumentParser:
     """Parses extracted text into manageable chunks (Documents for LangChain)."""
 
@@ -45,8 +46,9 @@ class DocumentParser:
         for i, chunk_text in enumerate(split_texts):
             # Create specific metadata for each chunk if needed
             chunk_metadata = base_metadata.copy()
-            chunk_metadata["chunk_index"] = i # Example of adding chunk-specific metadata
-            # You might add more sophisticated metadata like original page numbers if available from extractor
+            chunk_metadata["chunk_index"] = i  # Example of adding chunk-specific metadata
+            # You might add more sophisticated metadata like original page
+            # numbers if available from extractor
 
             doc = Document(page_content=chunk_text, metadata=chunk_metadata)
             documents.append(doc)
@@ -54,8 +56,10 @@ class DocumentParser:
         logger.info(f"Split text into {len(documents)} documents.")
         return documents
 
+
 # Global instance (or inject as dependency)
 document_parser = DocumentParser()
+
 
 def get_document_parser() -> DocumentParser:
     return document_parser
