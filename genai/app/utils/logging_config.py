@@ -15,17 +15,14 @@ def setup_logging():
         level=numeric_level,
         format=log_format,
         datefmt=date_format,
-        handlers=[
-            logging.StreamHandler(sys.stdout)
-        ],  # Log to stdout, suitable for containers
+        handlers=[logging.StreamHandler(sys.stdout)],  # Log to stdout, suitable for containers
     )
 
     # Adjust logging levels for noisy libraries if needed
     # logging.getLogger("httpx").setLevel(logging.WARNING)
     # logging.getLogger("httpcore").setLevel(logging.WARNING)
-    # logging.getLogger("uvicorn.access").setLevel(logging.WARNING) # Can be very verbose
+    # logging.getLogger("uvicorn.access").setLevel(logging.WARNING) # Can be
+    # very verbose
 
     logger = logging.getLogger(settings.APP_NAME)
-    logger.info(
-        f"Logging configured with level: {log_level} in {settings.ENVIRONMENT} environment."
-    )
+    logger.info(f"Logging configured with level: {log_level} in {settings.ENVIRONMENT} environment.")

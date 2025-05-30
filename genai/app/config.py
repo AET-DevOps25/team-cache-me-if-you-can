@@ -6,9 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     APP_NAME: str = "StudySync AI Service"
     OPENAI_API_KEY: str = "YOUR_DEFAULT_API_KEY_IF_NOT_SET"
@@ -24,14 +22,8 @@ class Settings(BaseSettings):
 
     def __init__(self, **values):
         super().__init__(**values)
-        if (
-            self.OPENAI_API_KEY == "YOUR_DEFAULT_API_KEY_IF_NOT_SET"
-            or not self.OPENAI_API_KEY
-        ):
-            logger.warning(
-                "OPENAI_API_KEY is not set in .env file or environment variables. "
-                "Using default placeholder which will likely fail."
-            )
+        if self.OPENAI_API_KEY == "YOUR_DEFAULT_API_KEY_IF_NOT_SET" or not self.OPENAI_API_KEY:
+            logger.warning("OPENAI_API_KEY is not set in .env file or environment variables. " "Using default placeholder which will likely fail.")
 
 
 settings = Settings()

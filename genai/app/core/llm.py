@@ -1,12 +1,11 @@
 import logging
 import os
 
+from app.config import settings
 from langchain_core.language_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 
 # from langchain_community.llms import GPT4All # Example for local LLM
-
-from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -18,19 +17,12 @@ class LLMProvider:
     """
 
     def __init__(self):
-
         self.llm: BaseChatModel = ChatOpenAI(
             openai_api_key=settings.OPENAI_API_KEY,
             model_name=settings.OPENAI_MODEL_NAME,
-            temperature=(
-                settings.OPENAI_LLM_TEMPERATURE
-                if hasattr(settings, "OPENAI_LLM_TEMPERATURE")
-                else 0.1
-            ),
+            temperature=(settings.OPENAI_LLM_TEMPERATURE if hasattr(settings, "OPENAI_LLM_TEMPERATURE") else 0.1),
         )
-        logger.info(
-            f"Initialized ChatOpenAI provider with model: {settings.OPENAI_MODEL_NAME}"
-        )
+        logger.info(f"Initialized ChatOpenAI provider with model: {settings.OPENAI_MODEL_NAME}")
 
     def get_model(self) -> BaseChatModel:
         """Returns the configured LLM instance."""
@@ -53,18 +45,14 @@ def get_llm_instance() -> BaseChatModel:
             _llm_provider_singleton = LLMProvider()
             logger.info("LLMProvider singleton initialized successfully.")
         except ValueError as e:
-            logger.error(
-                f"Failed to initialize LLMProvider during get_llm_instance: {e}"
-            )
+            logger.error(f"Failed to initialize LLMProvider during get_llm_instance: {e}")
             raise RuntimeError(f"LLMProvider could not be initialized: {e}")
         except Exception as e:  # Catch any other unexpected errors during init
             logger.error(
                 f"Unexpected error initializing LLMProvider in get_llm_instance: {e}",
                 exc_info=True,
             )
-            raise RuntimeError(
-                f"Unexpected error during LLMProvider initialization: {e}"
-            )
+            raise RuntimeError(f"Unexpected error during LLMProvider initialization: {e}")
 
     return _llm_provider_singleton.get_model()
 
@@ -105,17 +93,19 @@ if __name__ == "__main__":
         if model_name_from_env:
             app.config.settings.OPENAI_MODEL_NAME = model_name_from_env
 
-        logger.info(
-            f"Updated app.config.settings for test: "
-            f"KEY set: {bool(app.config.settings.OPENAI_API_KEY and app.config.settings.OPENAI_API_KEY not in ['YOUR_DEFAULT_PLACEHOLDER', 'YOUR_DEFAULT_API_KEY_IF_NOT_SET'])}, "
-            f"Model: {app.config.settings.OPENAI_MODEL_NAME}"
+        key_is_set = bool(
+            app.config.settings.OPENAI_API_KEY
+            and app.config.settings.OPENAI_API_KEY
+            not in [
+                "YOUR_DEFAULT_PLACEHOLDER",
+                "YOUR_DEFAULT_API_KEY_IF_NOT_SET",
+            ]
         )
+        logger.info(f"Updated app.config.settings for test: KEY set: {key_is_set}, Model: {app.config.settings.OPENAI_MODEL_NAME}")
 
         reset_llm_provider_for_testing()
     else:
-        logger.warning(
-            "No .env file found for llm.py test. Relying on existing environment variables or defaults."
-        )
+        logger.warning("No .env file found for llm.py test. Relying on existing environment variables or defaults.")
         reset_llm_provider_for_testing()
 
     llm = get_llm_instance()
@@ -124,7 +114,5 @@ if __name__ == "__main__":
 
     response = llm.invoke(test_prompt)
 
-    response_content = (
-        response.content if hasattr(response, "content") else str(response)
-    )
+    response_content = response.content if hasattr(response, "content") else str(response)
     logger.info(f"LLM Response: {response_content}")

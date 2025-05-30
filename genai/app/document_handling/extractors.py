@@ -7,17 +7,15 @@ the API and CLI interface are unchanged.
 
 from __future__ import annotations
 
-import io
 import logging
 import os
-from typing import IO
 from collections import Counter
+from typing import IO
 
 import fitz
 from PyPDF2 import PdfReader
-from pptx import Presentation
 from docx import Document
-
+from pptx import Presentation
 
 logger = logging.getLogger(__name__)
 
@@ -77,22 +75,15 @@ class TextExtractor:
                     for line in raw_block_dict.get("lines", []):
                         for span in line.get("spans", []):
                             font_name = span["font"]
-                            block_chars_detailed.extend(
-                                self._get_chars_from_rawdict_span(span, font_name)
-                            )
+                            block_chars_detailed.extend(self._get_chars_from_rawdict_span(span, font_name))
 
                     current_block_text = "".join(block_chars_detailed).strip()
 
-                    if (
-                        not current_block_text
-                        or len(current_block_text) < len(block_text_simple.strip()) / 2
-                    ):
+                    if not current_block_text or len(current_block_text) < len(block_text_simple.strip()) / 2:
                         current_block_text = block_text_simple.strip()
 
                     if current_block_text:
-                        all_blocks_info.append(
-                            (page_idx, current_block_text, block_bbox, page_rect)
-                        )
+                        all_blocks_info.append((page_idx, current_block_text, block_bbox, page_rect))
 
             common_hf_texts = set()
             if num_pages > 1:
@@ -105,16 +96,13 @@ class TextExtractor:
                         in_hf_zone_count = 0
                         for p_idx, b_text, b_bbox, p_rect in all_blocks_info:
                             if b_text == text:
-                                is_header_zone = (
-                                    b_bbox.y1 < p_rect.height * 0.15
-                                )  # Top 15%
-                                is_footer_zone = (
-                                    b_bbox.y0 > p_rect.height * 0.85
-                                )  # Bottom 15%
+                                is_header_zone = b_bbox.y1 < p_rect.height * 0.15  # Top 15%
+                                is_footer_zone = b_bbox.y0 > p_rect.height * 0.85  # Bottom 15%
                                 if is_header_zone or is_footer_zone:
                                     in_hf_zone_count += 1
 
-                        # If >70% of its occurrences are in H/F zones, mark as H/F
+                        # If >70% of its occurrences are in H/F zones, mark as
+                        # H/F
                         if in_hf_zone_count / count > 0.7:
                             common_hf_texts.add(text)
                             logger.debug(f"Identified common H/F: '{text}'")
@@ -122,7 +110,8 @@ class TextExtractor:
             # --- Reconstruct final text, skipping H/F and isolated page numbers ---
             output_by_page: list[list[str]] = [[] for _ in range(num_pages)]
             for p_idx, text, bbox, p_rect in all_blocks_info:
-                # Check 1: Is it a common H/F text and in an H/F zone on this page?
+                # Check 1: Is it a common H/F text and in an H/F zone on this
+                # page?
                 is_common_hf_in_zone = False
                 if text in common_hf_texts:
                     is_header_zone = bbox.y1 < p_rect.height * 0.15
@@ -134,17 +123,11 @@ class TextExtractor:
                     logger.debug(f"Skipping H/F block: '{text}' on page {p_idx}")
                     continue
 
-                if (
-                    text.strip().isdigit() and len(text.strip()) <= 4
-                ):  # Max 4 digits for page num
-                    is_extreme_top = (
-                        bbox.y1 < p_rect.height * 0.08
-                    )  # More stringent for page numbers
+                if text.strip().isdigit() and len(text.strip()) <= 4:  # Max 4 digits for page num
+                    is_extreme_top = bbox.y1 < p_rect.height * 0.08  # More stringent for page numbers
                     is_extreme_bottom = bbox.y0 > p_rect.height * 0.92
                     if is_extreme_top or is_extreme_bottom:
-                        logger.debug(
-                            f"Skipping potential page number: '{text}' on page {p_idx}"
-                        )
+                        logger.debug(f"Skipping potential page number: '{text}' on page {p_idx}")
                         continue
 
                 output_by_page[p_idx].append(text)
@@ -160,9 +143,7 @@ class TextExtractor:
         """Return plain text using PyPDF2 (fallback)."""
         # This method might also benefit from the generic post-processor
         reader = PdfReader(file_io)
-        text = "\n".join(
-            filter(None, (page.extract_text() for page in reader.pages))
-        ).strip()
+        text = "\n".join(filter(None, (page.extract_text() for page in reader.pages))).strip()
         return text  # Post-processing will be applied later by the dispatcher
 
     def extract_from_pdf(self, file_io: IO[bytes]) -> str:
@@ -178,9 +159,7 @@ class TextExtractor:
                 exc_info=True,
             )
             file_io.seek(0)  # Reset for PyPDF2
-            extracted_text = self._extract_pdf_pypdf2(
-                file_io
-            )  # Pass the original file_io
+            extracted_text = self._extract_pdf_pypdf2(file_io)  # Pass the original file_io
 
         return extracted_text  # Post-processing will be applied by the main dispatcher
 
@@ -214,24 +193,16 @@ class TextExtractor:
             for i in range(len(current_para_lines) - 1):
                 if current_para_lines[i].endswith("-"):
                     merged_line_start = current_para_lines[i][:-1]
-                    # Check if next line starts with a character that could continue a word
-                    if (
-                        current_para_lines[i + 1]
-                        and current_para_lines[i + 1][0].islower()
-                    ):
-                        current_para_lines[i] = (
-                            merged_line_start + current_para_lines[i + 1]
-                        )
+                    # Check if next line starts with a character that could
+                    # continue a word
+                    if current_para_lines[i + 1] and current_para_lines[i + 1][0].islower():
+                        current_para_lines[i] = merged_line_start + current_para_lines[i + 1]
                         current_para_lines[i + 1] = ""  # Mark for removal
 
-            current_para_lines = [
-                line for line in current_para_lines if line
-            ]  # Remove emptied lines
+            current_para_lines = [line for line in current_para_lines if line]  # Remove emptied lines
 
             if not current_para_lines:
-                reconstructed_paragraphs.append(
-                    ""
-                )  # Preserve paragraph break if original was just newlines
+                reconstructed_paragraphs.append("")  # Preserve paragraph break if original was just newlines
                 continue
 
             new_paragraph_content = [current_para_lines[0]]
@@ -242,27 +213,17 @@ class TextExtractor:
                 if not curr_line:  # Skip empty lines within a paragraph block
                     continue
 
-                prev_ends_punct = prev_line.endswith(
-                    (".", "!", "?", ":", ";", ")", "]")
-                )
+                prev_ends_punct = prev_line.endswith((".", "!", "?", ":", ";", ")", "]"))
                 curr_starts_lower = curr_line and curr_line[0].islower()
                 # More conservative joining:
-                prev_ends_punct = prev_line.endswith(
-                    (".", "!", "?", ":", ";", ")", "]")
-                )
+                prev_ends_punct = prev_line.endswith((".", "!", "?", ":", ";", ")", "]"))
                 curr_starts_lower = curr_line and curr_line[0].islower()
-                # Avoid joining list items or short headings to subsequent lines
-                prev_is_list_item = prev_line.startswith(("-", "*", "•")) or re.match(
-                    r"^\s*\d+\.\s+", prev_line
-                )
+                # Avoid joining list items or short headings to subsequent
+                # lines
+                prev_is_list_item = prev_line.startswith(("-", "*", "•")) or re.match(r"^\s*\d+\.\s+", prev_line)
                 # prev_is_short_heading = len(prev_line.split()) < 5 and prev_line.endswith(tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"))
 
-                if (
-                    prev_line
-                    and not prev_ends_punct
-                    and curr_starts_lower
-                    and not prev_is_list_item
-                ):
+                if prev_line and not prev_ends_punct and curr_starts_lower and not prev_is_list_item:
                     new_paragraph_content[-1] = prev_line + " " + curr_line
                 else:
                     new_paragraph_content.append(curr_line)
@@ -274,9 +235,7 @@ class TextExtractor:
 
         # Final cleanup: replace multiple spaces with single space
         final_text = re.sub(r" +", " ", final_text)
-        final_text = (
-            final_text.strip()
-        )  # Remove leading/trailing whitespace/newlines from the whole text
+        final_text = final_text.strip()  # Remove leading/trailing whitespace/newlines from the whole text
         return final_text
 
     # ───────────────────────────── PPTX ─────────────────────────────── #
@@ -339,9 +298,7 @@ if __name__ == "__main__":
             file_name_with_ext = os.path.basename(full_file_path)
             print(f"\n--- Processing {file_name_with_ext} ---")
             with open(full_file_path, "rb") as f:
-                extracted = extractor.extract_text(
-                    f, file_name_with_ext
-                )  # Pass filename for extension detection
+                extracted = extractor.extract_text(f, file_name_with_ext)  # Pass filename for extension detection
 
             base_name_no_ext = os.path.splitext(file_name_with_ext)[0]
             output_filename = base_name_no_ext + ".txt"

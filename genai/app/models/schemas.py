@@ -16,9 +16,7 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str
-    source_documents: Optional[List[Dict[str, Any]]] = (
-        None  # To hold excerpts of source docs
-    )
+    source_documents: Optional[List[Dict[str, Any]]] = None  # To hold excerpts of source docs
     error: Optional[str] = None
 
 

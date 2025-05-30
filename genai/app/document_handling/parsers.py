@@ -22,13 +22,9 @@ class DocumentParser:
             length_function=len,
             # add_start_index=True, # Useful for some RAG strategies
         )
-        logger.info(
-            f"DocumentParser initialized with chunk_size={chunk_size}, chunk_overlap={chunk_overlap}"
-        )
+        logger.info(f"DocumentParser initialized with chunk_size={chunk_size}, chunk_overlap={chunk_overlap}")
 
-    def split_text_to_documents(
-        self, text: str, metadata: dict = None
-    ) -> List[Document]:
+    def split_text_to_documents(self, text: str, metadata: dict = None) -> List[Document]:
         """
         Splits a long text into smaller Document objects.
         Args:
@@ -50,10 +46,9 @@ class DocumentParser:
         for i, chunk_text in enumerate(split_texts):
             # Create specific metadata for each chunk if needed
             chunk_metadata = base_metadata.copy()
-            chunk_metadata["chunk_index"] = (
-                i  # Example of adding chunk-specific metadata
-            )
-            # You might add more sophisticated metadata like original page numbers if available from extractor
+            chunk_metadata["chunk_index"] = i  # Example of adding chunk-specific metadata
+            # You might add more sophisticated metadata like original page
+            # numbers if available from extractor
 
             doc = Document(page_content=chunk_text, metadata=chunk_metadata)
             documents.append(doc)

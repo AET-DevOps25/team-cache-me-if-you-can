@@ -1,6 +1,5 @@
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from PIL import Image
-import requests
 
 url = "/Users/i_gore/PycharmProjects/study_sync/data/docs/tg_image_1864149188.png"
 image = Image.open(url).convert("RGB")

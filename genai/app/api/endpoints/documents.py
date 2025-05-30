@@ -27,9 +27,7 @@ async def upload_document(
     if "." in file.filename:
         file_extension = file.filename.rsplit(".", 1)[1].lower()
         if f".{file_extension}" not in allowed_extensions:
-            logger.warning(
-                f"Upload attempt with unsupported file type: {file.filename}"
-            )
+            logger.warning(f"Upload attempt with unsupported file type: {file.filename}")
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported file type: '{file_extension}'. Supported types are PDF, DOCX, PPTX.",
@@ -45,23 +43,21 @@ async def upload_document(
         logger.info(f"Received file for upload: {file.filename}")
         contents = await file.read()
 
-        docs_indexed, error_message = await doc_service.process_and_index_document(
-            contents, file.filename
-        )
+        docs_indexed, error_message = await doc_service.process_and_index_document(contents, file.filename)
 
         if error_message:
             logger.error(f"Error processing {file.filename}: {error_message}")
             # Determine appropriate status code based on error
-            status_code = 500
-            if "Unsupported file type" in error_message:
-                status_code = (
-                    400  # Bad request if service layer re-confirms unsupported type
-                )
-            elif (
-                "No text could be extracted" in error_message
-                or "could not be split" in error_message
-            ):
-                status_code = 422  # Unprocessable entity
+            # status_code = 500 # Removed
+            # if "Unsupported file type" in error_message:
+            #     status_code = (
+            #         400  # Bad request if service layer re-confirms unsupported type
+            #     )
+            # elif (
+            #     "No text could be extracted" in error_message
+            #     or "could not be split" in error_message
+            # ):
+            #     pass # Unprocessable entity, was status_code = 422
             return DocumentUploadResponse(
                 filename=file.filename,
                 message="Failed to process document.",
@@ -70,9 +66,7 @@ async def upload_document(
             # Instead of returning, raise HTTPException so FastAPI handles response format
             # raise HTTPException(status_code=status_code, detail=error_message)
 
-        logger.info(
-            f"Successfully processed and initiated indexing for {file.filename}. Documents created: {docs_indexed}"
-        )
+        logger.info(f"Successfully processed and initiated indexing for {file.filename}. Documents created: {docs_indexed}")
         return DocumentUploadResponse(
             filename=file.filename,
             message="Document processed and sent for indexing successfully.",
@@ -86,7 +80,8 @@ async def upload_document(
             f"Unexpected error during file upload of {file.filename}: {e}",
             exc_info=True,
         )
-        # Return a JSON response for unexpected errors too, matching the response_model
+        # Return a JSON response for unexpected errors too, matching the
+        # response_model
         return DocumentUploadResponse(
             filename=file.filename,
             message="An unexpected server error occurred.",

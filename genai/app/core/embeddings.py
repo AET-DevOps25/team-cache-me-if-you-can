@@ -18,10 +18,7 @@ class EmbeddingProvider:
     """
 
     def __init__(self):
-        if (
-            not settings.OPENAI_API_KEY
-            or settings.OPENAI_API_KEY == "YOUR_DEFAULT_API_KEY_IF_NOT_SET"
-        ):
+        if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "YOUR_DEFAULT_API_KEY_IF_NOT_SET":
             logger.error("OPENAI_API_KEY is not set correctly for embeddings.")
             raise ValueError("OPENAI_API_KEY is required for OpenAI Embeddings.")
 
@@ -29,9 +26,7 @@ class EmbeddingProvider:
             openai_api_key=settings.OPENAI_API_KEY,
             model=settings.OPENAI_EMBEDDING_MODEL_NAME,
         )
-        logger.info(
-            f"Initialized OpenAIEmbeddings provider with model: {settings.OPENAI_EMBEDDING_MODEL_NAME}"
-        )
+        logger.info(f"Initialized OpenAIEmbeddings provider with model: {settings.OPENAI_EMBEDDING_MODEL_NAME}")
 
     def get_model(self) -> Embeddings:
         """Returns the configured embedding model instance."""
@@ -43,7 +38,8 @@ try:
 except ValueError as e:
     logger.error(f"Failed to initialize EmbeddingProvider: {e}")
     embedding_provider = (
-        None  # Handle cases where initialization might fail (e.g. missing API key)
+        # Handle cases where initialization might fail (e.g. missing API key)
+        None
     )
 
 
@@ -53,9 +49,7 @@ def get_embedding_model_instance() -> Embeddings:
     Raises RuntimeError if the provider failed to initialize.
     """
     if embedding_provider is None:
-        logger.error(
-            "EmbeddingProvider is not initialized. Check API keys and configuration."
-        )
+        logger.error("EmbeddingProvider is not initialized. Check API keys and configuration.")
         raise RuntimeError("EmbeddingProvider could not be initialized.")
     return embedding_provider.get_model()
 
@@ -79,10 +73,7 @@ if __name__ == "__main__":
 
         settings_instance = Settings()
         settings.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
-        settings.OPENAI_EMBEDDING_MODEL_NAME = (
-            os.getenv("OPENAI_EMBEDDING_MODEL_NAME")
-            or settings.OPENAI_EMBEDDING_MODEL_NAME
-        )
+        settings.OPENAI_EMBEDDING_MODEL_NAME = os.getenv("OPENAI_EMBEDDING_MODEL_NAME") or settings.OPENAI_EMBEDDING_MODEL_NAME
 
         current_embedding_provider = None
         try:
@@ -91,12 +82,8 @@ if __name__ == "__main__":
             logger.error(f"Failed to initialize EmbeddingProvider for test: {e_init}")
 
     else:
-        logger.warning(
-            "No .env file found. Relying on environment variables or defaults."
-        )
-        current_embedding_provider = (
-            embedding_provider  # Use the globally initialized one
-        )
+        logger.warning("No .env file found. Relying on environment variables or defaults.")
+        current_embedding_provider = embedding_provider  # Use the globally initialized one
 
     if not current_embedding_provider:
         logger.error("Cannot run test: EmbeddingProvider is not available.")
@@ -123,6 +110,4 @@ if __name__ == "__main__":
         except ValueError as e:
             logger.error(f"Configuration error during test: {e}")
         except Exception as e:
-            logger.error(
-                f"An unexpected error occurred during test: {e}", exc_info=True
-            )
+            logger.error(f"An unexpected error occurred during test: {e}", exc_info=True)

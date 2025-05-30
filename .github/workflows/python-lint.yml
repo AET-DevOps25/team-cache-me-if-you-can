@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Нужно для некоторых проверок, связанных с git
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,5 +30,5 @@ jobs:
 
       - name: Run linters
         run: |
-          flake8 genai
-          black --check genai 
+          flake8 --max-line-length=200 genai
+          black --check --line-length=200 genai
