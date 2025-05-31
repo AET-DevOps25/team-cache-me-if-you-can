@@ -47,7 +47,7 @@ export default function Group() {
     };
 
     fetchData();
-  });
+  }, [userName]);
 
   if (!groups && !userName) {
     return <p>Loding...</p>;
