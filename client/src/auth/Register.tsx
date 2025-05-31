@@ -150,9 +150,6 @@ const Register: React.FC<RegisterProps> = () => {
     } finally {
       setIsLoading(false);
     }
-
-    navigate("/");
-    setIsLoading(false);
   };
 
   return (
