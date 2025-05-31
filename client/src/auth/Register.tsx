@@ -141,6 +141,7 @@ const Register: React.FC<RegisterProps> = () => {
         return;
       }
 
+      console.log(data.message || "Registration successful");
       message.success(data.message || "Registration successful");
       navigate("/");
     } catch (error) {

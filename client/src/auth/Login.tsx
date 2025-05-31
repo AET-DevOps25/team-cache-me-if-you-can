@@ -32,6 +32,8 @@ export default function Login() {
     setIsLoading(true);
     const isValid = await validateAuth(formData);
     if (isValid) {
+      console.log("successfully loged in.");
+      alert("successfully loged in.");
       navigate("/");
     } else {
       alert("username or password is not right!");
