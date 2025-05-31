@@ -7,7 +7,7 @@ export default function Navigator() {
   const auth = useAuth();
 
   function logout() {
-    navigate("/");
+    auth.logOut();
   }
 
   return (
