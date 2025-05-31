@@ -9,11 +9,6 @@ jest.mock("react-router-dom", () => ({
   useNavigate: jest.fn(),
 }));
 jest.mock("../nav/Navigator", () => () => <div>Navigator</div>);
-jest.mock("../utils/env", () => ({
-  getEnv: () => ({
-    apiUrl: "http://test-api.com",
-  }),
-}));
 
 jest.mock("antd", () => ({
   message: {

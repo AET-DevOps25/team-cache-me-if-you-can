@@ -3,8 +3,7 @@ import { Eye, EyeOff, User, Lock, School } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
 import Navigator from "../nav/Navigator";
-import "./Register.css";
-import { getEnv } from "../utils/env";
+import "./register.css";
 
 interface RegisterFormData {
   username: string;
@@ -38,7 +37,6 @@ const Register: React.FC<RegisterProps> = () => {
     useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-  const { apiUrl } = getEnv();
 
   const validatePassword = (
     password: string
@@ -119,7 +117,7 @@ const Register: React.FC<RegisterProps> = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${apiUrl}/api/auth/register`, {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

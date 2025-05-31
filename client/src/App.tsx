@@ -8,19 +8,35 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Home />,
+    element: (
+      <AuthProvider>
+        <Home />
+      </AuthProvider>
+    ),
   },
   {
     path: "/group/:groupName",
-    element: <GroupInfo />,
+    element: (
+      <AuthProvider>
+        <GroupInfo />
+      </AuthProvider>
+    ),
   },
   {
     path: "/login",
-    element: <Login />,
+    element: (
+      <AuthProvider>
+        <Login />
+      </AuthProvider>
+    ),
   },
   {
     path: "/register",
-    element: <Register />,
+    element: (
+      <AuthProvider>
+        <Register />
+      </AuthProvider>
+    ),
   },
 ]);
 

@@ -20,10 +20,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState(localStorage.getItem("name") || null);
   const [token, setToken] = useState(localStorage.getItem("site") || "");
   const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
   const loginAction = async (formData: LoginFormData): Promise<boolean> => {
     try {
-      const response = await fetch(`${apiUrl}/login`, {
+      const response = await fetch("api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
