@@ -1,4 +1,15 @@
 services:
+  nginx:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - user
+      - gateway
+      - files
+
   user:
     build:
       context: ./server/user
@@ -33,6 +44,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+
   mysql:
     image: mysql:8.0.33
     container_name: mysql
@@ -42,7 +54,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./environment/db_init:/docker-entrypoint-initdb.d
-      - ./environment/mysql/conf.d:/etc/mysql/conf.d
+      - ./environment/volume/conf.d:/etc/mysql/conf.d
     env_file: "environment/.env.docker.mysql"
     environment:
       MYSQL_ROOT_PASSWORD: StrongRootPass123!
@@ -52,12 +64,17 @@ services:
       - --pid-file=/tmp/mysql.pid
       - --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: [ "CMD",
-              "mysqladmin", "ping",
-              "-h", "127.0.0.1",
-              "-u", "root",
-              "-p${MYSQL_ROOT_PASSWORD}"
-      ]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -65,8 +82,3 @@ services:
     restart: unless-stopped
 volumes:
   mysql_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ./environment/volume/mysql_data
-      o: bind
