@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { message } from "antd";
 import Navigator from "../nav/Navigator";
 import "./Register.css";
+import { getEnv } from "../utils/env";
 
 interface RegisterFormData {
   username: string;
@@ -37,7 +38,7 @@ const Register: React.FC<RegisterProps> = () => {
     useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const { apiUrl } = getEnv();
 
   const validatePassword = (
     password: string
@@ -174,7 +175,7 @@ const Register: React.FC<RegisterProps> = () => {
                 <input
                   type="text"
                   id="name"
-                  name="name"
+                  name="username"
                   value={formData.username}
                   onChange={handleInputChange}
                   className={`form-input ${
@@ -190,7 +191,7 @@ const Register: React.FC<RegisterProps> = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="name" className="form-label">
+              <label htmlFor="university" className="form-label">
                 University
               </label>
               <div className="input-wrapper">
@@ -208,8 +209,8 @@ const Register: React.FC<RegisterProps> = () => {
                   autoComplete="university"
                 />
               </div>
-              {errors.username && (
-                <p className="error-message">{errors.username}</p>
+              {errors.university && (
+                <p className="error-message">{errors.university}</p>
               )}
             </div>
 
