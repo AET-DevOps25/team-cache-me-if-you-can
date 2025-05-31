@@ -56,7 +56,7 @@ export default function Group() {
 
   return (
     <div className="groups-container">
-      <h2 className="groups-title">My Groups</h2>
+      {activeView === "groups" && <h2 className="groups-title">My Groups</h2>}
 
       {/* Action Buttons */}
       <div className="groups-actions">
