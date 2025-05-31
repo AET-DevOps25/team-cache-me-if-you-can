@@ -53,11 +53,11 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logOut = () => {
-    navigate("/login");
     setUser(null);
     setToken("");
     localStorage.removeItem("username");
     sessionStorage.removeItem("username");
+    navigate("/");
   };
 
   return (
