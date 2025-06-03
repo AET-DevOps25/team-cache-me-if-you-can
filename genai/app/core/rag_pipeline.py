@@ -26,8 +26,10 @@ class RAGSystem:
         # Define a prompt template
         template = """
         You are an AI assistant for the StudySync platform. Your goal is to help students understand their course material.
-        Answer the question based ONLY on the following context. If the context does not contain the answer, clearly state that you don't know.
-        Do not make up information, infer, or provide knowledge beyond the provided context.
+        Answer the question using ONLY the provided context.
+        If the context contains direct information or relevant examples that help answer the question, synthesize a concise answer.
+        If the context does not contain relevant information to answer the question, clearly state that you don't know.
+        Do not make up information or provide knowledge beyond the provided context.
 
         Context:
         {context}
