@@ -14,9 +14,20 @@ class QueryRequest(BaseModel):
     # session_id: Optional[str] = None # For chat history if needed later
 
 
+class DocumentMetadata(BaseModel):
+    source: str
+    page_number: Optional[int] = None
+    # You can add other relevant metadata fields here, e.g., document_id, chunk_id, score
+
+
+class SourceDocument(BaseModel):
+    page_content: str
+    metadata: DocumentMetadata
+
+
 class QueryResponse(BaseModel):
     answer: str
-    source_documents: Optional[List[Dict[str, Any]]] = None  # To hold excerpts of source docs
+    source_documents: Optional[List[SourceDocument]] = None # Updated to use SourceDocument
     error: Optional[str] = None
 
 
