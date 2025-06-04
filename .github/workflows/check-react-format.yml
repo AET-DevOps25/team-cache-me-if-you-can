@@ -2,9 +2,11 @@ name: check format for React App
 
 on:
   push:
-    - "client/**"
+    paths:
+      - "client/**"
   pull_request:
-    - "client/**"
+    paths:
+      - "client/**"
 
 jobs:
   client-check-format:
