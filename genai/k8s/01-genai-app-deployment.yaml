@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: genai-app
+  namespace: cache-me-if-you-can-genai
+  labels:
+    app: genai-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: genai-app
+  template:
+    metadata:
+      labels:
+        app: genai-app
+    spec:
+      containers:
+      - name: genai-app
+        image: ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:21c12f9c57cb558b7932242c996fad51af441f2d@sha256:7d0a1848cd3d0e144a3efb92efbcf8bbbbca1a967d143eaf838023fa29ca5a90
+        ports:
+        - containerPort: 8000
+        env:
+        - name: WEAVIATE_URL
+          value: "http://weaviate-service.cache-me-if-you-can-genai.svc.cluster.local:8080" # Assuming Weaviate service will be named 'weaviate-service' in the same namespace
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openai-credentials
+              key: OPENAI_API_KEY
+        # If you have other env vars from .env for the app, add them here
+        # either directly, from a ConfigMap, or from the same/another Secret. 
