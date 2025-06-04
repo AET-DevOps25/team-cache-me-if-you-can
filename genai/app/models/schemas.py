@@ -27,7 +27,7 @@ class SourceDocument(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str
-    source_documents: Optional[List[SourceDocument]] = None # Updated to use SourceDocument
+    source_documents: Optional[List[SourceDocument]] = None  # Updated to use SourceDocument
     error: Optional[str] = None
 
 
