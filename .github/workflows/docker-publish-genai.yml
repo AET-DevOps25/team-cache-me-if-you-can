@@ -1,0 +1,42 @@
+name: Docker Publish Genai App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'genai/**'
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./genai
+          file: ./genai/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:latest
+            ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }} 
