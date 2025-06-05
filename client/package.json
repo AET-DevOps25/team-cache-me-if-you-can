@@ -19,8 +19,6 @@
     "react-router-dom": "^7.6.0"
   },
   "devDependencies": {
-    "@babel/preset-react": "^7.27.1",
-    "@babel/preset-typescript": "^7.27.1",
     "@eslint/js": "^9.22.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -37,7 +35,6 @@
     "jest-environment-jsdom": "^30.0.0-beta.3",
     "text-encoding": "^0.7.0",
     "ts-jest": "^29.3.4",
-    "ts-node": "^10.9.2",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.26.1",
     "vite": "^6.3.1"
