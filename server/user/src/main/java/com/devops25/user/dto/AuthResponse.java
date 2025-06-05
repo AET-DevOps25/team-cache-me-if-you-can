@@ -21,7 +21,6 @@ public class AuthResponse {
     private String university;
 
 
-    // MANUALLY ADD GETTERS (TESTING ONLY)
     public String getMessage() { return message; }
     public String getUsername() { return username; }
     public String getToken() { return token; }
