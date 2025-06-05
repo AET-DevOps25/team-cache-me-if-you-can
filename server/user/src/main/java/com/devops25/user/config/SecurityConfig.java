@@ -30,7 +30,6 @@ public class SecurityConfig {
     private final CustomLogoutHandler customLogoutHandler;
     private final TokenBlacklistService tokenBlacklistService;
 
-
     @Bean
     public UserDetailsService userDetailsService() {
         return username ->
