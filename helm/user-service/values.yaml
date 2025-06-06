@@ -1,0 +1,15 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/aet-devops25/team-cache-me-if-you-can/user-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8081
+
+env:
+  DB_URL: jdbc:mysql://mysql.cache-me-if-you-can-genai.svc.cluster.local:3306/user_database
+  DB_USERNAME: user
+  DB_PASSWORD: User123!
