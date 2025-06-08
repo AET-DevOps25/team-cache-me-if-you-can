@@ -91,21 +91,21 @@ jobs:
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
 
-    client-deploy:
-      name: Deploy to Kubernetes
-      runs-on: ubuntu-latest
-      needs: [client-check-format, client-run-tests, client-docker-build-push]
-      # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  client-deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: [client-check-format, client-run-tests, client-docker-build-push]
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
-      steps:
-        - name: Check out code
-          uses: actions/checkout@v4
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
 
-        - name: Set up Kubeconfig
-          uses: azure/k8s-set-context@v4
-          with:
-            method: kubeconfig
-            kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
+      - name: Set up Kubeconfig
+        uses: azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
 
-        - name: Deploy to Kubernetes
-          run: kubectl apply -f client/k8s
+      - name: Deploy to Kubernetes
+        run: kubectl apply -f client/k8s
