@@ -109,5 +109,5 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          sed -i "s|:latest|:${{ github.sha }}|g" client/k8s/deployment.yaml
+          sed -i "s|:latest|:${{ github.sha }}|g" client/k8s/client-deployment.yaml
           kubectl apply -f client/k8s
