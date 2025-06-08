@@ -108,4 +108,6 @@ jobs:
           kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
 
       - name: Deploy to Kubernetes
-        run: kubectl apply -f client/k8s
+        run: |
+          sed -i "s|:latest|:${{ github.sha }}|g" client/k8s/deployment.yaml
+          kubectl apply -f client/k8s
