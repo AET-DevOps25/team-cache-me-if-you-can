@@ -59,7 +59,7 @@ jobs:
         run: npm test
 
   client-docker-build-push:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: [client-check-format, client-run-tests]
     permissions:
@@ -81,8 +81,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./client/Dockerfile
+          context: ./client
+          file: Dockerfile
           push: true
           tags: |
             ghcr.io/aet-devops25/team-cache-me-if-you-can/client:latest
@@ -90,3 +90,22 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
+
+    client-deploy:
+      name: Deploy to Kubernetes
+      runs-on: ubuntu-latest
+      needs: [client-check-format, client-run-tests, client-docker-build-push]
+      # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+      steps:
+        - name: Check out code
+          uses: actions/checkout@v4
+
+        - name: Set up Kubeconfig
+          uses: azure/k8s-set-context@v4
+          with:
+            method: kubeconfig
+            kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
+
+        - name: Deploy to Kubernetes
+          run: kubectl apply -f client/k8s
