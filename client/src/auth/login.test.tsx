@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import Login from "./Login";
+import { message } from "antd";
 
 // Mock the dependencies
 jest.mock("./AuthProvider", () => ({
@@ -10,6 +11,15 @@ jest.mock("react-router-dom", () => ({
   useNavigate: jest.fn(),
 }));
 jest.mock("../nav/Navigator", () => () => <div>Navigator</div>);
+
+jest.mock("antd", () => ({
+  message: {
+    success: jest.fn(),
+    error: jest.fn(),
+    warning: jest.fn(),
+    info: jest.fn(),
+  },
+}));
 
 describe("Login Component", () => {
   const mockLoginAction = jest.fn();
@@ -52,7 +62,6 @@ describe("Login Component", () => {
 
   it("shows error and resets form on failed login", async () => {
     mockLoginAction.mockResolvedValue(false);
-    window.alert = jest.fn();
 
     render(<Login />);
 
@@ -65,7 +74,7 @@ describe("Login Component", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith(
+      expect(message.error).toHaveBeenCalledWith(
         "username or password is not right!"
       );
       expect(usernameInput).toHaveValue("");

@@ -82,7 +82,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./client
-          file: Dockerfile
+          file: ./client/Dockerfile
           push: true
           tags: |
             ghcr.io/aet-devops25/team-cache-me-if-you-can/client:latest
