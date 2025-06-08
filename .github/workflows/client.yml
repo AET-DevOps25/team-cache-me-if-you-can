@@ -109,5 +109,5 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          sed -i "s|:latest|:${{ github.sha }}|g" client/k8s/client-deployment.yml
+          sed -i "s|image: ghcr.io/aet-devops25/team-cache-me-if-you-can/client.*|image: ghcr.io/aet-devops25/team-cache-me-if-you-can/client@${{ needs.client-docker-build-push.outputs.image-digest }}|g" client/k8s/client-deployment.yml
           kubectl apply -f client/k8s
