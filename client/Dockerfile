@@ -12,5 +12,5 @@ WORKDIR /app
 RUN npm install -g http-server
 COPY --from=build /app/dist ./dist
 EXPOSE 3000
-# Run http-server to serve the React app
+# Run http-server to serve the client
 CMD ["http-server", "dist", "-p", "3000", "-a", "0.0.0.0"]
