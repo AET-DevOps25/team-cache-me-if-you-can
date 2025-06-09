@@ -2,24 +2,17 @@ import { useState } from "react";
 import "./create.css";
 import defaultImg from "../../../local_img/default.jpg";
 
-interface GroupData {
-  id: number;
-  name: string;
-  imageUrl: string;
-}
 interface CreateGroupFormData {
   name: string;
   university: string;
   description: string;
-  image: File | null;
+  imageUrl: string | null;
 }
 
 export function Create({
   setActiveView,
-  setGroups,
 }: {
   setActiveView: (view: "groups" | "create" | "search") => void;
-  setGroups: React.Dispatch<React.SetStateAction<GroupData[] | null>>;
 }) {
   const [isCreating, setIsCreating] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -27,7 +20,7 @@ export function Create({
     name: "",
     university: "",
     description: "",
-    image: null,
+    imageUrl: null,
   });
 
   const handleCreateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -42,23 +35,22 @@ export function Create({
 
     try {
       // TODO: Implement actual API call to create group
-      const newGroup: GroupData = {
-        id: Date.now(), // Temporary ID generation
+      const newGroup: CreateGroupFormData = {
         name: createFormData.name.trim(),
+        university: createFormData.university,
+        description: createFormData.description,
         imageUrl: imagePreview || defaultImg,
       };
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Add new group to the list
-      setGroups((prev) => (prev ? [newGroup, ...prev] : [newGroup]));
       // Reset form
       setCreateFormData({
         name: "",
         university: "",
         description: "",
-        image: null,
+        imageUrl: null,
       });
       setImagePreview(null);
 

@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080} 
+    depends_on:
+      - weaviate
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  weaviate:
+    image: semitechnologies/weaviate:1.23.7
+    ports:
+      - "8080:8080"
+      - "50051:50051" # gRPC
+    volumes:
+      - ./weaviate_data:/var/lib/weaviate
+    restart: on-failure:0
+    env_file:
+      - .env
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-openai' # Using OpenAI for vectorization
+      ENABLE_MODULES: 'text2vec-openai,generative-openai'
+      OPENAI_APIKEY: '${OPENAI_API_KEY}' # Ensure this is set in your .env or environment
+      CLUSTER_HOSTNAME: 'node1'
+
+volumes:
+  weaviate_data: 

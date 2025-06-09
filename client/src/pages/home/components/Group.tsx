@@ -4,14 +4,14 @@ import "./group.css";
 import { Find } from "./Find";
 import { Create } from "./Create";
 import defaultImg from "../../../local_img/default.jpg";
+import { useAuth } from "../../../auth/AuthProvider";
+import { useGroup } from "./GroupProvider";
+import { GroupData } from "../../../models/GroupData";
 
 export default function Group() {
-  const [groups, setGroups] = useState<Array<{
-    id: number;
-    name: string;
-    imageUrl: string;
-  }> | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
+  const [groups, setGroups] = useState<Array<GroupData> | null>(null);
+  const { setCurrentGroup } = useGroup();
+  const auth = useAuth();
   const [activeView, setActiveView] = useState<"groups" | "create" | "search">(
     "groups"
   );
@@ -19,38 +19,59 @@ export default function Group() {
 
   async function getAllGroups() {
     setGroups([
-      { id: 1, name: "Biology 101", imageUrl: defaultImg },
-      { id: 2, name: "Computer Science", imageUrl: defaultImg },
-      { id: 3, name: "Psychology", imageUrl: defaultImg },
+      {
+        id: 1,
+        name: "Biology 101",
+        university: "TUM",
+        description: "This is a group for Biology 101",
+        imageUrl: defaultImg,
+      },
+      {
+        id: 2,
+        name: "Computer Science",
+        university: "TUM",
+        description: "This is a group for Computer Science",
+        imageUrl: defaultImg,
+      },
+      {
+        id: 3,
+        name: "Psychology",
+        university: "TUM",
+        description: "This is a group for Psychology",
+        imageUrl: defaultImg,
+      },
     ]);
     //TODO: get all groups in no authentication info
   }
 
   async function getMyGroups() {
-    setGroups([{ id: 1, name: "Biology 101", imageUrl: defaultImg }]);
+    setGroups([
+      {
+        id: 1,
+        name: "Biology 101",
+        university: "TUM",
+        description: "This is a group for Biology 101",
+        imageUrl: defaultImg,
+      },
+    ]);
     //TODO: get groups if user logged in
   }
 
-  async function getUserName() {
-    //TODO: get authentication info
-    setUserName(null);
+  function clickGroup(id: number, group: GroupData) {
+    navigate(`/group/${id}`);
+    setCurrentGroup(group);
   }
 
   useEffect(() => {
-    const fetchData = async () => {
-      await getUserName();
+    setCurrentGroup(null);
+    if (auth.user) {
+      getMyGroups();
+    } else {
+      getAllGroups();
+    }
+  }, [auth.user]);
 
-      if (userName) {
-        await getMyGroups();
-      } else {
-        await getAllGroups();
-      }
-    };
-
-    fetchData();
-  }, [userName]);
-
-  if (!groups && !userName) {
+  if (!groups && !auth.user) {
     return <p>Loding...</p>;
   }
 
@@ -87,7 +108,7 @@ export default function Group() {
               <div key={group.id} className="group-item">
                 <div
                   className="group-image"
-                  onClick={() => navigate(`/group/${group.name}`)}
+                  onClick={() => clickGroup(group.id, group)}
                 >
                   <img src={group.imageUrl} alt="group image"></img>
                 </div>
@@ -101,7 +122,7 @@ export default function Group() {
       ) : activeView === "create" ? (
         <div className="groups-form">
           {/* Create Group Form */}
-          <Create setActiveView={setActiveView} setGroups={setGroups} />
+          <Create setActiveView={setActiveView} />
         </div>
       ) : (
         <div className="groups-form">

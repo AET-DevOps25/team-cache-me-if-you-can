@@ -1,0 +1,57 @@
+name: Docker Publish User Service
+
+on:
+  push:
+    branches:
+      - main
+      - server/user-ci-cd-deployment
+    paths:
+      - 'server/user/**'
+      - '.github/workflows/docker-publish-user.yml'
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+
+      - name: Build user-service (skip tests)
+        working-directory: ./server/user
+        run: ./gradlew clean build -x test
+
+      - name: Run tests with test profile
+        working-directory: ./server/user
+        run: ./gradlew test -Dspring.profiles.active=test
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server/user
+          file: ./server/user/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/aet-devops25/team-cache-me-if-you-can/user-service:latest
+            ghcr.io/aet-devops25/team-cache-me-if-you-can/user-service:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }}

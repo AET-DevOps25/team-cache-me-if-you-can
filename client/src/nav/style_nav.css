@@ -1,45 +1,44 @@
 .Nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.7rem 1rem;    
-    background-color: #4a7bdd;
-    color: white;
-  }
-  
-  .topLeft .logo {
-    margin-top: 0;
-    margin-bottom: 0;
-    font-size: 1.5rem;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  
-  .topRight {
-    display: flex;
-    align-items: center;
-  }
-  
-  .nav-link {
-    color: white;
-    margin-top: 0;
-    margin-bottom: 0;
-    margin-right: 1rem;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  
-  .link-separator {
-    margin-top: 0;
-    margin-bottom: 0;
-    margin-right: 1rem;
-  }
-  
-  .nav-link:hover {
-    text-decoration: underline;
-  }
-  
-  .logOut {
-    color: white;
-  }
-  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  background-color: #4a7bdd;
+  color: white;
+}
+
+.topLeft .logo {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.topRight {
+  display: flex;
+  align-items: center;
+}
+
+.nav-link {
+  color: white;
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-right: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.link-separator {
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-right: 1rem;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+}
+
+.logOut {
+  color: white;
+}

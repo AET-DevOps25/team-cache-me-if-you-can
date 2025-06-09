@@ -1,19 +1,13 @@
 import "./style_nav.css";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useAuth } from "../auth/AuthProvider";
 
 export default function Navigator() {
-  const [username, setUsername] = useState(null);
   const navigate = useNavigate();
-
-  //TODO: get authentication info from api
-  //const getUserName = async () => {
-  //  const response = await fetch(`/api/auth/${id}`);
-  //  const result = await response.json();};
+  const auth = useAuth();
 
   function logout() {
-    navigate("/");
-    setUsername(null);
+    auth.logOut();
   }
 
   return (
@@ -24,10 +18,10 @@ export default function Navigator() {
         </h1>
       </div>
       <div className="topRight">
-        {username ? (
+        {auth.user ? (
           <>
             <Link to="/profile" className="nav-link">
-              {username}
+              {auth.user}
             </Link>
             <span className="link-separator"> | </span>
             <a onClick={logout} className="nav-link logOut">
