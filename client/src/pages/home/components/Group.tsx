@@ -69,7 +69,7 @@ export default function Group() {
     } else {
       getAllGroups();
     }
-  }, [auth.user]);
+  }, [auth.user, setCurrentGroup]);
 
   if (!groups && !auth.user) {
     return <p>Loding...</p>;

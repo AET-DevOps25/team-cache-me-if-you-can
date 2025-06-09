@@ -13,6 +13,11 @@ export default function Navigator() {
   return (
     <div className="Nav">
       <div className="topLeft">
+        <img
+          src="/study_groups_icon.svg"
+          alt="StudySync Logo"
+          className="logo-icon"
+        />
         <h1 className="logo" onClick={() => navigate("/")}>
           StudySync
         </h1>

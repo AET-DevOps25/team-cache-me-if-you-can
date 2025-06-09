@@ -7,6 +7,27 @@
   color: white;
 }
 
+.logo-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.logo-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-right: 0.5rem;
+  background-color: white;
+  border-radius: 50%;
+}
+
+.topLeft {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-content: center;
+}
+
 .topLeft .logo {
   margin-top: 0;
   margin-bottom: 0;
