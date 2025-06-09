@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: cache-me-if-you-can-genai
+  labels:
+    app: client
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+        - name: client
+          image: ghcr.io/aet-devops25/team-cache-me-if-you-can/client@sha256:3889f71009bd51b1bf574dbf1cf33b3ccb54051328705426d86a68c9e4cadec8
+          ports:
+            - containerPort: 3000

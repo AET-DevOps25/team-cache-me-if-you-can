@@ -6,8 +6,11 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY ../nginx/nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+# Stage 2: Serve static files with http-server
+FROM node:18-alpine AS production
+WORKDIR /app
+RUN npm install -g http-server
+COPY --from=build /app/dist ./dist
+EXPOSE 3000
+# Run http-server to serve the client
+CMD ["http-server", "dist", "-p", "3000", "-a", "0.0.0.0"]

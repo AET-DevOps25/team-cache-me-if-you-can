@@ -3,6 +3,7 @@ import { Eye, EyeOff, User, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigator from "../nav/Navigator";
 import "./login.css";
+import { message } from "antd";
 import { LoginFormData } from "../models/LoginFormData";
 import { useAuth } from "./AuthProvider";
 
@@ -33,10 +34,10 @@ export default function Login() {
     const isValid = await validateAuth(formData);
     if (isValid) {
       console.log("successfully loged in.");
-      alert("successfully loged in.");
+      message.success("successfully loged in.");
       navigate("/");
     } else {
-      alert("username or password is not right!");
+      message.error("username or password is not right!");
       setFormData({
         username: "",
         password: "",

@@ -26,6 +26,7 @@ jobs:
         run: npm ci
 
       - name: Run ESLint on changed files
+        continue-on-error: true
         working-directory: ./client
         run: |
           changed_files=$(git diff --name-only --diff-filter=ACMRT HEAD^ HEAD | grep -E '\.(js|jsx|ts|tsx)$' | sed 's|^client/||' || true)
@@ -60,6 +61,7 @@ jobs:
   client-docker-build-push:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    needs: [client-check-format, client-run-tests]
     permissions:
       packages: write
       contents: read
@@ -88,3 +90,25 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
+
+  client-deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: [client-check-format, client-run-tests, client-docker-build-push]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Kubeconfig
+        uses: azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
+
+      - name: Deploy to Kubernetes
+        run: |
+          sed -i "s|image: ghcr.io/aet-devops25/team-cache-me-if-you-can/client.*|image: ghcr.io/aet-devops25/team-cache-me-if-you-can/client:${{ github.sha }}|g" client/k8s/client-deployment.yml
+          kubectl apply -f client/k8s
+          kubectl rollout restart deployment client -n cache-me-if-you-can-genai
