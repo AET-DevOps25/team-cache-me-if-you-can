@@ -1,8 +1,9 @@
-import GroupInfo from "./pages/group_info/GroupInfo";
+import GroupPage from "./pages/group_info/GroupPage";
 import Home from "./pages/home/Home";
 import Login from "./auth/Login";
 import Register from "./auth/Register";
 import AuthProvider from "./auth/AuthProvider";
+import GroupProvider from "./pages/home/components/GroupProvider";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 const router = createBrowserRouter([
@@ -10,15 +11,19 @@ const router = createBrowserRouter([
     path: "/",
     element: (
       <AuthProvider>
-        <Home />
+        <GroupProvider>
+          <Home />
+        </GroupProvider>
       </AuthProvider>
     ),
   },
   {
-    path: "/group/:groupName",
+    path: "/group/:groupId",
     element: (
       <AuthProvider>
-        <GroupInfo />
+        <GroupProvider>
+          <GroupPage />
+        </GroupProvider>
       </AuthProvider>
     ),
   },

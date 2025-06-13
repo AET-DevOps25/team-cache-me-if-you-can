@@ -1,0 +1,318 @@
+/* Find Groups Form Styles */
+.find-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 80%;
+  margin: 0 auto;
+}
+
+.find-groups-form {
+  display: flex;
+  flex-direction: column;
+  margin: 0 10rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
+  border: 0.0625rem solid #e5e5e5;
+}
+
+.find-groups-form form {
+  align-items: flex-start;
+  align-content: flex-start;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.find-groups-form input[type="text"] {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 0.125rem solid #e0e0e0;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  background-color: #fafafa;
+  box-sizing: border-box;
+}
+
+.find-groups-form input[type="text"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.1875rem rgba(0, 123, 255, 0.1);
+}
+
+.find-groups-form input[type="text"]:hover {
+  border-color: #007bff;
+  background-color: #f0f8ff;
+}
+
+.find-form-submit-btn {
+  flex: 0 0 auto;
+  width: 6rem;
+  padding: 0.75rem 0.5rem;
+  background: linear-gradient(135deg, #28a745, #20a440);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.03125rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.find-form-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #218838, #1e7e34);
+  transform: translateY(-0.125rem);
+  box-shadow: 0 0.375rem 0.75rem rgba(40, 167, 69, 0.3);
+}
+
+.find-form-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 0.125rem 0.25rem rgba(40, 167, 69, 0.3);
+}
+
+.find-form-submit-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.find-form-submit-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.find-form-submit-btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+/* Loading state animation for find button */
+.find-form-submit-btn:disabled::after {
+  content: "";
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  margin: auto;
+  border: 0.125rem solid transparent;
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Groups display container */
+.groups-img-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 0.75rem;
+  border: 0.0625rem solid #e9ecef;
+}
+
+.group-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.group-image {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.group-image:hover {
+  transform: scale(1.05);
+}
+
+.group-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.group-image img:hover {
+  opacity: 0.9;
+}
+
+.group-item h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333333;
+  text-align: center;
+  line-height: 1.4;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+/* No groups found message */
+.groups-img-container p {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 1.125rem;
+  color: #6c757d;
+  margin: 2rem 0;
+  font-style: italic;
+}
+
+/* Input validation styles */
+.find-groups-form input[type="text"]:invalid {
+  border-color: #dc3545;
+}
+
+.find-groups-form input[type="text"]:invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.1875rem rgba(220, 53, 69, 0.1);
+}
+
+/* Success state */
+.find-groups-form input[type="text"].success {
+  border-color: #28a745;
+}
+
+.find-groups-form input[type="text"].success:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.1875rem rgba(40, 167, 69, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 48rem) {
+  .find-groups-form {
+    margin: 0 1rem;
+    padding: 1.25rem;
+  }
+
+  .find-groups-form input[type="text"] {
+    font-size: 1rem; /* Prevents zoom on iOS */
+  }
+
+  .find-form-submit-btn {
+    width: 5rem;
+    font-size: 0.8125rem;
+  }
+
+  .groups-img-container {
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 1rem;
+    padding: 0.75rem;
+  }
+
+  .group-image {
+    width: 6rem;
+    height: 6rem;
+  }
+
+  .group-item h3 {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  .find-container {
+    gap: 1.5rem;
+  }
+
+  .find-groups-form {
+    margin: 0 0.5rem;
+    padding: 1rem;
+  }
+
+  .find-groups-form form {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .find-form-submit-btn {
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+  }
+
+  .groups-img-container {
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+    gap: 0.75rem;
+    padding: 0.5rem;
+  }
+
+  .group-item {
+    padding: 0.75rem;
+  }
+
+  .group-image {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .group-item h3 {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Focus management for accessibility */
+.find-groups-form input[type="text"]:focus,
+.find-form-submit-btn:focus {
+  outline: 0.125rem solid #007bff;
+  outline-offset: 0.125rem;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .find-groups-form {
+    border: 0.125rem solid #000000;
+  }
+
+  .find-groups-form input[type="text"] {
+    border: 0.125rem solid #000000;
+  }
+
+  .find-form-submit-btn {
+    background: #000000;
+    border: 0.125rem solid #000000;
+  }
+}
