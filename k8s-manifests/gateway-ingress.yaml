@@ -9,6 +9,7 @@ metadata:
     nginx.ingress.kubernetes.io/cors-allow-origin: "https://cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization"
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   tls:
@@ -20,6 +21,13 @@ spec:
       http:
         paths:
           - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client-service
+                port:
+                  number: 3000
+          - path: /api/
             pathType: Prefix
             backend:
               service:
