@@ -24,12 +24,21 @@ repositories {
 }
 
 dependencies {
+	// Reactive Web (WebClient, Mono, etc.)
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// Servlet API (needed only because you're using HttpServletRequest)
+	implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+	// Lombok (if you're using it in other parts of your project)
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
 }
 
 tasks.named('test') {

@@ -1,13 +1,13 @@
-name: Docker Publish Gateway Service
+name: Docker Publish Files Service
 
 on:
   push:
     branches:
       - main
-      - server/gateway-ci-cd-deployment
+      - server/files-ci-cd-deployment
     paths:
-      - 'server/gateway/**'
-      - '.github/workflows/docker-publish-gateway.yml'
+      - 'server/files/**'
+      - '.github/workflows/docker-publish-files.yml'
 
 jobs:
   build-and-push-image:
@@ -26,12 +26,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build gateway-service (skip tests)
-        working-directory: ./server/gateway
+      - name: Build files-service (skip tests)
+        working-directory: ./server/files
         run: ./gradlew clean build -x test
 
       - name: Run tests
-        working-directory: ./server/gateway
+        working-directory: ./server/files
         run: ./gradlew test
 
       - name: Set up Docker Buildx
@@ -47,12 +47,12 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./server/gateway
-          file: ./server/gateway/Dockerfile
+          context: ./server/files
+          file: ./server/files/Dockerfile
           push: true
           tags: |
-            ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:latest
-            ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:${{ github.sha }}
+            ghcr.io/aet-devops25/team-cache-me-if-you-can/files-service:latest
+            ghcr.io/aet-devops25/team-cache-me-if-you-can/files-service:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.repositoryUrl }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -75,6 +75,6 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          sed -i "s|image: ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service.*|image: ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:${{ github.sha }}|g" server/gateway/k8s/gateway-deployment.yml
-          kubectl apply -f server/gateway/k8s/
-          kubectl rollout restart deployment gateway-service -n cache-me-if-you-can-genai
+          sed -i "s|image: ghcr.io/aet-devops25/team-cache-me-if-you-can/files-service.*|image: ghcr.io/aet-devops25/team-cache-me-if-you-can/files-service:${{ github.sha }}|g" server/files/k8s/files-deployment.yml
+          kubectl apply -f server/files/k8s/
+          kubectl rollout restart deployment files-service -n cache-me-if-you-can-genai

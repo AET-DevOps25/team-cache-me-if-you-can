@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "user-service.fullname" . }}
+  namespace: cache-me-if-you-can-genai
 spec:
   type: {{ .Values.service.type }}
   ports:

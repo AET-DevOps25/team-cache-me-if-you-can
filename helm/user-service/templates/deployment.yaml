@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "user-service.fullname" . }}
+  namespace: cache-me-if-you-can-genai
   labels:
     app.kubernetes.io/name: {{ include "user-service.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

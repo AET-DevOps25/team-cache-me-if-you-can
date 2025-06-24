@@ -1,12 +1,17 @@
 package com.devops25.gateway;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Mono;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 @RestController
+@CrossOrigin(origins = {"https://cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de"})
 public class GatewayController {
 
     private final WebClient webClient;
@@ -24,67 +29,160 @@ public class GatewayController {
         this.webClient = webClientBuilder.build();
     }
 
-    // Health check endpoint (simple implementation)
+    // Health check endpoint
     @GetMapping("/health")
-    public ResponseEntity<String> health() {
-        return ResponseEntity.ok("Gateway is healthy");
+    public ResponseEntity<Map<String, String>> health() {
+        return ResponseEntity.ok(Map.of(
+                "status", "healthy",
+                "services", "gateway, user, files, genai"
+        ));
     }
 
-    // Welcome/info endpoint
+    // Welcome endpoint
     @GetMapping("/")
-    public ResponseEntity<String> welcome() {
-        return ResponseEntity.ok("Welcome to StudySync Gateway! Available endpoints: /api/users, /api/files, /ai");
+    public ResponseEntity<Map<String, Object>> welcome() {
+        return ResponseEntity.ok(Map.of(
+                "message", "Welcome to StudySync Gateway!",
+                "endpoints", Map.of(
+                        "auth", "/api/auth/login, /api/auth/register",
+                        "users", "/api/users/**",
+                        "files", "/api/files/**",
+                        "ai", "/ai/**"
+                )
+        ));
+    }
+
+    // Authentication endpoints (route to user service)
+    @PostMapping("/api/auth/login")
+    public Mono<ResponseEntity<String>> login(@RequestBody String body) {
+        return webClient.post()
+                .uri(userServiceUrl + "/api/auth/login")
+                .body(BodyInserters.fromValue(body))
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(response -> ResponseEntity.ok()
+                        .header("Content-Type", "application/json")
+                        .body(response))
+                .onErrorReturn(ResponseEntity.status(500)
+                        .body("{\"error\": \"Authentication service unavailable\"}"));
+    }
+
+    @PostMapping("/api/auth/register")
+    public Mono<ResponseEntity<String>> register(@RequestBody String body) {
+        return webClient.post()
+                .uri(userServiceUrl + "/api/auth/register")
+                .body(BodyInserters.fromValue(body))
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(response -> ResponseEntity.ok()
+                        .header("Content-Type", "application/json")
+                        .body(response))
+                .onErrorReturn(ResponseEntity.status(500)
+                        .body("{\"error\": \"Registration service unavailable\"}"));
     }
 
     // Route to User Service
     @RequestMapping(value = "/api/users/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public Mono<ResponseEntity<String>> routeToUserService(
-            @RequestBody(required = false) String body,
-            @RequestParam(required = false) String params,
-            @RequestHeader(required = false) String headers) {
+            HttpServletRequest request,
+            @RequestBody(required = false) String body) {
 
-        String path = "/api/users" + getPathAfter("/api/users");
+        String path = request.getRequestURI();
+        HttpMethod method = HttpMethod.valueOf(request.getMethod());
 
-        return webClient.get()
-                .uri(userServiceUrl + path)
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(ResponseEntity::ok)
-                .onErrorReturn(ResponseEntity.status(500).body("User service unavailable"));
+        WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
+
+        if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
+            return requestSpec
+                    .uri(userServiceUrl + path)
+                    .body(BodyInserters.fromValue(body))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"User service unavailable\"}"));
+        } else {
+            return requestSpec
+                    .uri(userServiceUrl + path)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"User service unavailable\"}"));
+        }
     }
 
     // Route to Files Service
     @RequestMapping(value = "/api/files/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public Mono<ResponseEntity<String>> routeToFilesService(
+            HttpServletRequest request,
             @RequestBody(required = false) String body) {
 
-        String path = "/api/files" + getPathAfter("/api/files");
+        String path = request.getRequestURI();
+        HttpMethod method = HttpMethod.valueOf(request.getMethod());
 
-        return webClient.get()
-                .uri(filesServiceUrl + path)
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(ResponseEntity::ok)
-                .onErrorReturn(ResponseEntity.status(500).body("Files service unavailable"));
+        WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
+
+        if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
+            return requestSpec
+                    .uri(filesServiceUrl + path)
+                    .body(BodyInserters.fromValue(body))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"Files service unavailable\"}"));
+        } else {
+            return requestSpec
+                    .uri(filesServiceUrl + path)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"Files service unavailable\"}"));
+        }
     }
 
     // Route to GenAI Service
     @RequestMapping(value = "/ai/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public Mono<ResponseEntity<String>> routeToGenaiService(
+            HttpServletRequest request,
             @RequestBody(required = false) String body) {
 
-        String path = "/ai" + getPathAfter("/ai");
+        String path = request.getRequestURI();
+        HttpMethod method = HttpMethod.valueOf(request.getMethod());
 
-        return webClient.get()
-                .uri(genaiServiceUrl + path)
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(ResponseEntity::ok)
-                .onErrorReturn(ResponseEntity.status(500).body("GenAI service unavailable"));
-    }
+        WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
 
-    private String getPathAfter(String prefix) {
-        // This is a simplified implementation - you'd want to use proper request path extraction
-        return ""; // For now, just route to root of each service
+        if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
+            return requestSpec
+                    .uri(genaiServiceUrl + path)
+                    .body(BodyInserters.fromValue(body))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"GenAI service unavailable\"}"));
+        } else {
+            return requestSpec
+                    .uri(genaiServiceUrl + path)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"GenAI service unavailable\"}"));
+        }
     }
 }
