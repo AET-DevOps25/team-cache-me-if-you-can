@@ -9,6 +9,10 @@ jest.mock("./AuthProvider", () => ({
 }));
 jest.mock("react-router-dom", () => ({
   useNavigate: jest.fn(),
+  useLocation: jest.fn(() => ({
+    pathname: "/login", // or whatever default path your component expects
+    state: null,        // or { from: { pathname: "/somepage" } } if needed
+  })),
 }));
 jest.mock("../nav/Navigator", () => () => <div>Navigator</div>);
 
