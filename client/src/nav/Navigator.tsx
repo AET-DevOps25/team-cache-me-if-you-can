@@ -1,33 +1,32 @@
 import "./style_nav.css";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useAuth } from "../auth/AuthProvider";
 
 export default function Navigator() {
-  const [username, setUsername] = useState(null);
   const navigate = useNavigate();
-
-  //TODO: get authentication info from api
-  //const getUserName = async () => {
-  //  const response = await fetch(`/api/auth/${id}`);
-  //  const result = await response.json();};
+  const auth = useAuth();
 
   function logout() {
-    navigate("/");
-    setUsername(null);
+    auth.logOut();
   }
 
   return (
     <div className="Nav">
       <div className="topLeft">
+        <img
+          src="/study_groups_icon.svg"
+          alt="StudySync Logo"
+          className="logo-icon"
+        />
         <h1 className="logo" onClick={() => navigate("/")}>
           StudySync
         </h1>
       </div>
       <div className="topRight">
-        {username ? (
+        {auth.user ? (
           <>
             <Link to="/profile" className="nav-link">
-              {username}
+              {auth.user}
             </Link>
             <span className="link-separator"> | </span>
             <a onClick={logout} className="nav-link logOut">
