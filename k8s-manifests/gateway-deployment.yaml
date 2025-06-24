@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  namespace: cache-me-if-you-can-genai
+  labels:
+    app: gateway-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+    spec:
+      containers:
+        - name: gateway-service
+          image: ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:latest
+          ports:
+            - containerPort: 8080
+          env:
+            # Configure your gateway to know where your microservices are
+            - name: USER_SERVICE_URL
+              value: "http://user-service-user-service.cache-me-if-you-can-genai.svc.cluster.local:8081"
+            - name: FILES_SERVICE_URL
+              value: "http://files-service.cache-me-if-you-can-genai.svc.cluster.local:8082"
+            - name: GENAI_SERVICE_URL
+              value: "http://genai-app-service.cache-me-if-you-can-genai.svc.cluster.local:8000"
+          # Add any other environment variables your gateway needs
+          readinessProbe:
+            httpGet:
+              path: /health  # Adjust this to your gateway's health endpoint
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health  # Adjust this to your gateway's health endpoint
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
