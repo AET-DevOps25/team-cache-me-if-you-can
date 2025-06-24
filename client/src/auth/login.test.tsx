@@ -60,7 +60,7 @@ describe("Login Component", () => {
         username: "testuser",
         password: "testpass",
       });
-      expect(mockNavigate).toHaveBeenCalledWith("/");
+      expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
     });
   });
 
