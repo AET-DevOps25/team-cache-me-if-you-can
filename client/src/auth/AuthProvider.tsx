@@ -9,7 +9,7 @@ interface AuthProviderProps {
 }
 
 interface AuthContextType {
-  token: string;
+  token: string | null; // Can be null when logged out
   user: string | null;
   loginAction: (formData: LoginFormData) => Promise<boolean>;
   logOut: () => void;
@@ -17,12 +17,16 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState(localStorage.getItem("name") || null);
-  const [token, setToken] = useState(localStorage.getItem("site") || "");
+  // --- FIX 1: Use consistent localStorage keys ---
+  // Initialize state directly from the same keys we save to.
+  const [user, setUser] = useState(localStorage.getItem("username") || null);
+  const [token, setToken] = useState(localStorage.getItem("authToken") || null);
   const navigate = useNavigate();
+
   const loginAction = async (formData: LoginFormData): Promise<boolean> => {
     try {
-      const response = await fetch("api/auth/login", {
+      // The API endpoint is proxied, so the full URL isn't needed here.
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -31,7 +35,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (!response.ok) {
-        // Handle 401 unauthorized, etc.
         const errorData = await response.json();
         console.error("Login failed:", errorData);
         return false;
@@ -39,10 +42,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const data = await response.json();
       message.success("Login successful!");
+
+      // --- FIX 2: Set state and localStorage with consistent keys ---
       setUser(formData.username);
       setToken(data.token);
       localStorage.setItem("username", formData.username);
-      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("authToken", data.token); // Use "authToken" consistently
 
       return true;
     } catch (err) {
@@ -54,16 +59,17 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logOut = () => {
     setUser(null);
-    setToken("");
+    setToken(null);
+    // --- FIX 3: Remove all auth-related items from localStorage on logout ---
     localStorage.removeItem("username");
-    sessionStorage.removeItem("username");
-    navigate("/");
+    localStorage.removeItem("authToken"); // Ensure token is removed
+    navigate("/login"); // Navigate to login page after logout
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, loginAction, logOut }}>
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={{ token, user, loginAction, logOut }}>
+        {children}
+      </AuthContext.Provider>
   );
 };
 

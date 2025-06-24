@@ -143,7 +143,7 @@ const Register: React.FC<RegisterProps> = () => {
 
       console.log(data.message || "Registration successful");
       message.success(data.message || "Registration successful");
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       console.error("Registration error:", error);
       message.error("An error occurred during registration");
