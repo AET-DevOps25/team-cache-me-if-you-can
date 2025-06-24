@@ -38,6 +38,26 @@ public class GatewayController {
         ));
     }
 
+    // Authentication validation endpoint
+    @GetMapping("/api/auth/validate")
+    public Mono<ResponseEntity<String>> validateToken(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return Mono.just(ResponseEntity.status(401).body("{\"error\": \"Invalid token format\"}"));
+        }
+
+        String token = authHeader.substring(7);
+
+        return webClient.get()
+                .uri(userServiceUrl + "/api/auth/validate")
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(response -> ResponseEntity.ok()
+                        .header("Content-Type", "application/json")
+                        .body(response))
+                .onErrorReturn(ResponseEntity.status(401)
+                        .body("{\"error\": \"Token validation failed\"}"));
+    }
     // Welcome endpoint
     @GetMapping("/")
     public ResponseEntity<Map<String, Object>> welcome() {

@@ -1,17 +1,20 @@
-// src/auth/ProtectedRoute.tsx
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import React from "react";
 
 const ProtectedRoute = () => {
-    const { token } = useAuth();
+    const { token, isTokenValidating } = useAuth();
+    const location = useLocation();
 
-    // If the user is not authenticated (no token), redirect them to the login page
-    if (!token) {
-        return <Navigate to="/login" />;
+    // Show loading state while validating token
+    if (isTokenValidating) {
+        return <div>Validating session...</div>; // Or a spinner
     }
 
-    // If they are authenticated, render the child route (e.g., Home, GroupPage)
+    if (!token) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
     return <Outlet />;
 };
 

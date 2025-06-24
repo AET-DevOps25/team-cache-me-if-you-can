@@ -6,6 +6,7 @@ import "./login.css";
 import { message } from "antd";
 import { LoginFormData } from "../models/LoginFormData";
 import { useAuth } from "./AuthProvider";
+import { useLocation } from "react-router-dom";
 
 export default function Login() {
   const [formData, setFormData] = useState<LoginFormData>({
@@ -16,6 +17,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const auth = useAuth();
+  const location = useLocation();
 
   const validateAuth = async (formData: LoginFormData): Promise<boolean> => {
     return auth.loginAction(formData);
@@ -33,9 +35,9 @@ export default function Login() {
     setIsLoading(true);
     const isValid = await validateAuth(formData);
     if (isValid) {
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
       console.log("successfully loged in.");
-      message.success("successfully loged in.");
-      navigate("/");
     } else {
       message.error("username or password is not right!");
       setFormData({

@@ -5,10 +5,10 @@ import Register from "./auth/Register";
 import AuthProvider from "./auth/AuthProvider";
 import GroupProvider from "./pages/home/components/GroupProvider";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import ProtectedRoute from "./auth/ProtectedRoute"; // 1. Import the ProtectedRoute
+import ProtectedRoute from "./auth/ProtectedRoute";
 
 const router = createBrowserRouter([
-  // 2. Define public routes that anyone can access
+  // Public routes
   {
     path: "/login",
     element: <Login />,
@@ -18,10 +18,10 @@ const router = createBrowserRouter([
     element: <Register />,
   },
 
-  // 3. Define the protected routes under a parent guard route
+  // Protected routes
   {
     path: "/",
-    element: <ProtectedRoute />, // This component now guards all its children
+    element: <ProtectedRoute />,
     children: [
       {
         path: "/",
@@ -39,14 +39,17 @@ const router = createBrowserRouter([
             </GroupProvider>
         ),
       },
-      // You can add more protected routes here
-      // For example: { path: "/profile", element: <ProfilePage /> }
     ],
   },
+
+  // Redirect all unmatched paths to login
+  {
+    path: "*",
+    element: <Navigate to="/login" replace />,
+  }
 ]);
 
 function App() {
-  // 4. Wrap the entire app in AuthProvider so the auth state is globally available
   return (
       <AuthProvider>
         <RouterProvider router={router} />
