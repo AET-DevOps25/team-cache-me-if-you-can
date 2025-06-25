@@ -37,7 +37,8 @@ spec:
       containers:
         - name: user-service
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+         # imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: Always # <--- CHANGE THIS TO 'Always' TEMPORARILY
           ports:
             - containerPort: {{ .Values.service.port }}
           env:

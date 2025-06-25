@@ -21,9 +21,8 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            # Fixed service name references
             - name: USER_SERVICE_URL
-              value: "http://user-service.cache-me-if-you-can-genai.svc.cluster.local:8081"
+              value: "http://user-service-user-service.cache-me-if-you-can-genai.svc.cluster.local:8081"
             - name: FILES_SERVICE_URL
               value: "http://files-service.cache-me-if-you-can-genai.svc.cluster.local:8082"
             - name: GENAI_SERVICE_URL
@@ -33,7 +32,7 @@ spec:
               value: "https://cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de"
           readinessProbe:
             httpGet:
-              path: /health
+              path: /actuator/health/readiness
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
@@ -41,7 +40,7 @@ spec:
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /health
+              path: /actuator/health/liveness
               port: 8080
             initialDelaySeconds: 60
             periodSeconds: 30
