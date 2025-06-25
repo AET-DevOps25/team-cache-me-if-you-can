@@ -1,4 +1,3 @@
-// src/App.tsx
 import GroupPage from "./pages/group_info/GroupPage";
 import Home from "./pages/home/Home";
 import Login from "./auth/Login";
@@ -53,10 +52,9 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-      <RouterProvider router={router}>
-        <AuthProvider>
-        </AuthProvider>
-      </RouterProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
   );
 }
 
