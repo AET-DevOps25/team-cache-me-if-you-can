@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: genai-app-service
+  name: loki-service
   namespace: cache-me-if-you-can-genai
 spec:
   selector:
-    app: genai-app
+    app: loki
   ports:
     - protocol: TCP
-      port: 8000
-      targetPort: 8000
-  type: ClusterIP
+      port: 3100
+      targetPort: 3100
+  type: ClusterIP 
