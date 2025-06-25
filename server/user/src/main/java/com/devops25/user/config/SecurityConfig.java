@@ -11,6 +11,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,6 +20,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
 
 @Configuration
 @EnableWebSecurity
@@ -39,6 +42,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthFilter jwtAuthFilter(UserDetailsService uds) {
+        // Ensure JwtAuthFilter doesn't have the shouldNotFilter method if you add this WebSecurityCustomizer
         return new JwtAuthFilter(jwtService, uds);
     }
 
@@ -62,6 +66,20 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    // THIS IS THE NEW BEAN TO ADD
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                // Completely ignore /actuator/** for all security filters
+                .requestMatchers(new AntPathRequestMatcher("/actuator/**"))
+                // You can also add your /api/auth/** paths here if you want them COMPLETELY unsecured
+                // However, often for /api/auth/** you want the filter chain to run but authorize permitAll()
+                // For this scenario, just handling /actuator/** should solve the 403.
+                .requestMatchers(new AntPathRequestMatcher("/api/auth/register")) // Example, if you prefer to exclude
+                .requestMatchers(new AntPathRequestMatcher("/api/auth/login"))    // from filter chain entirely
+                ;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
@@ -71,6 +89,8 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // Keep these permitAll() requests here for authentication-related endpoints
+                        // They will still go through the filter chain, but be authorized.
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
@@ -78,7 +98,7 @@ public class SecurityConfig {
                                 "/api/auth/debug",
                                 "/api/auth/logout"
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().authenticated() // All other requests require authentication
                 )
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
