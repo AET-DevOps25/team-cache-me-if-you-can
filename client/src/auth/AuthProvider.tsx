@@ -1,5 +1,4 @@
 import { useContext, createContext, useState, ReactNode, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { message } from "antd";
 import { LoginFormData } from "../models/LoginFormData";
 
@@ -12,7 +11,7 @@ interface AuthContextType {
   user: string | null;
   loginAction: (formData: LoginFormData) => Promise<boolean>;
   logOut: () => void;
-  isTokenValidating: boolean; // Add loading state for token validation
+  isTokenValidating: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,8 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState(localStorage.getItem("username") || null);
   const [token, setToken] = useState(localStorage.getItem("authToken") || null);
-  const [isTokenValidating, setIsTokenValidating] = useState(true); // Loading state
-  const navigate = useNavigate();
+  const [isTokenValidating, setIsTokenValidating] = useState(true);
 
   // Validate token on component mount
   useEffect(() => {
@@ -46,7 +44,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(user);
           setToken(storedToken);
         } else {
-          // Token is invalid - clear storage
           localStorage.removeItem("username");
           localStorage.removeItem("authToken");
         }
@@ -96,7 +93,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     localStorage.removeItem("username");
     localStorage.removeItem("authToken");
-    navigate("/login");
   };
 
   return (
@@ -105,7 +101,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user,
         loginAction,
         logOut,
-        isTokenValidating // Expose validation state
+        isTokenValidating
       }}>
         {children}
       </AuthContext.Provider>

@@ -18,5 +18,6 @@ spec:
       containers:
         - name: client
           image: ghcr.io/aet-devops25/team-cache-me-if-you-can/client:amd64-latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
