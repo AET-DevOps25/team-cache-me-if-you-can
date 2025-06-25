@@ -1,6 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
-import React from "react";
 
 const ProtectedRoute = () => {
     const { token, isTokenValidating } = useAuth();

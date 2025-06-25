@@ -6,6 +6,7 @@ import AuthProvider from "./auth/AuthProvider";
 import GroupProvider from "./pages/home/components/GroupProvider";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import { Navigate } from "react-router-dom";
 
 const router = createBrowserRouter([
   // Public routes
