@@ -3,11 +3,15 @@ package com.devops25.gateway;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Mono;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import reactor.netty.http.client.HttpClient;
+
+import java.time.Duration;
 
 @RestController
 @CrossOrigin(origins = {"https://cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de"})
@@ -25,12 +29,15 @@ public class GatewayController {
     private String genaiServiceUrl;
 
     public GatewayController(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.build();
+       /* this.webClient = webClientBuilder.build(); */
+        // Configure HttpClient with timeouts
+        HttpClient httpClient = HttpClient.create()
+                .responseTimeout(Duration.ofSeconds(15)); // Set a response timeout, e.g., 15 seconds
+
+        this.webClient = webClientBuilder
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
     }
-
-    // ... (existing health, validate, welcome endpoints - no changes needed there)
-
-    // Authentication endpoints (route to user service) - NO CHANGE NEEDED HERE
     @PostMapping("/api/auth/login")
     public Mono<ResponseEntity<String>> login(@RequestBody String body) {
         return webClient.post()
@@ -52,11 +59,18 @@ public class GatewayController {
                 .body(BodyInserters.fromValue(body))
                 .retrieve()
                 .bodyToMono(String.class)
-                .map(response -> ResponseEntity.ok()
-                        .header("Content-Type", "application/json")
-                        .body(response))
-                .onErrorReturn(ResponseEntity.status(500)
-                        .body("{\"error\": \"Registration service unavailable\"}"));
+                .timeout(Duration.ofSeconds(5)) // Add timeout
+                .map(response -> {
+                    System.out.println("Registration success: " + response); // Add logging
+                    return ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response);
+                })
+                .onErrorResume(e -> {
+                    System.err.println("Registration failed: " + e.getMessage()); // Better error logging
+                    return Mono.just(ResponseEntity.status(500)
+                            .body("{\"error\": \"Registration service unavailable - " + e.getMessage() + "\"}"));
+                });
     }
 
     // Route to User Service
