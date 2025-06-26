@@ -4,6 +4,7 @@ import Login from "./auth/Login";
 import Register from "./auth/Register";
 import AuthProvider from "./auth/AuthProvider";
 import GroupProvider from "./pages/home/components/GroupProvider";
+import PrivateRoute from "./auth/PrivateRoute";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 const router = createBrowserRouter([
@@ -12,7 +13,9 @@ const router = createBrowserRouter([
     element: (
       <AuthProvider>
         <GroupProvider>
-          <Home />
+          <PrivateRoute>
+            <Home />
+          </PrivateRoute>
         </GroupProvider>
       </AuthProvider>
     ),
@@ -22,7 +25,9 @@ const router = createBrowserRouter([
     element: (
       <AuthProvider>
         <GroupProvider>
-          <GroupPage />
+          <PrivateRoute>
+            <GroupPage />
+          </PrivateRoute>
         </GroupProvider>
       </AuthProvider>
     ),
