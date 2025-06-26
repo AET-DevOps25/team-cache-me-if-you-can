@@ -18,6 +18,7 @@ spec:
       containers:
         - name: gateway-service
           image: ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
