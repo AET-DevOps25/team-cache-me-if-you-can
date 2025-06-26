@@ -2,6 +2,7 @@ package com.devops25.gateway;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +45,8 @@ public class GatewayController {
     public Mono<ResponseEntity<String>> login(@RequestBody String body) {
         return webClient.post()
                 .uri(userServiceUrl + "/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(body))
                 .retrieve()
                 .bodyToMono(String.class)
@@ -61,6 +64,8 @@ public class GatewayController {
 
         return webClient.post()
                 .uri(fullUrl)
+                .contentType(MediaType.APPLICATION_JSON)                   // ← set JSON
+                .accept(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(body))
                 .retrieve()
                 .bodyToMono(String.class)
@@ -88,36 +93,53 @@ public class GatewayController {
     }
 
     // Route to User Service
-    @RequestMapping(value = "/api/users/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
+    @RequestMapping(value = "/api/users/**", method = {
+            RequestMethod.GET, RequestMethod.POST,
+            RequestMethod.PUT, RequestMethod.DELETE
+    })
     public Mono<ResponseEntity<String>> routeToUserService(
-            ServerHttpRequest request, // <-- Changed from HttpServletRequest
-            @RequestBody(required = false) String body) {
+            ServerHttpRequest request,
+            @RequestBody(required = false) String body
+    ) {
+        // 1) Build the path & method
+        String path = request.getPath().pathWithinApplication().value();
+        HttpMethod method = request.getMethod();
 
-        String path = request.getPath().pathWithinApplication().value(); // <-- Get path reactively
-        HttpMethod method = request.getMethod(); // <-- Get method reactively
-
+        // 2) Start a requestSpec and propagate headers
         WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
+        requestSpec.headers(h -> {
+            var incoming = request.getHeaders();
+            // forward Content-Type
+            if (incoming.getContentType() != null) {
+                h.setContentType(incoming.getContentType());
+            }
+            // forward Authorization, if present
+            incoming.getOrEmpty("Authorization")
+                    .stream().findFirst()
+                    .ifPresent(token -> h.set("Authorization", token));
+        });
 
+        // 3) Attach body for POST/PUT, or do GET/DELETE
         if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
             return requestSpec
                     .uri(userServiceUrl + path)
                     .body(BodyInserters.fromValue(body))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .map(response -> ResponseEntity.ok()
+                    .map(resp -> ResponseEntity.ok()
                             .header("Content-Type", "application/json")
-                            .body(response))
-                    .onErrorReturn(ResponseEntity.status(500)
+                            .body(resp))
+                    .onErrorReturn(ResponseEntity.status(502)
                             .body("{\"error\": \"User service unavailable\"}"));
         } else {
             return requestSpec
                     .uri(userServiceUrl + path)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .map(response -> ResponseEntity.ok()
+                    .map(resp -> ResponseEntity.ok()
                             .header("Content-Type", "application/json")
-                            .body(response))
-                    .onErrorReturn(ResponseEntity.status(500)
+                            .body(resp))
+                    .onErrorReturn(ResponseEntity.status(502)
                             .body("{\"error\": \"User service unavailable\"}"));
         }
     }
@@ -132,6 +154,17 @@ public class GatewayController {
         HttpMethod method = request.getMethod(); // <-- Get method reactively
 
         WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
+        requestSpec.headers(h -> {
+            var incoming = request.getHeaders();
+            // forward Content-Type
+            if (incoming.getContentType() != null) {
+                h.setContentType(incoming.getContentType());
+            }
+            // forward Authorization, if present
+            incoming.getOrEmpty("Authorization")
+                    .stream().findFirst()
+                    .ifPresent(token -> h.set("Authorization", token));
+        });
 
         if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
             return requestSpec
@@ -167,6 +200,17 @@ public class GatewayController {
         HttpMethod method = request.getMethod(); // <-- Get method reactively
 
         WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
+        requestSpec.headers(h -> {
+            var incoming = request.getHeaders();
+            // forward Content-Type
+            if (incoming.getContentType() != null) {
+                h.setContentType(incoming.getContentType());
+            }
+            // forward Authorization, if present
+            incoming.getOrEmpty("Authorization")
+                    .stream().findFirst()
+                    .ifPresent(token -> h.set("Authorization", token));
+        });
 
         if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
             return requestSpec
