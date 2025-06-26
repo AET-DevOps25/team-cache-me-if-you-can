@@ -11,7 +11,9 @@ import reactor.core.publisher.Mono;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import reactor.netty.http.client.HttpClient;
 
+import java.net.ConnectException;
 import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 
 @RestController
 @CrossOrigin(origins = {"https://cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de"})
@@ -54,22 +56,34 @@ public class GatewayController {
 
     @PostMapping("/api/auth/register")
     public Mono<ResponseEntity<String>> register(@RequestBody String body) {
+        String fullUrl = userServiceUrl + "/api/auth/register";
+        System.out.println("Attempting to register user. Forwarding request to: " + fullUrl); // Log the full URL
+
         return webClient.post()
-                .uri(userServiceUrl + "/api/auth/register")
+                .uri(fullUrl)
                 .body(BodyInserters.fromValue(body))
                 .retrieve()
                 .bodyToMono(String.class)
-                .timeout(Duration.ofSeconds(5)) // Add timeout
+                .timeout(Duration.ofSeconds(30)) // Increase timeout to 30 seconds
                 .map(response -> {
-                    System.out.println("Registration success: " + response); // Add logging
+                    System.out.println("Registration success: " + response);
                     return ResponseEntity.ok()
                             .header("Content-Type", "application/json")
                             .body(response);
                 })
                 .onErrorResume(e -> {
-                    System.err.println("Registration failed: " + e.getMessage()); // Better error logging
+                    String errorMessage = "Unknown error";
+                    if (e instanceof TimeoutException) {
+                        errorMessage = "Request timed out after 30 seconds.";
+                    } else if (e instanceof ConnectException) {
+                        errorMessage = "Connection refused to the user service.";
+                    } else {
+                        errorMessage = "An unexpected error occurred: " + e.getMessage();
+                    }
+                    System.err.println("Registration failed: " + errorMessage);
+                    e.printStackTrace(); // Print the full stack trace for more details
                     return Mono.just(ResponseEntity.status(500)
-                            .body("{\"error\": \"Registration service unavailable - " + e.getMessage() + "\"}"));
+                            .body("{\"error\": \"Registration service unavailable - " + errorMessage + "\"}"));
                 });
     }
 
