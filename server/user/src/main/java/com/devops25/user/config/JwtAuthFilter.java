@@ -58,6 +58,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
         // Exclude /actuator/** from this filter
         String path = request.getRequestURI();
-        return path.startsWith("/actuator/") || path.startsWith("/api/auth/");
+        return path.startsWith("/actuator/") || path.startsWith("/api/auth/") ||  path.equals("/api/auth/register") || path.equals("/api/auth/login");
     }
 }
