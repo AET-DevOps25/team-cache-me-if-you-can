@@ -1,13 +1,15 @@
+version: "3.8"
+
 services:
-  nginx:
+  client:
     build:
-      context: ./client
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.client-nginx
     ports:
       - "80:80"
     depends_on:
-      - user
       - gateway
+      - user
       - files
 
   user:
@@ -16,22 +18,32 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
-    container_name: user-service
-    env_file: "environment/.env.docker.user"
-    depends_on:
-      mysql:
-        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   gateway:
     build:
       context: ./server/gateway
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.gateway
     ports:
       - "8080:8080"
-    container_name: gateway-service
+    environment:
+      USER_SERVICE_URL: http://user:8081
+      FILES_SERVICE_URL: http://files:8082
+      GENAI_SERVICE_URL: http://genai:8000
     depends_on:
       - user
       - files
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   files:
     build:
@@ -39,46 +51,36 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8082:8082"
-    container_name: files-service
-    env_file: "environment/.env.docker.files"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      mysql:
-        condition: service_healthy
+      - mysql
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   mysql:
     image: mysql:8.0.33
-    container_name: mysql
-    user: "999:999"
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./environment/db_init:/docker-entrypoint-initdb.d
       - ./environment/volume/conf.d:/etc/mysql/conf.d
-    env_file: "environment/.env.docker.mysql"
-    environment:
-      MYSQL_ROOT_PASSWORD: StrongRootPass123!
+    env_file:
+      - environment/.env.docker.mysql
     command:
       - --lower-case-table-names=1
-      - --socket=/tmp/mysql.sock
-      - --pid-file=/tmp/mysql.pid
       - --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test:
-        [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "127.0.0.1",
-          "-u",
-          "root",
-          "-p${MYSQL_ROOT_PASSWORD}",
-        ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     restart: unless-stopped
+
 volumes:
   mysql_data:

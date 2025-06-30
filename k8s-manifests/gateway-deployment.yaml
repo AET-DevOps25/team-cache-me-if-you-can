@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  namespace: cache-me-if-you-can-genai
+  labels:
+    app: gateway-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+    spec:
+      containers:
+        - name: gateway-service
+          image: ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: USER_SERVICE_URL
+              value: "http://user-service-user-service.cache-me-if-you-can-genai.svc.cluster.local.:8081"
+            - name: FILES_SERVICE_URL
+              value: "http://files-service.cache-me-if-you-can-genai.svc.cluster.local:8082"
+            - name: GENAI_SERVICE_URL
+              value: "http://genai-app-service.cache-me-if-you-can-genai.svc.cluster.local:8000"
+            # Add CORS configuration
+            - name: CORS_ALLOWED_ORIGINS
+              value: "https://cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

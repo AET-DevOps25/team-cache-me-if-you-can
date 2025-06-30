@@ -20,10 +20,8 @@ public class AuthService {
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-
     private final AuthenticationManager authenticationManager;
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
-
 
 
     public AuthResponse register(AuthRequest request) {

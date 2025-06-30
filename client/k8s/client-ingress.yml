@@ -16,6 +16,14 @@ spec:
     - host: cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de
       http:
         paths:
+          # Rule to route API traffic to the gateway service
+          - path: /api/ # <--- New rule for API paths
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service # <--- Points to your gateway service
+                port:
+                  number: 8080 # <--- Port of your gateway service (from gateway-service-service.yaml)
           - path: /
             pathType: Prefix
             backend:
