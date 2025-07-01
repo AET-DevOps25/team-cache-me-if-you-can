@@ -50,17 +50,4 @@ public class AuthController {
             );
         }
     }
-
-    /*
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            // Optionally add token to a blacklist here, e.g.:
-            // tokenBlacklistService.blacklistToken(token);
-            return ResponseEntity.ok(Map.of("message", "Logout successful"));
-        }
-        return ResponseEntity.badRequest().body(Map.of("error", "Invalid token"));
-    }*/
-
 }
