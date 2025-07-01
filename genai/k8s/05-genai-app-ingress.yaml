@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: cache-me-if-you-can-genai-ingress
-  namespace: cache-me-if-you-can-genai
+  name: dev-ingress
+  namespace: dev
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
@@ -10,10 +10,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - cache-me-if-you-can-genai.student.k8s.aet.cit.tum.de
-    secretName: cache-me-if-you-can-genai-tls
+    - dev.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+    secretName: dev-tls
   rules:
-  - host: cache-me-if-you-can-genai.student.k8s.aet.cit.tum.de
+  - host: dev.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
     http:
       paths:
       - path: /
