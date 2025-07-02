@@ -33,6 +33,9 @@ python-dotenv>=1.0.0
 # Utilities
 # httpx # For making async HTTP requests if the AI service needs to call external APIs
 
+# Monitoring
+prometheus-fastapi-instrumentator
+
 # Testing
 pytest
 pytest-asyncio # For testing async code with FastAPI
