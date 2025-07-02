@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: genai-app
-  namespace: cache-me-if-you-can-genai
+  namespace: dev
   labels:
     app: genai-app
 spec:
@@ -22,7 +22,7 @@ spec:
         - containerPort: 8000
         env:
         - name: WEAVIATE_URL
-          value: "http://weaviate-service.cache-me-if-you-can-genai.svc.cluster.local:8080" # Assuming Weaviate service will be named 'weaviate-service' in the same namespace
+          value: "http://weaviate-service.dev.svc.cluster.local:8080" # Assuming Weaviate service will be named 'weaviate-service' in the same namespace
         - name: OPENAI_API_KEY
           valueFrom:
             secretKeyRef:
