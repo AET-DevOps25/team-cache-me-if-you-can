@@ -17,33 +17,6 @@ export default function Group() {
   );
   const navigate = useNavigate();
 
-  async function getAllGroups() {
-    setGroups([
-      {
-        id: 1,
-        name: "Biology 101",
-        university: "TUM",
-        description: "This is a group for Biology 101",
-        imageUrl: defaultImg,
-      },
-      {
-        id: 2,
-        name: "Computer Science",
-        university: "TUM",
-        description: "This is a group for Computer Science",
-        imageUrl: defaultImg,
-      },
-      {
-        id: 3,
-        name: "Psychology",
-        university: "TUM",
-        description: "This is a group for Psychology",
-        imageUrl: defaultImg,
-      },
-    ]);
-    //TODO: get all groups in no authentication info
-  }
-
   async function getMyGroups() {
     setGroups([
       {
@@ -63,13 +36,12 @@ export default function Group() {
   }
 
   useEffect(() => {
-    setCurrentGroup(null);
-    if (auth.user) {
-      getMyGroups();
-    } else {
-      getAllGroups();
+    if (!auth.user) {
+      navigate("/login");
     }
-  }, [auth.user, setCurrentGroup]);
+    setCurrentGroup(null);
+    getMyGroups();
+  }, [auth.user, navigate, setCurrentGroup]);
 
   if (!groups && !auth.user) {
     return <p>Loding...</p>;
