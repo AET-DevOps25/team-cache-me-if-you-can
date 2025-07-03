@@ -33,16 +33,18 @@ public class GatewayController {
     @Value("${genai.service.url}")
     private String genaiServiceUrl;
 
+    @Value("${group.service.url}") // <-- NEW: Group Service URL
+    private String groupServiceUrl;
+
     public GatewayController(WebClient.Builder webClientBuilder) {
-       /* this.webClient = webClientBuilder.build(); */
-        // Configure HttpClient with timeouts
         HttpClient httpClient = HttpClient.create()
-                .responseTimeout(Duration.ofSeconds(15)); // Set a response timeout, e.g., 15 seconds
+                .responseTimeout(Duration.ofSeconds(15));
 
         this.webClient = webClientBuilder
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
+
     @PostMapping("/api/auth/login")
     public Mono<ResponseEntity<String>> login(@RequestBody String body) {
         return webClient.post()
@@ -62,16 +64,16 @@ public class GatewayController {
     @PostMapping("/api/auth/register")
     public Mono<ResponseEntity<String>> register(@RequestBody String body) {
         String fullUrl = userServiceUrl + "/api/auth/register";
-        System.out.println("Attempting to register user. Forwarding request to: " + fullUrl); // Log the full URL
+        System.out.println("Attempting to register user. Forwarding request to: " + fullUrl);
 
         return webClient.post()
                 .uri(fullUrl)
-                .contentType(MediaType.APPLICATION_JSON)                   // ← set JSON
+                .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(body))
                 .retrieve()
                 .bodyToMono(String.class)
-                .timeout(Duration.ofSeconds(30)) // Increase timeout to 30 seconds
+                .timeout(Duration.ofSeconds(30))
                 .map(response -> {
                     System.out.println("Registration success: " + response);
                     return ResponseEntity.ok()
@@ -88,7 +90,7 @@ public class GatewayController {
                         errorMessage = "An unexpected error occurred: " + e.getMessage();
                     }
                     System.err.println("Registration failed: " + errorMessage);
-                    e.printStackTrace(); // Print the full stack trace for more details
+                    e.printStackTrace();
                     return Mono.just(ResponseEntity.status(500)
                             .body("{\"error\": \"Registration service unavailable - " + errorMessage + "\"}"));
                 });
@@ -103,25 +105,20 @@ public class GatewayController {
             ServerHttpRequest request,
             @RequestBody(required = false) String body
     ) {
-        // 1) Build the path & method
         String path = request.getPath().pathWithinApplication().value();
         HttpMethod method = request.getMethod();
 
-        // 2) Start a requestSpec and propagate headers
         WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
         requestSpec.headers(h -> {
             var incoming = request.getHeaders();
-            // forward Content-Type
             if (incoming.getContentType() != null) {
                 h.setContentType(incoming.getContentType());
             }
-            // forward Authorization, if present
             incoming.getOrEmpty("Authorization")
                     .stream().findFirst()
                     .ifPresent(token -> h.set("Authorization", token));
         });
 
-        // 3) Attach body for POST/PUT, or do GET/DELETE
         if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
             return requestSpec
                     .uri(userServiceUrl + path)
@@ -149,20 +146,18 @@ public class GatewayController {
     // Route to Files Service
     @RequestMapping(value = "/api/files/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public Mono<ResponseEntity<String>> routeToFilesService(
-            ServerHttpRequest request, // <-- Changed from HttpServletRequest
+            ServerHttpRequest request,
             @RequestBody(required = false) String body) {
 
-        String path = request.getPath().pathWithinApplication().value(); // <-- Get path reactively
-        HttpMethod method = request.getMethod(); // <-- Get method reactively
+        String path = request.getPath().pathWithinApplication().value();
+        HttpMethod method = request.getMethod();
 
         WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
         requestSpec.headers(h -> {
             var incoming = request.getHeaders();
-            // forward Content-Type
             if (incoming.getContentType() != null) {
                 h.setContentType(incoming.getContentType());
             }
-            // forward Authorization, if present
             incoming.getOrEmpty("Authorization")
                     .stream().findFirst()
                     .ifPresent(token -> h.set("Authorization", token));
@@ -195,20 +190,18 @@ public class GatewayController {
     // Route to GenAI Service
     @RequestMapping(value = "/ai/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public Mono<ResponseEntity<String>> routeToGenaiService(
-            ServerHttpRequest request, // <-- Changed from HttpServletRequest
+            ServerHttpRequest request,
             @RequestBody(required = false) String body) {
 
-        String path = request.getPath().pathWithinApplication().value(); // <-- Get path reactively
-        HttpMethod method = request.getMethod(); // <-- Get method reactively
+        String path = request.getPath().pathWithinApplication().value();
+        HttpMethod method = request.getMethod();
 
         WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
         requestSpec.headers(h -> {
             var incoming = request.getHeaders();
-            // forward Content-Type
             if (incoming.getContentType() != null) {
                 h.setContentType(incoming.getContentType());
             }
-            // forward Authorization, if present
             incoming.getOrEmpty("Authorization")
                     .stream().findFirst()
                     .ifPresent(token -> h.set("Authorization", token));
@@ -235,6 +228,53 @@ public class GatewayController {
                             .body(response))
                     .onErrorReturn(ResponseEntity.status(500)
                             .body("{\"error\": \"GenAI service unavailable\"}"));
+        }
+    }
+
+    // NEW: Route to Group Service
+    @RequestMapping(value = "/api/v1/groups/**", method = {
+            RequestMethod.GET, RequestMethod.POST,
+            RequestMethod.PUT, RequestMethod.DELETE
+    })
+    public Mono<ResponseEntity<String>> routeToGroupService(
+            ServerHttpRequest request,
+            @RequestBody(required = false) String body
+    ) {
+        String path = request.getPath().pathWithinApplication().value();
+        HttpMethod method = request.getMethod();
+
+        WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
+        requestSpec.headers(h -> {
+            var incoming = request.getHeaders();
+            if (incoming.getContentType() != null) {
+                h.setContentType(incoming.getContentType());
+            }
+            incoming.getOrEmpty("Authorization")
+                    .stream().findFirst()
+                    .ifPresent(token -> h.set("Authorization", token));
+        });
+
+        if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
+            return requestSpec
+                    .uri(groupServiceUrl + path) // <-- Use groupServiceUrl
+                    .body(BodyInserters.fromValue(body))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(resp -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(resp))
+                    .onErrorReturn(ResponseEntity.status(502)
+                            .body("{\"error\": \"Group service unavailable\"}"));
+        } else {
+            return requestSpec
+                    .uri(groupServiceUrl + path) // <-- Use groupServiceUrl
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(resp -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(resp))
+                    .onErrorReturn(ResponseEntity.status(502)
+                            .body("{\"error\": \"Group service unavailable\"}"));
         }
     }
 }

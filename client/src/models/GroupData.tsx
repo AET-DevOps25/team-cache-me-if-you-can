@@ -4,4 +4,5 @@ export interface GroupData {
   university: string;
   description: string;
   imageUrl: string;
+  filesServiceUrl?: string | null;
 }
