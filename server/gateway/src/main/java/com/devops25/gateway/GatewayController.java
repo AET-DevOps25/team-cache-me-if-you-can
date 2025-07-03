@@ -11,6 +11,8 @@ import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Mono;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import reactor.netty.http.client.HttpClient;
+import java.net.ConnectException; // Import these
+import java.util.concurrent.TimeoutException; // Import these
 
 import java.net.ConnectException;
 import java.time.Duration;
@@ -231,6 +233,7 @@ public class GatewayController {
         }
     }
 
+    /*
     // NEW: Route to Group Service
     @RequestMapping(value = "/api/v1/groups/**", method = {
             RequestMethod.GET, RequestMethod.POST,
@@ -276,5 +279,80 @@ public class GatewayController {
                     .onErrorReturn(ResponseEntity.status(502)
                             .body("{\"error\": \"Group service unavailable\"}"));
         }
+    }*/
+
+    // NEW: Route to Group Service
+    @RequestMapping(value = "/api/v1/groups/**", method = {
+            RequestMethod.GET, RequestMethod.POST,
+            RequestMethod.PUT, RequestMethod.DELETE
+    })
+    public Mono<ResponseEntity<String>> routeToGroupService(
+            ServerHttpRequest request,
+            @RequestBody(required = false) String body
+    ) {
+        String path = request.getPath().pathWithinApplication().value();
+        HttpMethod method = request.getMethod();
+        String targetUrl = groupServiceUrl + path; // Pre-calculate for logging
+
+        System.out.println("--- Gateway Routing to Group Service ---");
+        System.out.println("Incoming Path: " + path);
+        System.out.println("Incoming Method: " + method);
+        System.out.println("Target URL: " + targetUrl);
+        System.out.println("Incoming Content-Type: " + request.getHeaders().getContentType());
+        System.out.println("Incoming Authorization: " + request.getHeaders().getFirst("Authorization"));
+        System.out.println("Request Body received by Gateway: " + (body != null ? body.substring(0, Math.min(body.length(), 500)) : "[No body or null]")); // Print first 500 chars
+
+        WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
+        requestSpec.headers(h -> {
+            var incoming = request.getHeaders();
+            if (incoming.getContentType() != null) {
+                h.setContentType(incoming.getContentType());
+            }
+            // Forward all incoming headers except host (handled by changeOrigin)
+            incoming.forEach((name, values) -> {
+                if (!name.equalsIgnoreCase("Host") && !name.equalsIgnoreCase("Content-Length")) { // Content-Length will be re-calculated by WebClient
+                    h.addAll(name, values);
+                }
+            });
+        });
+
+        Mono<String> responseMono;
+        if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
+            responseMono = requestSpec
+                    .uri(targetUrl)
+                    .body(BodyInserters.fromValue(body))
+                    .retrieve()
+                    .bodyToMono(String.class);
+        } else {
+            responseMono = requestSpec
+                    .uri(targetUrl)
+                    .retrieve()
+                    .bodyToMono(String.class);
+        }
+
+        return responseMono
+                .map(resp -> {
+                    System.out.println("Group Service response successful for [" + path + "]: " + resp.substring(0, Math.min(resp.length(), 500))); // Log success
+                    return ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(resp);
+                })
+                .doOnError(e -> { // Capture the actual error
+                    String errorMessage = "Unknown error from Group Service:";
+                    if (e instanceof ConnectException) {
+                        errorMessage = "Connection refused to Group Service at " + targetUrl;
+                    } else if (e instanceof TimeoutException) {
+                        errorMessage = "Timeout connecting to Group Service at " + targetUrl;
+                    } else if (e instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
+                        org.springframework.web.reactive.function.client.WebClientResponseException wcException = (org.springframework.web.reactive.function.client.WebClientResponseException) e;
+                        errorMessage = "Group Service returned HTTP " + wcException.getStatusCode() + " - " + wcException.getResponseBodyAsString();
+                    } else {
+                        errorMessage = "An unexpected error occurred while calling Group Service at " + targetUrl + ":";
+                    }
+                    System.err.println(errorMessage);
+                    e.printStackTrace(); // Print stack trace for full details
+                })
+                .onErrorReturn(ResponseEntity.status(502)
+                        .body("{\"error\": \"Group service unavailable\"}"));
     }
 }

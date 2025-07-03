@@ -44,7 +44,8 @@ services:
       USER_SERVICE_URL: http://user-service:8081
       FILES_SERVICE_URL: http://files-service:8082
       GENAI_SERVICE_URL: http://genai-app:8000
-      GROUP_SERVICE_URL: http://group-service:8083
+      #GROUP_SERVICE_URL: http://group-service:8083
+      GROUP_SERVICE_URL:   http://group:8083
 
   files:
     build:

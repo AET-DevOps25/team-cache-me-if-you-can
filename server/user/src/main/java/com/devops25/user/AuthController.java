@@ -9,10 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -49,5 +47,17 @@ public class AuthController {
                     Map.of("error", "Invalid username or password")
             );
         }
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateToken(Authentication authentication) {
+        // If the request reaches this point, it means the JWT filter has
+        // successfully authenticated the user and set the Authentication object.
+        if (authentication != null && authentication.isAuthenticated()) {
+            return ResponseEntity.ok(Map.of("message", "Token is valid", "username", authentication.getName()));
+        }
+        // This part should ideally not be reached if security is configured correctly,
+        // as invalid tokens would be rejected by the filter before reaching the controller.
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or missing token"));
     }
 }

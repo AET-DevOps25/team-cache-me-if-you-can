@@ -66,17 +66,13 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // THIS IS THE NEW BEAN TO ADD
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring()
                 // Completely ignore /actuator/** for all security filters
                 .requestMatchers(new AntPathRequestMatcher("/actuator/**"))
-                // You can also add your /api/auth/** paths here if you want them COMPLETELY unsecured
-                // However, often for /api/auth/** you want the filter chain to run but authorize permitAll()
-                // For this scenario, just handling /actuator/** should solve the 403.
-                .requestMatchers(new AntPathRequestMatcher("/api/auth/register")) // Example, if you prefer to exclude
-                .requestMatchers(new AntPathRequestMatcher("/api/auth/login"))    // from filter chain entirely
+                .requestMatchers(new AntPathRequestMatcher("/api/auth/register"))
+                .requestMatchers(new AntPathRequestMatcher("/api/auth/login"))
                 ;
     }
 
@@ -96,7 +92,8 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/refresh-token",
                                 "/api/auth/debug",
-                                "/api/auth/logout"
+                                "/api/auth/logout",
+                                "/api/auth/validate"
                         ).permitAll()
                         .anyRequest().authenticated() // All other requests require authentication
                 )
