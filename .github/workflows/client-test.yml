@@ -25,20 +25,23 @@ jobs:
           mkdir -p ~/.kube
           echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
           chmod 600 ~/.kube/config
-          kubectl config use-context student
-          kubectl cluster-info
+
+          # Verify access to dev namespace
+          kubectl auth can-i create deployments -n dev || {
+            echo "ERROR: User lacks permissions in dev namespace"
+            exit 1
+          }
 
       - name: Terraform Init
         run: terraform init
         working-directory: ./client/terraform
-        env:
-          KUBECONFIG: ~/.kube/config
 
       - name: Terraform Plan
-        run: terraform plan
+        run: |
+          terraform plan \
+            -var="namespace=dev" \
+            -out=tfplan
         working-directory: ./client/terraform
-        env:
-          KUBECONFIG: ~/.kube/config
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
