@@ -1,8 +1,9 @@
 import logging
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api.api_router import api_router  # Corrected import
+from app.api.api_router import api_router
 from app.config import settings
 from app.utils.logging_config import (
     setup_logging,
@@ -33,6 +34,8 @@ app = FastAPI(
     description="AI Service for StudySync: AI-Powered Collaborative Study Assistant",
     lifespan=lifespan,
 )
+
+Instrumentator().instrument(app).expose(app)
 
 app.include_router(api_router, prefix="/api/v1")
 
