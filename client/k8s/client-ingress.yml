@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: cache-me-if-you-can-genai-client-ingress
-  namespace: cache-me-if-you-can-genai
+  name: client-ingress
+  namespace: dev
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
