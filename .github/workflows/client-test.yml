@@ -17,11 +17,16 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Set up Kubeconfig
-        uses: azure/k8s-set-context@v4
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
+      - name: Set up Kubernetes tools
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
+          chmod 600 ~/.kube/config
+          kubectl config use-context student
+          kubectl cluster-info
 
       - name: Terraform Init
         run: terraform init
