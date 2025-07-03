@@ -23,17 +23,9 @@ jobs:
       - name: Configure kubeconfig
         run: |
           mkdir -p ~/.kube
-          # Write the kubeconfig file
           echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
           chmod 600 ~/.kube/config
-
-          # Verify the config contains authentication
-          if ! grep -q "token:" ~/.kube/config && ! grep -q "client-certificate-data:" ~/.kube/config; then
-            echo "ERROR: Kubeconfig is missing authentication credentials"
-            exit 1
-          fi
-
-          # Set the namespace context
+          kubectl config use-context student
           kubectl config set-context --current --namespace=dev
 
       - name: Terraform Init
