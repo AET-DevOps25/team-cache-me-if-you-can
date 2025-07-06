@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: dev-ingress
+  name: genai-dev-ingress
   namespace: dev
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -10,10 +10,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - dev.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
-    secretName: dev-tls
+    - genai-dev.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+    secretName: genai-dev-tls
   rules:
-  - host: dev.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+  - host: genai-dev.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
     http:
       paths:
       - path: /

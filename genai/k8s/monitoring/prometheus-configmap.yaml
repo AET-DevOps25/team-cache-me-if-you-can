@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
-  namespace: cache-me-if-you-can-genai
+  namespace: dev
 data:
   prometheus.yml: |
     global:

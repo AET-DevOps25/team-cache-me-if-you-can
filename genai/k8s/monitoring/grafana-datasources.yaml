@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources
-  namespace: cache-me-if-you-can-genai
+  namespace: dev
 data:
   datasources.yaml: |
     apiVersion: 1
