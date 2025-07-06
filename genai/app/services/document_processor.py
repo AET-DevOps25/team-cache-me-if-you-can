@@ -2,14 +2,9 @@ import base64
 import os
 from pathlib import Path
 import subprocess
-from dotenv import load_dotenv
 
 import fitz  # PyMuPDF
-import openai
-
-load_dotenv()
-
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+from app.core.dependencies import get_openai_client
 
 
 def encode_image(image_path):
@@ -18,6 +13,7 @@ def encode_image(image_path):
 
 
 def extract_text_from_image(image_path: str) -> str:
+    client = get_openai_client()
     base64_image = encode_image(image_path)
     response = client.chat.completions.create(
         model="gpt-4.1-nano",
@@ -93,6 +89,7 @@ def get_latex_postamble() -> str:
 
 
 def format_text_to_latex(text: str) -> str:
+    client = get_openai_client()
     response = client.chat.completions.create(
         model="gpt-4.1-nano",
         messages=[
