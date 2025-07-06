@@ -27,10 +27,10 @@ async def query_document(
 
     try:
         logger.info(f"Received query: {query_request.question}")
-        
+
         # The rag_system now returns a dictionary with the answer and source documents
         result = await rag_system.invoke_chain(query_request.question)
-        
+
         answer = result.get("answer", "An error occurred while generating the answer.")
         context_docs = result.get("source_documents", [])
 

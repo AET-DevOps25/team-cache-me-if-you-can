@@ -9,7 +9,7 @@ from app.core.dependencies import get_openai_client
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode('utf-8')
+        return base64.b64encode(image_file.read()).decode("utf-8")
 
 
 def extract_text_from_image(image_path: str) -> str:
@@ -23,15 +23,10 @@ def extract_text_from_image(image_path: str) -> str:
                 "content": [
                     {
                         "type": "text",
-                        "text": "You are an expert in handwritten text extraction. Your task is to extract all text from the provided image, including handwritten and typed text.\nPlease be as precise as possible.\nProvide only the transcribed text, without any additional comments, introductions, or explanations. Be mostly accurate, with mathematical expressions, use latex expressions to transcribe them."
+                        "text": "You are an expert in handwritten text extraction. Your task is to extract all text from the provided image, including handwritten and typed text.\nPlease be as precise as possible.\nProvide only the transcribed text, without any additional comments, introductions, or explanations. Be mostly accurate, with mathematical expressions, use latex expressions to transcribe them.",
                     },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/png;base64,{base64_image}"
-                        }
-                    }
-                ]
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{base64_image}"}},
+                ],
             }
         ],
         max_tokens=2048,
@@ -95,12 +90,9 @@ def format_text_to_latex(text: str) -> str:
         messages=[
             {
                 "role": "system",
-                "content": "You are a LaTeX expert. Your task is to convert the following text into a well-structured LaTeX document body. You should organize the text into sections, subsections, and paragraphs. Correct any spelling or grammatical errors. Ensure that all mathematical formulas are correctly formatted using LaTeX syntax. Use inline math for formulas in text (e.g., $...$), and display math for equations on their own lines (e.g., \\begin{equation} ... \\end{equation} or $$...$$). Do not lose any information. Do not include the document preamble (like \\documentclass) or \\begin{document} and \\end{document} commands. Only provide the body of the document content itself."
+                "content": "You are a LaTeX expert. Your task is to convert the following text into a well-structured LaTeX document body. You should organize the text into sections, subsections, and paragraphs. Correct any spelling or grammatical errors. Ensure that all mathematical formulas are correctly formatted using LaTeX syntax. Use inline math for formulas in text (e.g., $...$), and display math for equations on their own lines (e.g., \\begin{equation} ... \\end{equation} or $$...$$). Do not lose any information. Do not include the document preamble (like \\documentclass) or \\begin{document} and \\end{document} commands. Only provide the body of the document content itself.",
             },
-            {
-                "role": "user",
-                "content": text
-            }
+            {"role": "user", "content": text},
         ],
         max_tokens=4096,
     )
@@ -115,23 +107,17 @@ def compile_latex_to_pdf(tex_path: Path):
     for i in range(2):
         print(f"Running pdflatex compilation pass {i + 1}...")
         try:
-            result = subprocess.run(
-                ["pdflatex", "-interaction=nonstopmode", tex_path.name],
-                cwd=run_dir,
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            result = subprocess.run(["pdflatex", "-interaction=nonstopmode", tex_path.name], cwd=run_dir, capture_output=True, text=True, check=True)
             print(result.stdout)
         except FileNotFoundError:
             print("Error: 'pdflatex' command not found. Is a LaTeX distribution (like TeX Live, MiKTeX) installed and in your PATH?")
             return
         except subprocess.CalledProcessError as e:
             print(f"Error compiling LaTeX file on pass {i+1}. Return code: {e.returncode}")
-            log_file = tex_path.with_suffix('.log')
+            log_file = tex_path.with_suffix(".log")
             if log_file.exists():
                 print(f"--- LaTeX Log File ({log_file}) ---")
-                with open(log_file, 'r') as f:
+                with open(log_file, "r") as f:
                     print(f.read())
             else:
                 print("--- stdout ---")
@@ -139,7 +125,7 @@ def compile_latex_to_pdf(tex_path: Path):
                 print("--- stderr ---")
                 print(e.stderr)
             return
-    pdf_path = tex_path.with_suffix('.pdf')
+    pdf_path = tex_path.with_suffix(".pdf")
     if pdf_path.exists():
         print(f"Successfully compiled '{tex_path.name}' to '{pdf_path.name}'")
     else:
@@ -164,16 +150,16 @@ def process_pdf_to_latex_pdf(pdf_path: str) -> str:
     full_latex_doc = preamble + latex_body + postamble
 
     # 3. Save .tex file
-    output_tex_path = pdf_path_obj.with_suffix('.tex')
+    output_tex_path = pdf_path_obj.with_suffix(".tex")
     print(f"Saving LaTeX document to '{output_tex_path}'...")
-    with open(output_tex_path, 'w', encoding='utf-8') as f:
+    with open(output_tex_path, "w", encoding="utf-8") as f:
         f.write(full_latex_doc)
 
     # 4. Compile to PDF
     compile_latex_to_pdf(output_tex_path)
 
-    output_pdf_path = output_tex_path.with_suffix('.pdf')
+    output_pdf_path = output_tex_path.with_suffix(".pdf")
     if output_pdf_path.exists():
         return str(output_pdf_path)
     else:
-        return None 
+        return None

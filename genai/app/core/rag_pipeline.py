@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # A machine-readable identifier for when the context is not useful.
 CONTEXT_NOT_FOUND_IDENTIFIER = "CONTEXT_NOT_FOUND"
 
+
 def format_docs(docs: List[Document]) -> str:
     """A simple function to join the page content of retrieved documents."""
     return "\n\n".join(doc.page_content for doc in docs)
@@ -89,10 +90,7 @@ class RAGSystem:
         # Get the source documents first, so we can return them regardless of the answer
         source_documents = await self.retriever.aget_relevant_documents(question)
         # Manually format the context with source information for the prompt
-        formatted_context = "\n\n".join(
-            f"source: {doc.metadata.get('source', 'Unknown')}, page: {doc.metadata.get('page_number', 'N/A')}\n{doc.page_content}"
-            for doc in source_documents
-        )
+        formatted_context = "\n\n".join(f"source: {doc.metadata.get('source', 'Unknown')}, page: {doc.metadata.get('page_number', 'N/A')}\n{doc.page_content}" for doc in source_documents)
 
         # Invoke the RAG chain with the manually formatted context
         rag_answer = await self.rag_chain.ainvoke({"question": question, "context": formatted_context})
@@ -101,10 +99,7 @@ class RAGSystem:
         if CONTEXT_NOT_FOUND_IDENTIFIER in rag_answer:
             logger.info(f"Context not found for question: '{question}'. Switching to general knowledge.")
             general_answer = await self.general_knowledge_chain.ainvoke({"question": question})
-            final_answer = (
-                "I could not find a definitive answer in your documents. "
-                f"However, based on my general knowledge:\n\n{general_answer}"
-            )
+            final_answer = "I could not find a definitive answer in your documents. " f"However, based on my general knowledge:\n\n{general_answer}"
         else:
             final_answer = rag_answer
 

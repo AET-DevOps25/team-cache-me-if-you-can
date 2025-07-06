@@ -12,6 +12,7 @@ router = APIRouter()
 FILES_DIR = Path("app/data/processed")
 FILES_DIR.mkdir(parents=True, exist_ok=True)
 
+
 @router.post("/upload-and-process/")
 async def upload_and_process_document(file: UploadFile = File(...)):
     """
@@ -43,10 +44,10 @@ async def get_task_status(task_id: str):
     status = task_result.status
     result = task_result.result if task_result.ready() else None
 
-    if status == 'FAILURE':
+    if status == "FAILURE":
         # If the task failed, return the error message
         return {"status": status, "error": str(result)}
-    
+
     return {"status": status, "result": result}
 
 
@@ -58,4 +59,4 @@ async def get_file(file_name: str):
     file_path = FILES_DIR / file_name
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found.")
-    return FileResponse(path=file_path, media_type='application/pdf', filename=file_name) 
+    return FileResponse(path=file_path, media_type="application/pdf", filename=file_name)
