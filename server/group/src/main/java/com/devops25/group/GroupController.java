@@ -3,7 +3,7 @@ package com.devops25.group;
 import com.devops25.group.dto.CreateGroupRequest;
 import com.devops25.group.dto.GroupResponse;
 import com.devops25.group.dto.UpdateGroupRequest;
-import com.devops25.group.GroupService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import com.devops25.group.JwtService;
 
 import java.util.List;
 
@@ -19,55 +20,124 @@ import java.util.List;
 public class GroupController {
 
     private final GroupService groupService;
+    private final JwtService jwtService;
 
     @Autowired
-    public GroupController(GroupService groupService) {
+    public GroupController(GroupService groupService, JwtService jwtService) {
         this.groupService = groupService;
+        this.jwtService = jwtService;
     }
 
-    // Handles creation of a new group (image URL comes as part of JSON)
+    private String extractUsername(HttpServletRequest httpRequest) {
+        String authHeader = httpRequest.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or invalid Authorization header");
+        }
+        String token = authHeader.substring(7);
+        try {
+            return jwtService.extractUsername(token);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token");
+        }
+    }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GroupResponse> createGroup(@Valid @RequestBody CreateGroupRequest request) {
-        GroupResponse response = groupService.createGroup(request);
+    public ResponseEntity<GroupResponse> createGroup(
+            @Valid @RequestBody CreateGroupRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String ownerUsername = extractUsername(httpRequest);
+        GroupResponse response = groupService.createGroup(request, ownerUsername);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    // Retrieves all groups
     @GetMapping
-    public ResponseEntity<List<GroupResponse>> getAllGroups() {
-        List<GroupResponse> groups = groupService.getAllGroups();
+    public ResponseEntity<List<GroupResponse>> getAllGroups(HttpServletRequest httpRequest) {
+        String authenticatedUsername = null;
+        try {
+            authenticatedUsername = extractUsername(httpRequest);
+        } catch (ResponseStatusException e) {
+            // Unauthenticated is allowed for listing all groups
+        }
+        List<GroupResponse> groups = groupService.getAllGroups(authenticatedUsername);
         return ResponseEntity.ok(groups);
     }
 
-    // Retrieves a group by its ID
+    @GetMapping("/my-groups")
+    public ResponseEntity<List<GroupResponse>> getMyGroups(HttpServletRequest httpRequest) {
+        String ownerUsername = extractUsername(httpRequest);
+        List<GroupResponse> groups = groupService.getGroupsByOwnerUsername(ownerUsername);
+        return ResponseEntity.ok(groups);
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<GroupResponse> getGroupById(@PathVariable Long id) {
-        GroupResponse group = groupService.getGroupById(id);
+    public ResponseEntity<GroupResponse> getGroupById(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = null;
+        try {
+            authenticatedUsername = extractUsername(httpRequest);
+        } catch (ResponseStatusException e) {
+            // Unauthenticated viewing allowed
+        }
+        GroupResponse group = groupService.getGroupById(id, authenticatedUsername);
         return ResponseEntity.ok(group);
     }
 
-    // Searches for groups by name or university
     @GetMapping("/search")
-    public ResponseEntity<List<GroupResponse>> searchGroups(@RequestParam String query) {
-        List<GroupResponse> groups = groupService.searchGroups(query);
+    public ResponseEntity<List<GroupResponse>> searchGroups(
+            @RequestParam String query,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = null;
+        try {
+            authenticatedUsername = extractUsername(httpRequest);
+        } catch (ResponseStatusException e) {
+            // Unauthenticated allowed
+        }
+        List<GroupResponse> groups = groupService.searchGroups(query, authenticatedUsername);
         return ResponseEntity.ok(groups);
     }
 
-    // Updates an existing group by ID
-    // Uses PUT for full replacement or PATCH for partial update depending on semantics,
-    // but RequestBody with optional fields works for PATCH-like behavior here.
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GroupResponse> updateGroup(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateGroupRequest request) {
-        GroupResponse response = groupService.updateGroup(id, request);
+            @Valid @RequestBody UpdateGroupRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = extractUsername(httpRequest);
+        GroupResponse response = groupService.updateGroup(id, request, authenticatedUsername);
         return ResponseEntity.ok(response);
     }
 
-    // Deletes a group by ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteGroup(@PathVariable Long id) {
-        groupService.deleteGroup(id);
+    public ResponseEntity<Void> deleteGroup(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = extractUsername(httpRequest);
+        groupService.deleteGroup(id, authenticatedUsername);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/join")
+    public ResponseEntity<GroupResponse> joinGroup(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = extractUsername(httpRequest);
+        GroupResponse response = groupService.joinGroup(id, authenticatedUsername);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/leave")
+    public ResponseEntity<GroupResponse> leaveGroup(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = extractUsername(httpRequest);
+        GroupResponse response = groupService.leaveGroup(id, authenticatedUsername);
+        return ResponseEntity.ok(response);
     }
 }

@@ -7,76 +7,70 @@ export function Find() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [groups, setGroups] = useState<Array<{
+  const [groups, setGroups] = useState<{
     id: number;
     name: string;
-    imageUrl: string;
-  }> | null>(null);
+    description: string;
+    university: string;
+    imageUrl: string | null;
+    isMember: boolean;
+  }[] | null>(null);
 
-  async function getSearchedGroups(query: string) {
-    setGroups([{ id: 1, name: query, imageUrl: defaultImg }]);
-    //TODO: Implement actual API call to get all groups contains this query
-  }
-
-  const handleSearchSubmit = async (e: { preventDefault: () => void }) => {
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!query.trim()) {
-      alert("Please enter a group name or university");
-      return;
-    }
+    if (!query.trim()) return alert("Please enter text to search");
 
     setIsSearching(true);
-
     try {
-      // Simulate API call
-      await getSearchedGroups(query);
-      console.log("Group found:", groups);
-    } catch (error) {
-      console.error("Error searching group:", error);
-      alert("Failed to find group. Please try again.");
+      const res = await fetch(`/api/v1/groups/search?query=${encodeURIComponent(query)}`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || res.statusText);
+      }
+      const data = await res.json();
+      setGroups(data);
+    } catch (err: any) {
+      console.error("Search failed:", err);
+      alert("Search error: " + err.message);
+      setGroups([]);                            // show “no results”
     } finally {
       setIsSearching(false);
     }
   };
 
   return (
-    <div className="find-container">
-      <div className="find-groups-form">
-        {/* Find Groups Form */}
-        <form onSubmit={handleSearchSubmit}>
+      <div className="find-container">
+        <form className="find-groups-form" onSubmit={handleSearchSubmit}>
           <input
-            type="text"
-            placeholder="Search Groups with Group Names or University"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+              type="text"
+              placeholder="Search by name or university"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
           />
-          <button
-            type="submit"
-            className="find-form-submit-btn"
-            disabled={isSearching || !query.trim()}
-          >
-            {isSearching ? "Searching..." : "Search"}
+          <button type="submit" disabled={isSearching || !query.trim()}>
+            {isSearching ? "Searching…" : "Search"}
           </button>
         </form>
-      </div>
-      <div className="groups-img-container">
-        {groups ? (
-          groups.map((group) => (
-            <div key={group.id} className="group-item">
-              <div
-                className="group-image"
-                onClick={() => navigate(`/group/${group.name}`)}
-              >
-                <img src={group.imageUrl} alt="group image"></img>
-              </div>
-              <h3>{group.name}</h3>
+
+        {groups === null ? null : groups.length > 0 ? (
+            <div className="groups-img-container">
+              {groups.map((g) => (
+                  <div key={g.id} className="group-item" onClick={() => {
+                    navigate(`/group/${g.id}`);
+                    // setCurrentGroup somewhere upstream
+                  }}>
+                    <img src={g.imageUrl || defaultImg} alt={g.name} />
+                    <h3>{g.name}</h3>
+                    <p>{g.university}</p>
+                    {g.isMember && <span>✅ Joined</span>}
+                  </div>
+              ))}
             </div>
-          ))
         ) : (
-          <p>No Group Found.</p>
+            <p>No Groups Found.</p>
         )}
       </div>
-    </div>
   );
 }

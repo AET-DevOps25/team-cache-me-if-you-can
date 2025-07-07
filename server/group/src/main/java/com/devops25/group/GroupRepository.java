@@ -10,4 +10,6 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     List<Group> findByNameContainingIgnoreCase(String name); // For partial name search
     List<Group> findByUniversityContainingIgnoreCase(String university); // For partial university search
     List<Group> findByNameContainingIgnoreCaseOrUniversityContainingIgnoreCase(String nameQuery, String universityQuery); // For combined search
+    List<Group> findByOwnerUsername(String ownerUsername);
+
 }

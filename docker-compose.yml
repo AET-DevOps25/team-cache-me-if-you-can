@@ -5,17 +5,23 @@ services:
       context: ./client
       dockerfile: Dockerfile # Refers to your multi-stage client/Dockerfile
     ports:
-      - "80:3000" # Map host port 80 to container port 3000
+      - "3000:3000" # Map host port 80 to container port 3000
     depends_on:
       - gateway # Client talks to Gateway for API calls
 
     # **** THIS IS THE CRUCIAL PART FOR DEVELOPMENT ****
     # Override the CMD from the Dockerfile to run Vite's dev server
     # **** CRUCIAL CHANGE: Define entrypoint to explicitly use bash ****
-    entrypoint: /bin/sh # Or just 'sh' if bash isn't available, but node:alpine usually has bash
+    #entrypoint: /bin/sh # Or just 'sh' if bash isn't available, but node:alpine usually has bash
 
     # Now, the 'command' will be executed by the entrypoint (bash)
-    command: -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
+   # command: -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
+    entrypoint:
+      - /bin/sh
+      - -lc
+      - |
+        npm install &&
+        npm run dev -- --host 0.0.0.0 --port 3000
     volumes:
       - ./client:/app
       - /app/node_modules

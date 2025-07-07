@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -16,5 +18,8 @@ public class GroupResponse {
     private String university;
     private String imageUrl; // This will likely be a URL to the image in your files service
     private String filesServiceUrl; // The URL/ID pointing to group-specific files
-    // You might want to add members count, creation date, etc.
+    private String ownerUsername;
+    private Set<String> memberUsernames;
+
+    private boolean isMember;
 }
