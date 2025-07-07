@@ -7,6 +7,7 @@ interface GroupContextType {
   setCurrentGroup: (group: GroupData | null) => void;
   groups: GroupData[] | null;
   refreshGroups: () => Promise<void>;
+  updateGroupInList: (updatedGroup: GroupData) => void;
 }
 
 const GroupContext = createContext<GroupContextType | undefined>(undefined);
@@ -58,13 +59,23 @@ export function GroupProvider({ children }: { children: ReactNode }) {
     refreshGroups();
   }, [auth.user, refreshGroups]);
 
+  const updateGroupInList = useCallback((updatedGroup: GroupData) => {
+    setAllGroups(prevGroups => {
+      if (!prevGroups) return null;
+      return prevGroups.map(group =>
+          group.id === updatedGroup.id ? updatedGroup : group
+      );
+    });
+  }, []);
+
   return (
       <GroupContext.Provider
           value={{
             currentGroup, // Use currentGroup state here
             setCurrentGroup,
             groups: allGroups,
-            refreshGroups
+            refreshGroups,
+            updateGroupInList
           }}
       >
         {children}

@@ -34,9 +34,14 @@ export default function Group() {
   }, [auth.user, setCurrentGroup, activeView, refreshGroups]); // Added refreshGroups to dependencies
 
   // Filter groups for "My Groups" display
-  const myGroups = groups ? groups.filter(
-      (g) => auth.user && (g.ownerUsername === auth.user || g.isMember)
-  ) : [];
+  const myGroups = groups
+      ? groups.filter(
+          (g) =>
+              auth.user &&
+              (g.ownerUsername === auth.user ||
+                  (g.memberUsernames && g.memberUsernames.includes(auth.user)))
+      )
+      : [];
 
   const displayedGroups = auth.user && !showAllGroups ? myGroups : groups;
 

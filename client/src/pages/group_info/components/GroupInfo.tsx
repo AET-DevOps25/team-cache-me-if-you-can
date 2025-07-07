@@ -7,9 +7,15 @@ import { EditGroupForm } from "./EditGroupForm";
 import defaultImg from "../../../local_img/default.jpg"; // Adjust path as needed
 
 export function GroupInfo() {
-    const { currentGroup, setCurrentGroup, refreshGroups } = useGroup();
+    const {
+        currentGroup,
+        setCurrentGroup,
+        refreshGroups,
+        updateGroupInList
+    } = useGroup();
     const { user,token } = useAuth(); // Get the authenticated username
     const [isEditing, setIsEditing] = useState(false);
+
 
     if (!currentGroup) {
         return <p>Select a group to see its info.</p>;
@@ -32,6 +38,8 @@ export function GroupInfo() {
              await refreshGroups();
              const updated = await res.json();
              setCurrentGroup(updated);
+             updateGroupInList(updated);
+             await refreshGroups();
          };
 
      // Handler to leave
@@ -46,6 +54,7 @@ export function GroupInfo() {
            if (!res.ok) return alert("Leave failed");
            const updated = await res.json();
            setCurrentGroup(updated);
+           updateGroupInList(updated);
            await refreshGroups();
          };
     const handleUpdateSuccess = (updatedGroup: GroupData) => {
