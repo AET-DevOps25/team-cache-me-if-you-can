@@ -151,7 +151,7 @@ class WeaviateIndexer:
             if collection.batch.failed_objects:
                 logger.error(f"Failed to index {len(collection.batch.failed_objects)} documents.")
                 for failed_obj in collection.batch.failed_objects:
-                    logger.error(f"  Failed object: {failed_obj.message}, original: {failed_obj.original_uuid}, properties: {failed_obj.original_properties}")
+                    logger.error(f"  Failed object: {failed_obj.message}, original_uuid: {failed_obj.original_uuid}")
             else:
                 logger.info(f"Successfully indexed {len(documents)} documents into '{self.index_name}'.")
 

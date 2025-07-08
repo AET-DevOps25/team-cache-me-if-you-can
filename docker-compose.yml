@@ -22,6 +22,7 @@ services:
       - |
         npm install &&
         npm run dev -- --host 0.0.0.0 --port 3000
+
     volumes:
       - ./client:/app
       - /app/node_modules
@@ -53,6 +54,7 @@ services:
       #GROUP_SERVICE_URL: http://group-service:8083
       GROUP_SERVICE_URL:   http://group:8083
 
+
   files:
     build:
       context: ./server/files
@@ -80,6 +82,7 @@ services:
     image: mysql:8.0.33
     container_name: mysql
     user: "999:999" # Keep this, it's good practice
+
     ports:
       - "3306:3306"
     volumes:
@@ -87,6 +90,7 @@ services:
       - ./environment/db_init:/docker-entrypoint-initdb.d
       - ./environment/volume/conf.d:/etc/mysql/conf.d
     env_file: "environment/.env.docker.mysql"
+
     command:
       - --lower-case-table-names=1
       - --socket=/tmp/mysql.sock
@@ -102,7 +106,7 @@ services:
           "127.0.0.1",
           "-u",
           "root",
-          "-p$$MYSQL_ROOT_PASSWORD", # **MAKE SURE THIS IS $$**
+          "-p$$MYSQL_ROOT_PASSWORD", 
         ]
       interval: 10s
       timeout: 5s

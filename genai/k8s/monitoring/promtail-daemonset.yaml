@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: promtail
-  namespace: cache-me-if-you-can-genai
+  namespace: dev
   labels:
     app: promtail
 spec:

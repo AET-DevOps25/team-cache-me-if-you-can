@@ -1,4 +1,3 @@
-// src/pages/home/components/Group.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./group.css";
@@ -15,10 +14,12 @@ export default function Group() {
   const [activeView, setActiveView] = useState<"groups" | "create" | "search">(
       "groups"
   );
+
   // New state to control if "All Groups" are being shown or "My Groups"
   const [showAllGroups, setShowAllGroups] = useState(false);
 
   const navigate = useNavigate();
+
 
   function clickGroup(id: number, group: GroupData) {
     navigate(`/group/${id}`);
