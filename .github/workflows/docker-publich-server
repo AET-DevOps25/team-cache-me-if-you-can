@@ -1,0 +1,42 @@
+name: Publish Server Docker Images
+
+on:
+  push:
+    branches:
+      - workflows/publish-group-service-and-user
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push user-service
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/user-service:latest ./server/user
+          docker push ghcr.io/${{ github.repository_owner }}/user-service:latest
+
+      - name: Build and push group-service
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/group-service:latest ./server/group
+          docker push ghcr.io/${{ github.repository_owner }}/group-service:latest
+
+      - name: Build and push gateway-service
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/gateway-service:latest ./server/gateway
+          docker push ghcr.io/${{ github.repository_owner }}/gateway-service:latest
