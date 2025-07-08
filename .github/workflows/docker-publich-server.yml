@@ -28,15 +28,18 @@ jobs:
 
       - name: Build and push user-service
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner | lower }}/user-service:latest ./server/user
-          docker push ghcr.io/${{ github.repository_owner | lower }}/user-service:latest
+          REPO_OWNER_LOWERCASE=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t ghcr.io/${{ REPO_OWNER_LOWERCASE }}/user-service:latest ./server/user
+          docker push ghcr.io/${{ REPO_OWNER_LOWERCASE }}/user-service:latest
 
       - name: Build and push group-service
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner | lower }}/group-service:latest ./server/group
-          docker push ghcr.io/${{ github.repository_owner | lower }}/group-service:latest
+          REPO_OWNER_LOWERCASE=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t ghcr.io/${{ REPO_OWNER_LOWERCASE }}/group-service:latest ./server/group
+          docker push ghcr.io/${{ REPO_OWNER_LOWERCASE }}/group-service:latest
 
       - name: Build and push gateway-service
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner | lower }}/gateway-service:latest ./server/gateway
-          docker push ghcr.io/${{ github.repository_owner | lower }}/gateway-service:latest
+          REPO_OWNER_LOWERCASE=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t ghcr.io/${{ REPO_OWNER_LOWERCASE }}/gateway-service:latest ./server/gateway
+          docker push ghcr.io/${{ REPO_OWNER_LOWERCASE }}/gateway-service:latest
