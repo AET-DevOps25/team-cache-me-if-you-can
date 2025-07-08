@@ -44,4 +44,4 @@ async def summarize_document_endpoint(
         raise HTTPException(
             status_code=500,
             detail=f"An unexpected server error occurred while summarizing {source_filename}.",
-        ) 
+        )

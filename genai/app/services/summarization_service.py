@@ -51,4 +51,4 @@ class SummarizationService:
 
 def get_summarization_service() -> SummarizationService:
     # Basic factory function, can be improved with singleton pattern or DI
-    return SummarizationService() 
+    return SummarizationService()
