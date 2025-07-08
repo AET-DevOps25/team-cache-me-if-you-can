@@ -120,9 +120,7 @@ def test_query_document_empty_question(chat_test_client: TestClient):
     """
     Tests the behavior with an empty question.
     """
-    response = chat_test_client.post(
-        "/api/v1/chat/query/sync", json={"question": "   "}
-    )  # Empty or whitespace only
+    response = chat_test_client.post("/api/v1/chat/query/sync", json={"question": "   "})  # Empty or whitespace only
     assert response.status_code == 400
 
 
@@ -130,9 +128,7 @@ def test_query_document_no_question_field(chat_test_client: TestClient):
     """
     Tests the behavior when the question field is missing.
     """
-    response = chat_test_client.post(
-        "/api/v1/chat/query/sync", json={}
-    )  # Missing question field
+    response = chat_test_client.post("/api/v1/chat/query/sync", json={})  # Missing question field
     # FastAPI should return 422 for validation error
     assert response.status_code == 422
 
@@ -194,9 +190,7 @@ def test_get_query_result_success(chat_test_client: TestClient, mocker):
     mock_async_result.return_value.status = "SUCCESS"
     mock_result = {
         "answer": "The task is complete.",
-        "source_documents": [
-            {"page_content": "doc1", "metadata": {"source": "s1", "page_number": 1}}
-        ],
+        "source_documents": [{"page_content": "doc1", "metadata": {"source": "s1", "page_number": 1}}],
     }
     mock_async_result.return_value.get.return_value = mock_result
 
@@ -209,6 +203,7 @@ def test_get_query_result_success(chat_test_client: TestClient, mocker):
     assert data["status"] == "SUCCESS"
     assert data["result"]["answer"] == "The task is complete."
     assert len(data["result"]["source_documents"]) == 1
+
 
 # Remove old module-level client and teardown_module if they exist
 # (No explicit teardown_module was in the previous version of this specific file from snippets)

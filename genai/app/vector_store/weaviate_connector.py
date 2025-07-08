@@ -165,15 +165,15 @@ class WeaviateIndexer:
         """
         try:
             collection = self.client.collections.get(self.index_name)
-            
+
             # Use a query to fetch distinct source properties
             response = collection.query.fetch_objects(
                 return_properties=["source"],
             )
-            
+
             # Process the response to get unique source filenames
             unique_sources = {obj.properties["source"] for obj in response.objects if "source" in obj.properties}
-            
+
             # Return a list of dictionaries as per the DocumentResponse model
             return [{"filename": source, "metadata": {}} for source in unique_sources]
 
