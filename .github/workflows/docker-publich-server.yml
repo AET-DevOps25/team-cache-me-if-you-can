@@ -28,15 +28,15 @@ jobs:
 
       - name: Build and push user-service
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/user-service:latest ./server/user
-          docker push ghcr.io/${{ github.repository_owner }}/user-service:latest
+          docker build -t ghcr.io/${{ github.repository_owner | lower }}/user-service:latest ./server/user
+          docker push ghcr.io/${{ github.repository_owner | lower }}/user-service:latest
 
       - name: Build and push group-service
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/group-service:latest ./server/group
-          docker push ghcr.io/${{ github.repository_owner }}/group-service:latest
+          docker build -t ghcr.io/${{ github.repository_owner | lower }}/group-service:latest ./server/group
+          docker push ghcr.io/${{ github.repository_owner | lower }}/group-service:latest
 
       - name: Build and push gateway-service
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/gateway-service:latest ./server/gateway
-          docker push ghcr.io/${{ github.repository_owner }}/gateway-service:latest
+          docker build -t ghcr.io/${{ github.repository_owner | lower }}/gateway-service:latest ./server/gateway
+          docker push ghcr.io/${{ github.repository_owner | lower }}/gateway-service:latest
