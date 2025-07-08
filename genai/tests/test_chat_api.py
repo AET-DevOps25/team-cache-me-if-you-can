@@ -53,7 +53,14 @@ class MockRAGSystem:
     async def invoke_chain(self, query: str):
         if "error_query" in query:
             raise ValueError("Simulated RAG system error")
-        return "This is a mocked answer to your question: " + query
+
+        # Simulate document retrieval to match the expected dictionary output
+        source_documents = await self.retriever.aget_relevant_documents(query)
+
+        return {
+            "answer": "This is a mocked answer to your question: " + query,
+            "source_documents": source_documents,
+        }
 
 
 async def get_mock_rag_system_instance():
