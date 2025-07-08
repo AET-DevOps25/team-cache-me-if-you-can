@@ -251,6 +251,42 @@ def get_retriever(k: int = DEFAULT_TOP_K) -> BaseRetriever:
     )
 
 
+async def get_all_documents_for_source(source_filename: str) -> List[LangchainDocument]:
+    """
+    Retrieves all document chunks associated with a specific source filename from Weaviate.
+    """
+    client = get_weaviate_client()
+    collection = client.collections.get(settings.WEAVIATE_INDEX_NAME)
+
+    try:
+        response = collection.query.fetch_objects(
+            filters=wvc.query.Filter.by_property("source").equal(source_filename),
+            # Fetch all matching objects. Be cautious with very large result sets.
+            # Consider adding a limit if performance becomes an issue.
+            limit=1000,  # A reasonable upper limit for chunks per document
+        )
+
+        documents = [
+            LangchainDocument(
+                page_content=obj.properties["text"],
+                metadata={
+                    "source": obj.properties.get("source", "Unknown"),
+                    "chunk_index": obj.properties.get("chunk_index", -1),
+                },
+            )
+            for obj in response.objects
+        ]
+
+        # Sort by chunk_index to reconstruct the document order
+        documents.sort(key=lambda doc: doc.metadata.get("chunk_index", -1))
+
+        logger.info(f"Retrieved {len(documents)} document chunks for source: {source_filename}")
+        return documents
+    except Exception as e:
+        logger.error(f"Failed to retrieve all documents for source {source_filename}: {e}", exc_info=True)
+        return []
+
+
 def close_weaviate_connection():
     """Closes the global Weaviate client connection if it's open."""
     global _weaviate_client

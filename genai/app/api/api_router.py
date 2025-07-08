@@ -1,11 +1,12 @@
 from fastapi import APIRouter
-from app.api.endpoints import documents, chat, doc_processing
+from app.api.endpoints import documents, chat, doc_processing, summarization
 
 api_router = APIRouter()
 
 api_router.include_router(documents.router, prefix="/documents", tags=["documents"])
 api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(doc_processing.router, prefix="/doc_processing", tags=["doc_processing"])
+api_router.include_router(summarization.router, prefix="/documents", tags=["summarization"])
 
 
 # Health check endpoint
