@@ -4,6 +4,7 @@ import com.devops25.user.config.JwtService;
 import com.devops25.user.dto.AuthRequest;
 import com.devops25.user.dto.AuthResponse;
 import com.devops25.user.exceptions.InvalidRequestException;
+import com.devops25.user.exceptions.UsernameTakenException; // NEW Import
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -42,6 +43,12 @@ class AuthServiceTest {
         AuthRequest request = new AuthRequest("testuser", "password", "Test University");
         when(repository.findByUsername("testuser")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
+        // Mock save to return the user that would be saved, including the university
+        when(repository.save(any(com.devops25.user.User.class))).thenAnswer(invocation -> {
+            com.devops25.user.User user = invocation.getArgument(0);
+            user.setId(1L); // Simulate ID being set by DB
+            return user;
+        });
 
         AuthResponse response = authService.register(request);
 
@@ -51,13 +58,14 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_ExistingUser_ReturnsUsernameExists() {
+    void register_ExistingUser_ThrowsUsernameExistsException() { // Renamed test method
         AuthRequest request = new AuthRequest("existinguser", "password", null);
         when(repository.findByUsername("existinguser")).thenReturn(Optional.of(new com.devops25.user.User()));
 
-        AuthResponse response = authService.register(request);
+        assertThrows(UsernameTakenException.class, () -> {
+            authService.register(request);
+        });
 
-        assertEquals("Username already exists", response.getMessage());
         verify(repository, never()).save(any(com.devops25.user.User.class));
     }
 
@@ -80,6 +88,7 @@ class AuthServiceTest {
         com.devops25.user.User user = com.devops25.user.User.builder()
                 .username("validuser")
                 .password("encodedPass")
+                .university("TestUni") // Ensure university is set for the mock user
                 .build();
 
         // Mock authentication
@@ -91,11 +100,14 @@ class AuthServiceTest {
 
         when(jwtService.generateToken(user)).thenReturn("generatedToken");
 
+        when(repository.findByUsername("validuser")).thenReturn(Optional.of(user));
+
         AuthResponse response = authService.authenticate(request);
 
         assertEquals("Login successful", response.getMessage());
         assertEquals("validuser", response.getUsername());
         assertEquals("generatedToken", response.getToken());
+        assertEquals("TestUni", response.getUniversity()); // Verify university is present
     }
 
     @Test

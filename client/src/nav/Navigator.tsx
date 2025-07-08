@@ -27,9 +27,13 @@ export default function Navigator() {
             <div className="topRight">
                 {auth.user ? (
                     <>
-                        <Link to="/profile" className="nav-link">
-                            {auth.user}
-                        </Link>
+                        <span
+                            className="nav-link username-link"
+                            onClick={() => navigate("/")}
+                            style={{ cursor: "pointer" }}
+                        >
+                          {auth.user}
+                        </span>
                         <span className="link-separator"> | </span>
                         <a onClick={logout} className="nav-link logOut"> {/* Changed onClick to call the new logout function */}
                             Log out

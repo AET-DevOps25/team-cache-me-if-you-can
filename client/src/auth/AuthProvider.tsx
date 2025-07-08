@@ -11,7 +11,7 @@ interface AuthContextType {
   user: string | null;
   loginAction: (formData: LoginFormData) => Promise<boolean>;
   logOut: () => void;
-  isTokenValidating: boolean;
+  isTokenValidating: boolean; // NEW: Add this to context
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,15 +19,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState(localStorage.getItem("username") || null);
   const [token, setToken] = useState(localStorage.getItem("authToken") || null);
-  const [isTokenValidating, setIsTokenValidating] = useState(true);
+  const [isTokenValidating, setIsTokenValidating] = useState(true); // NEW: Initial state is true
 
-  // Validate token on component mount
   useEffect(() => {
     const validateToken = async () => {
       const storedToken = localStorage.getItem("authToken");
+      const storedUsername = localStorage.getItem("username");
 
       if (!storedToken) {
-        setIsTokenValidating(false);
+        setIsTokenValidating(false); // No token, validation done.
         return;
       }
 
@@ -40,25 +40,35 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
 
         if (response.ok) {
-          const user = localStorage.getItem("username");
-          setUser(user);
+          // If token is valid, set user and token (they might already be set but ensures consistency)
+          setUser(storedUsername);
           setToken(storedToken);
+          message.success("Session re-validated successfully!"); // Optional: user feedback
         } else {
+          // If token is invalid/expired, clear local storage
           localStorage.removeItem("username");
           localStorage.removeItem("authToken");
+          setUser(null);
+          setToken(null);
+          message.info("Session expired or invalid. Please log in again.");
         }
       } catch (error) {
         console.error("Token validation error:", error);
-        message.error("Failed to validate session");
+        message.error("Failed to validate session. Please log in again.");
+        localStorage.removeItem("username");
+        localStorage.removeItem("authToken");
+        setUser(null);
+        setToken(null);
       } finally {
-        setIsTokenValidating(false);
+        setIsTokenValidating(false); // Validation complete, regardless of outcome
       }
     };
 
     validateToken();
-  }, []);
+  }, []); // Run only on mount
 
   const loginAction = async (formData: LoginFormData): Promise<boolean> => {
+    setIsTokenValidating(true); // Set to true during login
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -85,6 +95,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error("Network error:", err);
       message.error("Login failed. Please try again later.");
       return false;
+    } finally {
+      setIsTokenValidating(false); // Set to false after login attempt
     }
   };
 
@@ -93,6 +105,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     localStorage.removeItem("username");
     localStorage.removeItem("authToken");
+    message.info("You have been logged out."); // Optional: user feedback
+    // No need to set isTokenValidating here, as we are explicitly logging out.
   };
 
   return (
