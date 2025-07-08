@@ -29,17 +29,17 @@ jobs:
       - name: Build and push user-service
         run: |
           REPO_OWNER_LOWERCASE=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t ghcr.io/${{ REPO_OWNER_LOWERCASE }}/user-service:latest ./server/user
-          docker push ghcr.io/${{ REPO_OWNER_LOWERCASE }}/user-service:latest
+          docker build -t ghcr.io/${REPO_OWNER_LOWERCASE}/user-service:latest ./server/user
+          docker push ghcr.io/${REPO_OWNER_LOWERCASE}/user-service:latest
 
       - name: Build and push group-service
         run: |
           REPO_OWNER_LOWERCASE=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t ghcr.io/${{ REPO_OWNER_LOWERCASE }}/group-service:latest ./server/group
-          docker push ghcr.io/${{ REPO_OWNER_LOWERCASE }}/group-service:latest
+          docker build -t ghcr.io/${REPO_OWNER_LOWERCASE}/group-service:latest ./server/group
+          docker push ghcr.io/${REPO_OWNER_LOWERCASE}/group-service:latest
 
       - name: Build and push gateway-service
         run: |
           REPO_OWNER_LOWERCASE=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t ghcr.io/${{ REPO_OWNER_LOWERCASE }}/gateway-service:latest ./server/gateway
-          docker push ghcr.io/${{ REPO_OWNER_LOWERCASE }}/gateway-service:latest
+          docker build -t ghcr.io/${REPO_OWNER_LOWERCASE}/gateway-service:latest ./server/gateway
+          docker push ghcr.io/${REPO_OWNER_LOWERCASE}/gateway-service:latest
