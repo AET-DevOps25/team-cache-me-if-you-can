@@ -1,16 +1,24 @@
-version: "3.8"
-
 services:
   client:
+    # Use the existing Dockerfile to build the base image, but override how it's run
     build:
-      context: .
-      dockerfile: Dockerfile.client-nginx
+      context: ./client
+      dockerfile: Dockerfile # Refers to your multi-stage client/Dockerfile
     ports:
-      - "80:80"
+      - "80:3000" # Map host port 80 to container port 3000
     depends_on:
-      - gateway
-      - user
-      - files
+      - gateway # Client talks to Gateway for API calls
+
+    # **** THIS IS THE CRUCIAL PART FOR DEVELOPMENT ****
+    # Override the CMD from the Dockerfile to run Vite's dev server
+    # **** CRUCIAL CHANGE: Define entrypoint to explicitly use bash ****
+    entrypoint: /bin/sh # Or just 'sh' if bash isn't available, but node:alpine usually has bash
+
+    # Now, the 'command' will be executed by the entrypoint (bash)
+    command: -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
 
   user:
     build:
@@ -18,32 +26,24 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
+    container_name: user-service
+    env_file: "environment/.env.docker.user"
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   gateway:
     build:
       context: ./server/gateway
-      dockerfile: Dockerfile.gateway
-    ports:
-      - "8080:8080"
-    environment:
-      USER_SERVICE_URL: http://user:8081
-      FILES_SERVICE_URL: http://files:8082
-      GENAI_SERVICE_URL: http://genai:8000
+    ports: ['8080:8080']
+    container_name: gateway-service
     depends_on:
       - user
       - files
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
+    environment:
+      USER_SERVICE_URL: http://user-service:8081
+      FILES_SERVICE_URL: http://files-service:8082
+      GENAI_SERVICE_URL: http://genai-app:8000 # Assuming this service exists
 
   files:
     build:
@@ -51,31 +51,42 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8082:8082"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
+    container_name: files-service
+    env_file: "environment/.env.docker.files"
     depends_on:
-      - mysql
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
+      mysql:
+        condition: service_healthy
 
   mysql:
     image: mysql:8.0.33
+    container_name: mysql
+    user: "999:999" # Good practice for non-root user
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./environment/db_init:/docker-entrypoint-initdb.d
       - ./environment/volume/conf.d:/etc/mysql/conf.d
-    env_file:
-      - environment/.env.docker.mysql
+    env_file: "environment/.env.docker.mysql"
+    environment:
+      MYSQL_ROOT_PASSWORD: StrongRootPass123! # Best to use a secret for this
     command:
       - --lower-case-table-names=1
+      - --socket=/tmp/mysql.sock
+      - --pid-file=/tmp/mysql.pid
       - --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-u",
+          "root",
+          "-p$MYSQL_ROOT_PASSWORD", # Use $ for shell variable expansion
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

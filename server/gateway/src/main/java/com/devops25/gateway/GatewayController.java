@@ -17,7 +17,9 @@ import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 
 @RestController
-@CrossOrigin(origins = {"https://cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de"})
+@CrossOrigin(origins = {"https://cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de",
+        "http://localhost",
+        "http://localhost:3000",})
 public class GatewayController {
 
     private final WebClient webClient;
