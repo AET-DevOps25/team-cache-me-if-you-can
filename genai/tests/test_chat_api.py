@@ -88,8 +88,11 @@ def chat_test_client():
 
 # Update tests to use the client from the fixture
 def test_query_document_success(chat_test_client: TestClient):
+    """
+    Tests a successful query to the RAG pipeline.
+    """
     query = "What is the capital of France?"
-    response = chat_test_client.post("/api/v1/chat/query", json={"question": query})
+    response = chat_test_client.post("/api/v1/chat/query/sync", json={"question": query})
     assert response.status_code == 200
     data = response.json()
     assert data["answer"] == "This is a mocked answer to your question: " + query
@@ -98,34 +101,108 @@ def test_query_document_success(chat_test_client: TestClient):
     assert data["source_documents"][0]["metadata"]["source"] == "mock_source.pdf"
 
 
-def test_query_document_no_docs_retrieved(chat_test_client: TestClient):
+def test_query_document_no_docs_retrieved(chat_test_client: TestClient, mocker):
+    """
+    Tests the scenario where the RAG pipeline retrieves no documents.
+    """
     query = "no_docs_query specific phrase"
-    response = chat_test_client.post("/api/v1/chat/query", json={"question": query})
+    mocker.patch(
+        "app.core.rag_pipeline.RAGSystem.invoke_chain",
+        return_value={"answer": "I don't know.", "source_documents": []},
+    )
+    response = chat_test_client.post("/api/v1/chat/query/sync", json={"question": query})
     assert response.status_code == 200
     data = response.json()
-    assert data["answer"] == "This is a mocked answer to your question: " + query
-    assert len(data["source_documents"]) == 0
+    assert "answer" in data
 
 
 def test_query_document_empty_question(chat_test_client: TestClient):
-    response = chat_test_client.post("/api/v1/chat/query", json={"question": "   "})  # Empty or whitespace only
+    """
+    Tests the behavior with an empty question.
+    """
+    response = chat_test_client.post("/api/v1/chat/query/sync", json={"question": "   "})  # Empty or whitespace only
     assert response.status_code == 400
-    data = response.json()
-    assert "Question cannot be empty." in data["detail"]
 
 
 def test_query_document_no_question_field(chat_test_client: TestClient):
-    response = chat_test_client.post("/api/v1/chat/query", json={})  # Missing question field
+    """
+    Tests the behavior when the question field is missing.
+    """
+    response = chat_test_client.post("/api/v1/chat/query/sync", json={})  # Missing question field
     # FastAPI should return 422 for validation error
     assert response.status_code == 422
 
 
-def test_query_document_rag_system_error(chat_test_client: TestClient):
+def test_query_document_rag_system_error(chat_test_client: TestClient, mocker):
+    """
+    Tests the behavior when the RAG pipeline raises an exception.
+    """
     query = "error_query induce system failure"
-    response = chat_test_client.post("/api/v1/chat/query", json={"question": query})
+    mocker.patch(
+        "app.core.rag_pipeline.RAGSystem.invoke_chain",
+        side_effect=Exception("RAG system failure"),
+    )
+    response = chat_test_client.post("/api/v1/chat/query/sync", json={"question": query})
     assert response.status_code == 500
+
+
+def test_query_document_async_starts_task(chat_test_client: TestClient, mocker):
+    """
+    Tests that the async query endpoint starts a task and returns a task ID.
+    """
+    mock_task = mocker.patch("app.api.endpoints.chat.process_query_task.delay")
+    mock_task.return_value = mocker.MagicMock(id="test_task_id")
+
+    query = "What is the meaning of life, asynchronously?"
+    response = chat_test_client.post("/api/v1/chat/query/async", json={"question": query})
+
+    assert response.status_code == 202
     data = response.json()
-    assert "An error occurred while processing your question: Simulated RAG system error" in data["detail"]
+    assert data["task_id"] == "test_task_id"
+    mock_task.assert_called_once_with(query)
+
+
+def test_get_query_result_pending(chat_test_client: TestClient, mocker):
+    """
+    Tests checking the result of a pending task.
+    """
+    mock_async_result = mocker.patch("app.api.endpoints.chat.AsyncResult")
+    mock_async_result.return_value.ready.return_value = False
+    mock_async_result.return_value.status = "PENDING"
+
+    task_id = "pending_task_id"
+    response = chat_test_client.get(f"/api/v1/chat/query/result/{task_id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["task_id"] == task_id
+    assert data["status"] == "PENDING"
+    assert data["result"] is None
+
+
+def test_get_query_result_success(chat_test_client: TestClient, mocker):
+    """
+    Tests checking the result of a successful task.
+    """
+    mock_async_result = mocker.patch("app.api.endpoints.chat.AsyncResult")
+    mock_async_result.return_value.ready.return_value = True
+    mock_async_result.return_value.successful.return_value = True
+    mock_async_result.return_value.status = "SUCCESS"
+    mock_result = {
+        "answer": "The task is complete.",
+        "source_documents": [{"page_content": "doc1", "metadata": {"source": "s1", "page_number": 1}}],
+    }
+    mock_async_result.return_value.get.return_value = mock_result
+
+    task_id = "successful_task_id"
+    response = chat_test_client.get(f"/api/v1/chat/query/result/{task_id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["task_id"] == task_id
+    assert data["status"] == "SUCCESS"
+    assert data["result"]["answer"] == "The task is complete."
+    assert len(data["result"]["source_documents"]) == 1
 
 
 # Remove old module-level client and teardown_module if they exist

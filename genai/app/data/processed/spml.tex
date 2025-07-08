@@ -1,0 +1,170 @@
+
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\title{SPML Summer 2023}
+\author{Generative AI}
+\date{\today}
+\begin{document}
+\maketitle
+\section{Signal Processing and Machine Learning (SPML) -- Summer 2023}
+
+\subsection{Generative AI}
+
+\begin{flushright}
+July 6, 2025
+\end{flushright}
+
+\section{Overview of the Course}
+
+The course has evolved from an introduction to basic machine learning (ML) concepts to covering Generative Modeling and Generative AI within the context of Signal Processing (SP).
+
+\subsection{Tentative Outline}
+\begin{itemize}
+    \item Part I -- Estimation and Regression
+    \item Part II -- Generative Modeling
+    \item Part III -- Applications
+\end{itemize}
+
+\section{Part I -- Estimation and Regression}
+
+\subsection{Introduction}
+
+What is the difference between estimation and regression? In both cases, we want to find the relationship between variables. Estimation is solely based on observations of random variables, whereas regression requires observations of pairs consisting of dependent and independent random variables.
+
+\subsection{Estimation}
+
+Suppose we have an estimator:
+\begin{equation}
+\hat{y} = 2
+\end{equation}
+
+Statistical models are represented explicitly via data samples:
+\begin{equation}
+(x_i, y_i) \in S, \quad |S| = s
+\end{equation}
+where the observed variable \( x \in \mathbb{R} \) has the distribution
+\begin{equation}
+x_i \sim f(x_i) = \int f_{X,Y}(x_i, y) \, dy
+\end{equation}
+
+if a statistical model exists. The estimated variable \( y \in \mathbb{R}^m \) is characterized by the conditional distribution:
+\begin{equation}
+y_i \sim f_{Y|X}(y_i | x)
+\end{equation}
+
+\subsection{Model Assumptions and Estimation}
+
+In cases where a statistical model is partially or fully available, the inference process (handled by the SSP team) aims to produce optimal solutions.
+
+\subsubsection{Maximum Likelihood (ML) Estimation}
+
+When partial knowledge of the joint distribution \( f_{X,Y}(x,y) \) exists, the maximum likelihood estimator (MLE) is defined as:
+\begin{equation}
+\hat{\text{ML}} = \arg \max_{y \in \mathcal{Y}} \sum_{i=1}^n \log f_{Y|X}(y_i | x)
+\end{equation}
+assuming the observations \( Q = \{x_1, x_2, \ldots, x_q\} \) are independent and identically distributed (i.i.d.) and originate from the true, unknown \( y \).
+
+\subsection{Further Assumptions and Asymptotic Properties}
+
+\begin{itemize}
+    \item Under the assumption that \( x_i \sim f_x(x_i) \), fixed-condition ML estimators are asymptotically efficient.
+    \item As the number of samples \( n \rightarrow \infty \), the estimator \( \hat{\text{ML}} \) approaches the minimum achievable variance, the Cramér-Rao bound.
+\end{itemize}
+\begin{equation}
+\boxed{
+\text{(6)}
+}
+\end{equation}
+
+\subsection{Conditional Mean Estimation}
+
+The conditional mean estimate \( Y_{CME} \) is given by:
+\begin{equation}
+Y_{CME} = \int y \, f_{Y|X_1,\dots,X_q}(y | x_1, \dots, x_q) \, dx \, dy
+\end{equation}
+which can also be expressed as:
+\begin{equation}
+Y_{CME} = \mathbb{E}_{Y | X_1, \dots, X_q} [ y \mid X_1 = x_1, \dots, X_q = x_q ]
+\end{equation}
+
+\subsection{Conditional Mean Estimator}
+
+The conditional mean estimator (CME) of \( Y \) given \( X = x \) is:
+\begin{equation}
+\hat{Y}_{CE} = \mathbb{E}_Y [ y | X = x ] = \int y \, f_{Y|X}(y|x) \, dy
+\end{equation}
+with the conditional density proportional to the joint:
+\begin{equation}
+f_{Y|X}(y|x) \propto f_{XY}(x, y)
+\end{equation}
+where \( f_Y(y) \) is the prior distribution of \( Y \).
+
+\subsection{Optimality of the Conditional Mean Estimator}
+
+The CME minimizes the mean squared error (MSE):
+\begin{equation}
+\boxed{
+\hat{Y}_{CE} = \arg \min_Y \, \mathbb{E}_Y \left[ (Y - \hat{Y})^2 \right]
+}
+\end{equation}
+making it the optimal predictor in the MSE sense.
+
+\section{Linear Minimum MSE Estimator}
+
+Suppose the following covariances:
+\begin{align}
+C_x &= \mathrm{Var}[X] = \mathbb{E}_x \left[ (X - \mu_x)^2 \right], \\
+C_y &= \mathrm{Var}[Y] = \mathbb{E}_y \left[ (Y - \mu_y)^2 \right], \\
+C_{xy} &= \mathrm{Cov}[X, Y] = \mathbb{E}_{x,y} \left[ (X - \mu_x)(Y - \mu_y) \right],
+\end{align}
+with symmetry \( C_{xy} = C_{yx} \).
+
+The linear minimum mean square error (LMMSE) estimator for \( Y \) given \( X = x \) is:
+\begin{equation}
+\boxed{
+\hat{Y}_{LMMSE} = C_{yx} C_x^{-1} (x - \mu_x) + \mu_y
+}
+\end{equation}
+This estimator yields the linear predictor with minimal mean squared error, and the trace of the minimal MSE is:
+\begin{equation}
+\mathrm{trace} \left[ \mathrm{Cov}_Y - C_{yx} C_x^{-1} C_{xy} \right]
+\end{equation}
+
+\section{Conditional Priors}
+
+In many applications, the prior distribution \( f_Y(y) \) is known and can be computed as:
+\begin{equation}
+f_Y(y) = \int f_{Y|x}(y|x) f_x(x) \, dx
+\end{equation}
+where \( f_x(x) \) is known, and \( f_{Y|x}(y|x) \) is the conditional prior.
+
+The expected value conditioned on \( Y = y \) can then be written as:
+\begin{equation}
+\mathbb{E}_{X|Y=y} [ Y | X ] = \mathbb{E}_{X|Y=y} [ Y | X, f_{Y|x} = f_{Y|x} ]
+\end{equation}
+
+\section{Proof Sketch}
+
+The conditional expectation \( \mathbb{E}_{Y|x=z}[Y|X=x] \) can be derived from the joint distribution:
+\begin{align}
+\mathbb{E}_{Y|x=z}[Y|X=x] &= \int \int_{x,x} x_{f_{Y|x}}(x, y) \, dx \, dy \\
+&= \int \int_{x} x_{f_{Y|x}}(x|y) \, dx \, dy \\
+&= \int \left( x_{f_{Y|x}}(x|y) \, dx \right) f_{Y|x}(y) \, dy \\
+&= \int f_{x|y}(x|y) \, dx \, f_{Y}(y) \, dy \\
+&= \int_{y} f_Y(y) \, dy
+\end{align}
+This illustrates the relationship between joint and marginal distributions in the context of conditional expectations.
+
+\section{Conditional Prediction}
+
+The conditional point estimate (CPE) based on the prior is:
+\begin{equation}
+Y_{CPE} = \mathbb{E} [ d_x ] \left[ \sum_{y} y \, f_{x,y}(x | y_{x,y}) \, dy \right]
+\end{equation}
+This essentially represents an average over linear estimators, weighted by the conditional distributions.
+\end{document}

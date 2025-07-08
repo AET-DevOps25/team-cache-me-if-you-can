@@ -4,10 +4,25 @@ from app.services.document_service import (
     DocumentProcessingService,
     get_document_processing_service,
 )
-from app.models.schemas import DocumentUploadResponse
+from app.models.schemas import DocumentUploadResponse, DocumentResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.get("/", response_model=list[DocumentResponse])
+async def list_indexed_documents(
+    doc_service: DocumentProcessingService = Depends(get_document_processing_service),
+):
+    """
+    Retrieves a list of all indexed documents.
+    """
+    try:
+        documents = await doc_service.get_all_documents()
+        return documents
+    except Exception as e:
+        logger.error(f"Error retrieving documents: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve documents.")
 
 
 @router.post("/upload", response_model=DocumentUploadResponse)

@@ -1,0 +1,228 @@
+--- Page 1 ---
+Signal Processing and Machine Learning  
+(SPML) – Summer 2023
+
+The new version of the course moves from an introduction to eceiving things, draft ML to Generative Modeling or Generative AI in SP.
+
+Tentative Outline:
+
+Part I – Estimation and Regression  
+What is estimation vs. regression?  
+Similarity and differences, basics of estimation theory; basics of Regression analysis; linear regression; parametric regression; neural network-based regression.
+
+Part II – Generative Modeling  
+Generative Adversarial Networks,  
+Narrowing Flows,  
+Gaussian Mixture Models,
+
+--- Page 2 ---
+Vanataional Autoregressive
+Diffusion Models
+
+Part III — Applications
+
+Application in Parameter Estimation, e.g., in Wireless Communications.
+
+Part I — Estimation and Regression
+
+What is the difference between estimation and regression?
+In both estimation and regression, we want to find out the relationship between variables.
+Whereas estimation is only based on observations of random variables, for regression we need observations of pairs of dependent and independent random variables.
+
+--- Page 3 ---
+1. Estimation
+
+x → Estimator → y = 2
+
+Statistical models by means of explicit models  
+f_{X,Y} represented by data samples  
+\((x_i, y_i) \in S,\ |S|=s\)
+
+- observed variable \( x \in \mathbb{R} \), with  
+\[
+x_i \sim f(x_i) = \int f_{X,Y}(x_i, y) dy
+\]
+if a statistical model exists.
+
+- estimated variable \( y \in \mathbb{R}^m \), with \( y_i \sim f_{Y|X}(y_i|x) \)
+
+--- Page 4 ---
+if a statistical model exists.  
+In case that a statistical model is  
+partially or fully available, statistical  
+ignition processing (SSP) team providing  
+optimal solutions for the estimation  
+problem.  
+Maximum Likelihood (ML) Estimation  
+In case that any partial knowledge  
+f_{x,y}(x,y) is available, we define  
+\hat{y}_{ML} = argmax_{y \in Y} \sum_{x \in Q} \log f_{x|y}(x; y)  
+assuming the Q observatons of  
+the unknown true y  
+Q = x_{1}, x_{2}, ..., x_{Q}  
+are i.i.d. (-> refer to SSP course)
+
+--- Page 5 ---
+and further based on the assumption  
+x_i ≈ f_{X_i}(x_i | y)
+
+under fixed condition, MLE estimators  
+are asymptotically efficient, i.e,  
+for n → ∞, the estimator converges  
+to the minimum achievable variance  
+of the estimator (→ Cramér-Rao -  
+bound)
+
+Conditional Mean Estimation
+
+In case of free knowledge of the  
+statistical model, we obtain
+
+\[
+Y_{CME} = \int \int y f_{Y|X_{1..x_a}}(y | x_{1..x_a}) dx dy
+\]
+
+i.e.: \(Y_{CME} = E_{Y|X_{1..x_a}} [ y | X_{1..x_a} = x_{1..x_a} ]\)
+
+--- Page 6 ---
+(- conditional mean estimator)
+The core that Q=1,
+\[
+\hat{Y}_{\text{CE}}=E_{Y|X}[Y|X]
+= \int y f_{Y|X}(y|x) dy
+\]
+with \(\boldsymbol{f_{Y|X}(y|x)}= \frac{f_{XY}(x,y)f_Y(y)}{\int f_{XY}(x|x)f_Y(y) dy}\)
+
+\(\propto f_{XY}(x,y)f_Y(y)\)
+
+("proportional to")
+
+and the given prior-statics model
+\(f_Y(y)\) of the variable to be estimated.
+
+The CSE \(\hat{Y}_{\text{CE}}\) is optimal in the sense
+
+--- Page 7 ---
+that it derives the minimal mean
+squared error **(MSE)** of the parameter
+to be estimated, i.e.,
+
+\[
+Y_{*} = \arg \min_{Y \in \mathcal{Y}} E_{Y} \left[ (Y - \hat{Y})^{2} \right]
+\]
+
+with \(E_{Y_{*}}\left[ (Y - Y_{*})^{2} \right]\)
+
+= \(\int (Y - y)^{2} f_{Y_{*}|X}(y|x) dy\)
+
+(→ refer to the SSP course)
+
+Example and special case
+
+X and Y are jointly Gaussian distributed, i.e.,
+
+\[
+Z = \begin{bmatrix} X \\ Y \end{bmatrix} \in \mathbb{R}^{d+m}
+\]
+with
+
+\[
+\boldsymbol{\mu}_{Z} = \left[ \begin{array}{c} \boldsymbol{\mu}_X \\ \boldsymbol{\mu}_Y \end{array} \right]
+\]
+and
+
+\[
+\boldsymbol{\Sigma}_Z = \left[ \begin{array}{cc} \boldsymbol{\Sigma}_{XX} & \boldsymbol{\Sigma}_{XY} \\ \boldsymbol{\Sigma}_{YX} & \boldsymbol{\Sigma}_{YY} \end{array} \right]
+\]
+
+and
+
+--- Page 8 ---
+\[
+Q_z = \left[ E_x, C_{xy} \right] \text{ so that}
+\]
+
+\[
+C_x = \operatorname{Var}[X] = E_x \left[(X - \mu_x)^2\right]
+\]
+
+\[
+C_y = \operatorname{Var}[Y] = E_y \left[(Y - \mu_y)^2\right]
+\]
+
+\[
+C_{xy} = \operatorname{Cov}[X,Y] = E_{x,y} \left[(X - \mu_x)(Y - \mu_y)\right]
+\]
+
+\[
+C_{xy} = C_{yx}, \text{ then}
+\]
+
+\[
+\boxed{
+\hat{L}_{\text{MMSE}}^y = C_{yx} C_x^{-1} (x - \mu_x) + \mu_y
+}
+\]
+
+\[
+\text{is a linear estimator, also a linear minimum MSE estimator (LMMSE), which adds the minimum MSE}
+\]
+
+\[
+\text{trace} \left[\operatorname{Cov}_Y - C_{yx} C_x^{-1} C_{xy}\right]
+\]
+
+--- Page 9 ---
+(→ refer to SP course)
+Conditional Priors
+In media applications and because of methodological purposes it can be assumed that the prior \(f(y)\) is available as
+\[
+f_{Y}(y) = \int f_{Y|X}(y|x)f_{X}(x) \, dx
+\]
+with a given \(f_{X}(x)\) and a *conditional prior* \(f_{Y|X}(y|x)\), which might lie in a favorable shape. Consequently,
+\[
+E_{X|Y=x} [Y|X] = E_{X|Y=x} [Y|X, f_{Y|X=x}]
+\]
+
+Proof.
+\[
+E_{Y|X=x} [Y|X=x, E_{Y|X=x,6} [Y|X=x]
+\]
+
+--- Page 10 ---
+\[
+= \iint_{\triangle} \int_{x,y} x^2 f_{x,y}(x,y) \, dx \, dy
+\]
+
+\[
+= \iint_{\triangle} \int_{x} f_{x|y}(x|y) \, dx
+\]
+
+\[
+= \int_{y} \int_{x} f_{x|y}(x|y) \, dx \, dy
+\]
+
+\[
+= \int_{y} f_{Y}(y) \left( \int_{x} f_{x|y}(x|y) \, dx \right) dy
+\]
+
+\[
+= \int_{y} f_{Y}(y) \, dy
+\]
+
+\[
+= E_{Y}[X|Y]
+\]
+
+"Given a conditional prior for the CPE is detailed as"
+
+\[
+Y_{CPE} = E_{d|x} \left[ \sum_{y} y \, f_{Y|X,Y}(y|x,y) \, dy \right]
+\]
+
+"In case that the conditional prior"
+
+--- Page 11 ---
+% \text{CME} = E_{81x} \left[ Y_{LMSE}^1 (x, \theta, x) \right], \\
+\text{ie: it's an average of linear estimators.
+
