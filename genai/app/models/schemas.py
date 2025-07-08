@@ -9,6 +9,11 @@ class DocumentUploadResponse(BaseModel):
     error: Optional[str] = None
 
 
+class DocumentResponse(BaseModel):
+    filename: str
+    metadata: Dict[str, Any]
+
+
 class QueryRequest(BaseModel):
     question: str
     # session_id: Optional[str] = None # For chat history if needed later

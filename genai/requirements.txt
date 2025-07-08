@@ -34,6 +34,7 @@ prometheus-fastapi-instrumentator
 pytest
 pytest-asyncio
 httpx
+pytest-mock
 
 # Async tasks
 celery==5.3.6

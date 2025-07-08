@@ -159,6 +159,28 @@ class WeaviateIndexer:
             logger.error(f"Error indexing documents into '{self.index_name}': {e}", exc_info=True)
             raise
 
+    async def get_all_document_sources(self) -> List[dict]:
+        """
+        Retrieves a list of unique source documents from Weaviate.
+        """
+        try:
+            collection = self.client.collections.get(self.index_name)
+            
+            # Use a query to fetch distinct source properties
+            response = collection.query.fetch_objects(
+                return_properties=["source"],
+            )
+            
+            # Process the response to get unique source filenames
+            unique_sources = {obj.properties["source"] for obj in response.objects if "source" in obj.properties}
+            
+            # Return a list of dictionaries as per the DocumentResponse model
+            return [{"filename": source, "metadata": {}} for source in unique_sources]
+
+        except Exception as e:
+            logger.error(f"Error retrieving all document sources from '{self.index_name}': {e}", exc_info=True)
+            raise
+
 
 def get_weaviate_indexer() -> WeaviateIndexer:
     """Provides a WeaviateIndexer instance."""
