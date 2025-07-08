@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from celery.result import AsyncResult
-from app.celery_worker import process_document_task
+from app.celery_tasks.document_tasks import process_document_task
 
 router = APIRouter()
 

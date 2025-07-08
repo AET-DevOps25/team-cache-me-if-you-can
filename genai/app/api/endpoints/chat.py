@@ -1,4 +1,6 @@
 import logging
+from celery.result import AsyncResult
+from app.celery_tasks.chat_tasks import process_query_task
 
 from app.core.rag_pipeline import RAGSystem, get_rag_system_instance
 from app.models.schemas import (
@@ -6,15 +8,17 @@ from app.models.schemas import (
     QueryResponse,
     DocumentMetadata,
     SourceDocument,
+    QueryTaskResponse,
+    TaskStatusResponse,
 )
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, status
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/query", response_model=QueryResponse)
-async def query_document(
+@router.post("/query/sync", response_model=QueryResponse)
+async def query_document_sync(
     query_request: QueryRequest = Body(...),
     rag_system: RAGSystem = Depends(get_rag_system_instance),
 ):
@@ -56,3 +60,63 @@ async def query_document(
             status_code=500,
             detail=f"An error occurred while processing your question: {str(e)}",
         )
+
+
+@router.post("/query/async", response_model=QueryTaskResponse, status_code=status.HTTP_202_ACCEPTED)
+async def query_document_async(
+    query_request: QueryRequest = Body(...),
+):
+    """
+    Endpoint to ask a question about the indexed documents asynchronously.
+    This will start a background task and return a task ID.
+    """
+    if not query_request.question or not query_request.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty.")
+
+    try:
+        logger.info(f"Received async query: {query_request.question}")
+        task = process_query_task.delay(query_request.question)
+        return QueryTaskResponse(task_id=task.id)
+
+    except Exception as e:
+        logger.error(f"Error starting async query '{query_request.question}': {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred while starting the query task: {str(e)}",
+        )
+
+
+@router.get("/query/result/{task_id}", response_model=TaskStatusResponse)
+async def get_query_result(task_id: str):
+    """
+    Endpoint to check the status of a query task and get the result.
+    """
+    task_result = AsyncResult(task_id)
+
+    if task_result.ready():
+        if task_result.successful():
+            result = task_result.get()
+            answer = result.get("answer", "An error occurred while generating the answer.")
+            context_docs = result.get("source_documents", [])
+
+            retrieved_docs_for_response = []
+            for doc_data in context_docs:
+                # The document from celery might be a dict, so we reconstruct the Pydantic model
+                metadata_dict = doc_data.get("metadata", {})
+                source_doc = SourceDocument(
+                    page_content=doc_data.get("page_content"),
+                    metadata=DocumentMetadata(
+                        source=metadata_dict.get("source", "Unknown source"),
+                        page_number=metadata_dict.get("page_number"),
+                    ),
+                )
+                retrieved_docs_for_response.append(source_doc)
+
+            query_response = QueryResponse(answer=answer, source_documents=retrieved_docs_for_response)
+            return TaskStatusResponse(task_id=task_id, status=task_result.status, result=query_response)
+        else:
+            # Task failed
+            return TaskStatusResponse(task_id=task_id, status="FAILED", result=None)
+    else:
+        # Task is still pending
+        return TaskStatusResponse(task_id=task_id, status="PENDING", result=None)

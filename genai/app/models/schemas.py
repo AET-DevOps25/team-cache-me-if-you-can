@@ -31,5 +31,15 @@ class QueryResponse(BaseModel):
     error: Optional[str] = None
 
 
+class QueryTaskResponse(BaseModel):
+    task_id: str
+
+
+class TaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    result: Optional[QueryResponse] = None
+
+
 class HealthCheckResponse(BaseModel):
     status: str = "OK"
