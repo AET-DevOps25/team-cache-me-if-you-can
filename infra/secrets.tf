@@ -30,7 +30,6 @@
     type = "Opaque"
   }
 
-  # gateway-service environment secret
   resource "kubernetes_secret" "gateway_env" {
     metadata {
       name      = "gateway-env-secret"
