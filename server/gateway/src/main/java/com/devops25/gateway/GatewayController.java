@@ -168,7 +168,6 @@ public class GatewayController {
     }
 
 
-    // Route to User Service
     @RequestMapping(value = "/api/users/**", method = {
             RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.DELETE
