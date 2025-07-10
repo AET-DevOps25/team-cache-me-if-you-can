@@ -11,7 +11,8 @@ on:
 
 env:
   GHCR_REGISTRY: ghcr.io
-  IMAGE_REPO: ${{ github.repository_owner }}/team-cache-me-if-you-can
+  IMAGE_OWNER: ${{ toLower(github.repository_owner) }}
+  IMAGE_REPO: ${{ env.IMAGE_OWNER }}/team-cache-me-if-you-can
 
 jobs:
   # 1) Build & push all three services in parallel
@@ -23,7 +24,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [ user, group, gateway ]
+        service: [user, group, gateway]
       fail-fast: false
 
     steps:
