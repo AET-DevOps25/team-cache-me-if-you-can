@@ -11,8 +11,7 @@ on:
 
 env:
   GHCR_REGISTRY: ghcr.io
-  IMAGE_OWNER: aet-devops25
-  IMAGE_REPO: ${{ env.IMAGE_OWNER }}/team-cache-me-if-you-can
+  IMAGE_NAMESPACE: aet-devops25/team-cache-me-if-you-can
 
 jobs:
   # 1) Build & push all three services in parallel
@@ -38,15 +37,15 @@ jobs:
           distribution: temurin
 
       - name: Build service (skip tests)
+        working-directory: ./server/${{ matrix.service }}
         run: |
           export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
           ./gradlew clean build -x test
-        working-directory: ./server/${{ matrix.service }}
 
       - name: Run tests (allow failures)
-        run: ./gradlew test --info
         working-directory: ./server/${{ matrix.service }}
         continue-on-error: true
+        run: ./gradlew test --info
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -66,8 +65,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_REPO }}/${{ matrix.service }}-service:latest
-            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_REPO }}/${{ matrix.service }}-service:${{ github.sha }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:latest
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:${{ github.sha }}
 
   # 2) Terraform deploy
   terraform-deploy:
@@ -105,7 +104,7 @@ jobs:
         run: terraform plan -input=false
 
       - name: Terraform Apply
+        working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
-        working-directory: ./infra
         run: terraform apply -auto-approve

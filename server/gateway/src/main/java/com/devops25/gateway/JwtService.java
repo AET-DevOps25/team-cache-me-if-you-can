@@ -23,7 +23,6 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
 
-    // Only methods strictly needed by the Gateway are kept
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
