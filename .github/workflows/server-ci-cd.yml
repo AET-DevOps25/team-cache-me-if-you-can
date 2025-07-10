@@ -3,11 +3,10 @@ name: Server CI/CD
 on:
   push:
     branches:
+      - '**' # Runs on push to any branch
+  pull_request:
+    branches:
       - main
-      - files/implement-microservice
-    paths:
-      - 'server/**'
-      - '.github/workflows/server-ci-cd.yml'
 
 env:
   GHCR_REGISTRY: ghcr.io
