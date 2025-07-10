@@ -142,7 +142,6 @@ public class GroupService {
         return mapToGroupResponse(updatedGroup, usernameToLeave);
     }
 
-    // Modified mapToGroupResponse to include isMember check
     private GroupResponse mapToGroupResponse(Group group, String authenticatedUsername) {
         boolean isMember = authenticatedUsername != null && group.getMemberUsernames().contains(authenticatedUsername);
 
