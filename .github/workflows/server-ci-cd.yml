@@ -3,7 +3,7 @@ name: Server CI/CD
 on:
   push:
     branches:
-      - '**' # Runs on push to any branch
+      - '**'
   pull_request:
     branches:
       - main
