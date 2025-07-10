@@ -88,8 +88,9 @@ jobs:
           KUBECONFIG: ~/.kube/config
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
+          echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
           chmod 600 ~/.kube/config
+          kubectl config use-context student
           kubectl config set-context --current --namespace=developmentv1
 
       - name: Terraform Init
