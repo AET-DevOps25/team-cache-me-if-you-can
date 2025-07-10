@@ -11,7 +11,7 @@ on:
 
 env:
   GHCR_REGISTRY: ghcr.io
-  IMAGE_OWNER: ${{ toLower(github.repository_owner) }}
+  IMAGE_OWNER: aet-devops25
   IMAGE_REPO: ${{ env.IMAGE_OWNER }}/team-cache-me-if-you-can
 
 jobs:
@@ -38,15 +38,15 @@ jobs:
           distribution: temurin
 
       - name: Build service (skip tests)
-        working-directory: ./server/${{ matrix.service }}
         run: |
           export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
           ./gradlew clean build -x test
+        working-directory: ./server/${{ matrix.service }}
 
       - name: Run tests (allow failures)
+        run: ./gradlew test --info
         working-directory: ./server/${{ matrix.service }}
         continue-on-error: true
-        run: ./gradlew test --info
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -87,14 +87,14 @@ jobs:
         uses: azure/setup-kubectl@v3
 
       - name: Configure kubeconfig
+        env:
+          KUBECONFIG: ~/.kube/config
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
           chmod 600 ~/.kube/config
           kubectl config use-context student
           kubectl config set-context --current --namespace=developmentv1
-        env:
-          KUBECONFIG: ~/.kube/config
 
       - name: Terraform Init
         working-directory: ./infra
@@ -105,7 +105,7 @@ jobs:
         run: terraform plan -input=false
 
       - name: Terraform Apply
-        working-directory: ./infra
-        run: terraform apply -auto-approve
         env:
           KUBECONFIG: ~/.kube/config
+        working-directory: ./infra
+        run: terraform apply -auto-approve

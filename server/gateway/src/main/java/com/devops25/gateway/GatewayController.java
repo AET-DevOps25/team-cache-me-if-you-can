@@ -274,12 +274,6 @@ public class GatewayController {
         String query    = requestUri.getRawQuery();
         String targetUrl   = "http://group:8083" + incomingPath + (query != null ? "?" + query : "");
         String incomingMethod = request.getMethod().name();
-
-        /*
-        String incomingPath   = request.getURI().getPath();
-        String incomingMethod = request.getMethod().name();
-        String targetUrl      = "http://group:8083" + incomingPath;*/
-
         System.out.println("--- Gateway Routing to Group Service ---");
         System.out.println("Incoming Path: "       + incomingPath);
         System.out.println("Incoming Method: "     + incomingMethod);
