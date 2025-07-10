@@ -78,7 +78,6 @@ public class GroupController {
         try {
             authenticatedUsername = extractUsername(httpRequest);
         } catch (ResponseStatusException e) {
-            // Unauthenticated viewing allowed
         }
         GroupResponse group = groupService.getGroupById(id, authenticatedUsername);
         return ResponseEntity.ok(group);
