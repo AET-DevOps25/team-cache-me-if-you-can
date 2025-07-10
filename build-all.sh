@@ -18,4 +18,9 @@ cd ./server/files
 ./gradlew clean build -x test
 cd ../../
 
+echo "Building group service..."
+cd ./server/group
+./gradlew clean build -x test
+cd ../../
+
 echo "All JARs built successfully."

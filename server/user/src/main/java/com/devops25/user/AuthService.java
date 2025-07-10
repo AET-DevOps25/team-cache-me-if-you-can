@@ -4,6 +4,7 @@ import com.devops25.user.config.JwtService;
 import com.devops25.user.dto.AuthRequest;
 import com.devops25.user.dto.AuthResponse;
 import com.devops25.user.exceptions.InvalidRequestException;
+import com.devops25.user.exceptions.UsernameTakenException; // NEW Import
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,21 +21,17 @@ public class AuthService {
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-
     private final AuthenticationManager authenticationManager;
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
-
-
+    // Modified register method
     public AuthResponse register(AuthRequest request) {
         if (request.getUsername() == null || request.getPassword() == null) {
             throw new InvalidRequestException("Username and password are required");
         }
 
         if (repository.findByUsername(request.getUsername()).isPresent()) {
-            return AuthResponse.builder()
-                    .message("Username already exists")
-                    .build();
+            throw new UsernameTakenException("Username already exists"); // NEW: Throw exception
         }
 
         var user = User.builder()
@@ -50,7 +47,6 @@ public class AuthService {
                 .build();
     }
 
-    // AuthService.java
     public AuthResponse authenticate(AuthRequest request) {
         if (request.getUsername() == null || request.getPassword() == null) {
             throw new InvalidRequestException("Username and password are required");
@@ -63,14 +59,17 @@ public class AuthService {
                 )
         );
 
-        // Get UserDetails instead of domain User
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtService.generateToken(userDetails);
+
+        User user = repository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new InvalidRequestException("User not found after authentication"));
 
         return AuthResponse.builder()
                 .message("Login successful")
                 .username(userDetails.getUsername())
                 .token(token)
+                .university(user.getUniversity()) // Include university in response
                 .build();
     }
 }

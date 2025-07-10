@@ -1,86 +1,142 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./group.css";
+import { Find } from "./Find";
+import { Create } from "./Create";
 import defaultImg from "../../../local_img/default.jpg";
+import { useAuth } from "../../../auth/AuthProvider";
+import { useGroup } from "./GroupProvider";
+import { GroupData } from "../../../models/GroupData"; // Make sure to import GroupData
 
 export default function Group() {
-  const [groups, setGroups] = useState<Array<{
-    id: number;
-    name: string;
-    imageUrl: string;
-  }> | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
+  const { setCurrentGroup, groups, refreshGroups } = useGroup();
+  const auth = useAuth();
+  const [activeView, setActiveView] = useState<"groups" | "create" | "search">(
+      "groups"
+  );
+
+  // New state to control if "All Groups" are being shown or "My Groups"
+  const [showAllGroups, setShowAllGroups] = useState(false);
+
   const navigate = useNavigate();
 
-  async function getAllGroups() {
-    setGroups([
-      { id: 1, name: "Biology 101", imageUrl: defaultImg },
-      { id: 2, name: "Computer Science", imageUrl: defaultImg },
-      { id: 3, name: "Psychology", imageUrl: defaultImg },
-    ]);
-    //TODO: get all groups in no authentication info
-  }
 
-  async function getMyGroups() {
-    setGroups([{ id: 1, name: "Biology 101", imageUrl: defaultImg }]);
-    //TODO: get groups if user logged in
-  }
-
-  async function getUserName() {
-    //TODO: get authentication info
-    setUserName(null);
-  }
-
-  function onGroupSelect(name: string) {
-    navigate(`/group/${name}`);
+  function clickGroup(id: number, group: GroupData) {
+    navigate(`/group/${id}`);
+    setCurrentGroup(group);
   }
 
   useEffect(() => {
-    const fetchData = async () => {
-      await getUserName();
+    setCurrentGroup(null);
+    // Refresh groups whenever the user changes or activeView changes to 'groups'
+    if (activeView === "groups") {
+      refreshGroups();
+    }
+  }, [auth.user, setCurrentGroup, activeView, refreshGroups]); // Added refreshGroups to dependencies
 
-      if (userName) {
-        await getMyGroups();
-      } else {
-        await getAllGroups();
-      }
-    };
+  // Filter groups for "My Groups" display
+  const myGroups = groups
+      ? groups.filter(
+          (g) =>
+              auth.user &&
+              (g.ownerUsername === auth.user ||
+                  (g.memberUsernames && g.memberUsernames.includes(auth.user)))
+      )
+      : [];
 
-    fetchData();
-  }, [userName]);
+  const displayedGroups = auth.user && !showAllGroups ? myGroups : groups;
 
-  if (!groups && !userName) {
-    return <p>Loding...</p>;
+  if (!groups && activeView === "groups") {
+    return <p>Loading groups...</p>;
   }
 
   return (
-    <div className="groups-container">
-      <h2 className="groups-title">My Groups</h2>
+      <div className="groups-container">
+        {activeView === "groups" && (
+            <h2 className="groups-title">
+              {auth.user && !showAllGroups ? "My Groups" : "All Groups"}
+            </h2>
+        )}
 
-      {/* Action Buttons */}
-      <div className="groups-actions">
-        <button className="groups-button groups-button-margin">create</button>
-        <button className="groups-button">find</button>
-      </div>
-
-      {/* Groups Container */}
-      <div className="groups-img-container">
-        {groups ? (
-          groups.map((group) => (
-            <div key={group.id} className="group-item">
-              <div
-                className="group-image"
-                onClick={() => onGroupSelect(group.name)}
+        <div className="groups-actions">
+          {auth.user && (
+              <button
+                  className="groups-button groups-button-margin"
+                  onClick={() => {
+                    setActiveView(activeView === "create" ? "groups" : "create");
+                    // Reset showAllGroups when switching to create view
+                    setShowAllGroups(false);
+                  }}
               >
-                <img src={group.imageUrl} alt="group image"></img>
-              </div>
-              <h3>{group.name}</h3>
+                {activeView === "create" ? "Back to My Groups" : "Create Group"}
+              </button>
+          )}
+
+          <button
+              className="groups-button"
+              onClick={() => {
+                setActiveView(activeView === "search" ? "groups" : "search");
+                // Reset showAllGroups when switching to search view
+                setShowAllGroups(false);
+              }}
+          >
+            {activeView === "search"
+                ? "Back to " + (auth.user && !showAllGroups ? "My Groups" : "All Groups")
+                : "Search Groups"}
+          </button>
+
+          {auth.user && activeView === "groups" && (
+              <button
+                  className="groups-button"
+                  onClick={() => setShowAllGroups(!showAllGroups)} // Toggle showAllGroups
+              >
+                {showAllGroups ? "View My Groups" : "View All Groups"}
+              </button>
+          )}
+        </div>
+
+        {activeView === "groups" ? (
+            <div className="groups-img-container">
+              {displayedGroups && displayedGroups.length > 0 ? (
+                  displayedGroups.map((group) => (
+                      <div key={group.id} className="group-item">
+                        <div
+                            className="group-image"
+                            onClick={() => clickGroup(group.id, group)}
+                        >
+                          <img
+                              src={group.imageUrl || defaultImg}
+                              alt={`${group.name} image`}
+                          />
+                        </div>
+                        <h3>{group.name}</h3>
+                        {group.ownerUsername && (
+                            <p className="group-owner">
+                              Owner: {group.ownerUsername}
+                            </p>
+                        )}
+                        {auth.user && group.isMember && (
+                            <p className="group-member-status">✅ Member</p>
+                        )}
+                      </div>
+                  ))
+              ) : (
+                  <p>
+                    {auth.user && !showAllGroups
+                        ? "You haven't joined or created any groups yet."
+                        : "No groups available. Please create one or check back later!"}
+                  </p>
+              )}
             </div>
-          ))
+        ) : activeView === "create" ? (
+            <div className="groups-form">
+              <Create setActiveView={setActiveView} />
+            </div>
         ) : (
-          <p>Join a Group!</p>
+            <div className="groups-form">
+              <Find />
+            </div>
         )}
       </div>
-    </div>
   );
 }

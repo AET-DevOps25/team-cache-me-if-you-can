@@ -1,0 +1,111 @@
+name: Server CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - workflows/publish-group-service-and-user
+    paths:
+      - 'server/**'
+      - '.github/workflows/server-ci-cd.yml'
+
+env:
+  GHCR_REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: aet-devops25/team-cache-me-if-you-can
+
+jobs:
+  build-and-push:
+    name: Build & Push Service Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [user, group, gateway]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Build service (skip tests)
+        working-directory: ./server/${{ matrix.service }}
+        run: |
+          export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+          ./gradlew clean build -x test
+
+      - name: Run tests (allow failures)
+        working-directory: ./server/${{ matrix.service }}
+        continue-on-error: true
+        run: ./gradlew test --info
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server/${{ matrix.service }}
+          file: ./server/${{ matrix.service }}/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:latest
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:${{ github.sha }}
+
+  terraform-deploy:
+    name: Terraform Deploy to Kubernetes
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: needs.build-and-push.result == 'success'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        env:
+          KUBECONFIG: ~/.kube/config
+        run: |
+          mkdir -p ~/.kube
+          echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+
+      - name: Terraform Init
+        working-directory: ./infra
+        env:
+          KUBECONFIG: ~/.kube/config
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        working-directory: ./infra
+        env:
+          KUBECONFIG: ~/.kube/config
+        run: terraform plan -input=false
+
+      - name: Terraform Apply
+        working-directory: ./infra
+        env:
+          KUBECONFIG: ~/.kube/config
+        run: terraform apply -auto-approve

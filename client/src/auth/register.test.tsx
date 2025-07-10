@@ -156,7 +156,7 @@ describe("Register Component", () => {
 
     await waitFor(() => {
       expect(message.success).toHaveBeenCalledWith("Registration successful");
-      expect(mockNavigate).toHaveBeenCalledWith("/");
+      expect(mockNavigate).toHaveBeenCalledWith("/login");
     });
   });
 

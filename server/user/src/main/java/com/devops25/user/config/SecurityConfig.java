@@ -11,6 +11,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,6 +20,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
 
 @Configuration
 @EnableWebSecurity
@@ -30,7 +33,6 @@ public class SecurityConfig {
     private final CustomLogoutHandler customLogoutHandler;
     private final TokenBlacklistService tokenBlacklistService;
 
-
     @Bean
     public UserDetailsService userDetailsService() {
         return username ->
@@ -40,6 +42,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthFilter jwtAuthFilter(UserDetailsService uds) {
+        // Ensure JwtAuthFilter doesn't have the shouldNotFilter method if you add this WebSecurityCustomizer
         return new JwtAuthFilter(jwtService, uds);
     }
 
@@ -64,6 +67,15 @@ public class SecurityConfig {
     }
 
     @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                .requestMatchers(new AntPathRequestMatcher("/actuator/**"))
+                .requestMatchers(new AntPathRequestMatcher("/api/auth/register"))
+                .requestMatchers(new AntPathRequestMatcher("/api/auth/login"))
+                ;
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthFilter jwtAuthFilter,
@@ -72,14 +84,17 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // Keep these permitAll() requests here for authentication-related endpoints
+                        // They will still go through the filter chain, but be authorized.
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/refresh-token",
                                 "/api/auth/debug",
-                                "/api/auth/logout"
+                                "/api/auth/logout",
+                                "/api/auth/validate"
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().authenticated() // All other requests require authentication
                 )
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

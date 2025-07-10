@@ -1,14 +1,31 @@
 services:
-  nginx:
+  client:
+    # Use the existing Dockerfile to build the base image, but override how it's run
     build:
       context: ./client
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile # Refers to your multi-stage client/Dockerfile
     ports:
-      - "80:80"
+      - "3000:3000" # Map host port 80 to container port 3000
     depends_on:
-      - user
-      - gateway
-      - files
+      - gateway # Client talks to Gateway for API calls
+
+    # **** THIS IS THE CRUCIAL PART FOR DEVELOPMENT ****
+    # Override the CMD from the Dockerfile to run Vite's dev server
+    # **** CRUCIAL CHANGE: Define entrypoint to explicitly use bash ****
+    #entrypoint: /bin/sh # Or just 'sh' if bash isn't available, but node:alpine usually has bash
+
+    # Now, the 'command' will be executed by the entrypoint (bash)
+   # command: -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
+    entrypoint:
+      - /bin/sh
+      - -lc
+      - |
+        npm install &&
+        npm run dev -- --host 0.0.0.0 --port 3000
+
+    volumes:
+      - ./client:/app
+      - /app/node_modules
 
   user:
     build:
@@ -25,13 +42,18 @@ services:
   gateway:
     build:
       context: ./server/gateway
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+    ports: ['8080:8080']
     container_name: gateway-service
     depends_on:
       - user
       - files
+    environment:
+      USER_SERVICE_URL: http://user-service:8081
+      FILES_SERVICE_URL: http://files-service:8082
+      GENAI_SERVICE_URL: http://genai-app:8000
+      #GROUP_SERVICE_URL: http://group-service:8083
+      GROUP_SERVICE_URL:   http://group:8083
+
 
   files:
     build:
@@ -44,11 +66,23 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-
+  group:
+    build:
+      context: ./server/group # Path to your group service directory
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083" # Map host port 8083 to container port 8083
+    container_name: group-service
+    env_file: "environment/.env.docker.group" # Point to the new env file
+    depends_on:
+      mysql:
+        condition: service_healthy # Ensure MySQL is healthy before starting group service
+    command: [ "-Dspring.profiles.active=dev", "-Dlogging.level.root=DEBUG", "-Dlogging.level.org.springframework=DEBUG", "-Dlogging.level.com.devops25=TRACE" ]
   mysql:
     image: mysql:8.0.33
     container_name: mysql
-    user: "999:999"
+    user: "999:999" # Keep this, it's good practice
+
     ports:
       - "3306:3306"
     volumes:
@@ -56,8 +90,7 @@ services:
       - ./environment/db_init:/docker-entrypoint-initdb.d
       - ./environment/volume/conf.d:/etc/mysql/conf.d
     env_file: "environment/.env.docker.mysql"
-    environment:
-      MYSQL_ROOT_PASSWORD: StrongRootPass123!
+
     command:
       - --lower-case-table-names=1
       - --socket=/tmp/mysql.sock
@@ -73,12 +106,13 @@ services:
           "127.0.0.1",
           "-u",
           "root",
-          "-p${MYSQL_ROOT_PASSWORD}",
+          "-p$$MYSQL_ROOT_PASSWORD", 
         ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     restart: unless-stopped
+
 volumes:
   mysql_data:

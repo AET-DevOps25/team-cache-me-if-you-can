@@ -5,6 +5,7 @@ import com.devops25.user.config.JwtService;
 import com.devops25.user.config.SecurityConfig;
 import com.devops25.user.dto.AuthRequest;
 import com.devops25.user.dto.AuthResponse;
+import com.devops25.user.exceptions.UsernameTakenException; // Import the new exception
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -68,13 +69,13 @@ class AuthControllerTest {
     @Test
     void register_ExistingUsername_ReturnsConflict() throws Exception {
         when(authService.register(any(AuthRequest.class)))
-                .thenReturn(AuthResponse.builder().message("Username already exists").build());
+                .thenThrow(new UsernameTakenException("Username already exists")); // Simulate the service throwing
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"existinguser\",\"password\":\"pass123\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Username already exists"));
+                .andExpect(status().isConflict()) // Expect CONFLICT status
+                .andExpect(jsonPath("$.message").value("Username already exists")); // Expect 'message' field
     }
 
     @Test
@@ -104,6 +105,6 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"invaliduser\",\"password\":\"wrongpass\"}"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Invalid username or password"));
+                .andExpect(jsonPath("$.message").value("Invalid username or password"));
     }
 }

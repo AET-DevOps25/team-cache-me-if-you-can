@@ -8,9 +8,18 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import RunnablePassthrough, RunnableParallel
+from langchain_core.runnables import RunnablePassthrough, RunnableParallel, RunnableLambda
+from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
+
+# A machine-readable identifier for when the context is not useful.
+CONTEXT_NOT_FOUND_IDENTIFIER = "CONTEXT_NOT_FOUND"
+
+
+def format_docs(docs: List[Document]) -> str:
+    """A simple function to join the page content of retrieved documents."""
+    return "\n\n".join(doc.page_content for doc in docs)
 
 
 class RAGSystem:
@@ -23,13 +32,16 @@ class RAGSystem:
         self.llm = llm or get_llm_instance()
         self.retriever = retriever or get_retriever()
 
-        # Define a prompt template
-        template = """
+        # Define a prompt template for the RAG chain
+        rag_template = """
         You are an AI assistant for the StudySync platform. Your goal is to help students understand their course material.
-        Answer the question using ONLY the provided context.
-        If the context contains direct information or relevant examples that help answer the question, synthesize a concise answer.
-        If the context does not contain relevant information to answer the question, clearly state that you don't know.
-        Do not make up information or provide knowledge beyond the provided context.
+        Answer the question strictly and only based on the provided context.
+
+        When you find the answer in the context, cite the source. The context for each document chunk is preceded by its source and page number in the format 'source: [source], page: [page_number]'.
+        At the end of the sentence or paragraph that uses information from the context, add a citation like `[Source: document_name.pdf, Page: 12]`.
+
+        If the provided context does not contain the information needed to answer the question, you MUST respond with only the following exact phrase:
+        {context_not_found_identifier}
 
         Context:
         {context}
@@ -38,40 +50,61 @@ class RAGSystem:
 
         Answer:
         """
-        self.prompt = ChatPromptTemplate.from_template(template)
+        self.rag_prompt = ChatPromptTemplate.from_template(rag_template)
 
-        # Define the RAG chain using LangChain Expression Language (LCEL)
-        # The context is formatted by the retriever's format_docs function (default simple join).
-        # RunnableParallel allows "context" and "question" to be processed
-        # (retrieved/passed) in parallel.
+        # General knowledge prompt, used when context is not found
+        general_knowledge_template = """
+        You are an AI assistant. You were asked a question but could not find the answer in the user's provided documents.
+        Provide a helpful, general-knowledge answer to the following question.
+
+        Question: {question}
+
+        Answer:
+        """
+        self.general_knowledge_prompt = ChatPromptTemplate.from_template(general_knowledge_template)
+
+        # The primary RAG chain
         self.rag_chain = (
-            RunnableParallel(
-                context=(lambda x: x["question"]) | self.retriever,
-                # Pass question to retriever for context
-                question=RunnablePassthrough(),  # Pass original question through
-            )  # Alternative if retriever needs the full input dict:
-            # {"context": self.retriever, "question": RunnablePassthrough()}
-            | self.prompt
+            {
+                "context": self.retriever | format_docs,
+                "question": RunnablePassthrough(),
+                "context_not_found_identifier": lambda _: CONTEXT_NOT_FOUND_IDENTIFIER,
+            }
+            | self.rag_prompt
             | self.llm
             | StrOutputParser()
-            # Parses the LLM's ChatMessage output into a string
         )
+
+        # A separate chain for generating answers from general knowledge
+        self.general_knowledge_chain = self.general_knowledge_prompt | self.llm | StrOutputParser()
+
         logger.info("RAG System initialized.")
 
-    async def invoke_chain(self, question: str) -> str:
+    async def invoke_chain(self, question: str) -> dict:
         """
-        Invokes the RAG chain asynchronously with a given question.
+        Invokes the RAG chain and, if necessary, the general knowledge chain.
+        Returns a dictionary with the answer and the source documents.
         """
-        try:
-            logger.debug(f"Invoking RAG chain with question: {question}")
-            # Use ainvoke for async operations with LCEL
-            response = await self.rag_chain.ainvoke({"question": question})
-            logger.debug(f"RAG chain response: {response}")
-            return response
-        except Exception as e:
-            logger.error(f"Error invoking RAG chain: {e}", exc_info=True)
-            # Re-raise the exception to be handled by the caller
-            raise
+        logger.debug(f"Invoking RAG chain with question: {question}")
+
+        # Get the source documents first, so we can return them regardless of the answer
+        source_documents = await self.retriever.aget_relevant_documents(question)
+        # Manually format the context with source information for the prompt
+        formatted_context = "\n\n".join(f"source: {doc.metadata.get('source', 'Unknown')}, page: {doc.metadata.get('page_number', 'N/A')}\n{doc.page_content}" for doc in source_documents)
+
+        # Invoke the RAG chain with the manually formatted context
+        rag_answer = await self.rag_chain.ainvoke({"question": question, "context": formatted_context})
+
+        final_answer = ""
+        if CONTEXT_NOT_FOUND_IDENTIFIER in rag_answer:
+            logger.info(f"Context not found for question: '{question}'. Switching to general knowledge.")
+            general_answer = await self.general_knowledge_chain.ainvoke({"question": question})
+            final_answer = "I could not find a definitive answer in your documents. " f"However, based on my general knowledge:\n\n{general_answer}"
+        else:
+            final_answer = rag_answer
+
+        logger.debug(f"Final answer: {final_answer}")
+        return {"answer": final_answer, "source_documents": source_documents}
 
 
 # Global instance is optional. For FastAPI or larger apps, dependency injection is preferred.

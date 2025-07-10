@@ -151,12 +151,34 @@ class WeaviateIndexer:
             if collection.batch.failed_objects:
                 logger.error(f"Failed to index {len(collection.batch.failed_objects)} documents.")
                 for failed_obj in collection.batch.failed_objects:
-                    logger.error(f"  Failed object: {failed_obj.message}, original: {failed_obj.original_uuid}, properties: {failed_obj.original_properties}")
+                    logger.error(f"  Failed object: {failed_obj.message}, original_uuid: {failed_obj.original_uuid}")
             else:
                 logger.info(f"Successfully indexed {len(documents)} documents into '{self.index_name}'.")
 
         except Exception as e:
             logger.error(f"Error indexing documents into '{self.index_name}': {e}", exc_info=True)
+            raise
+
+    async def get_all_document_sources(self) -> List[dict]:
+        """
+        Retrieves a list of unique source documents from Weaviate.
+        """
+        try:
+            collection = self.client.collections.get(self.index_name)
+
+            # Use a query to fetch distinct source properties
+            response = collection.query.fetch_objects(
+                return_properties=["source"],
+            )
+
+            # Process the response to get unique source filenames
+            unique_sources = {obj.properties["source"] for obj in response.objects if "source" in obj.properties}
+
+            # Return a list of dictionaries as per the DocumentResponse model
+            return [{"filename": source, "metadata": {}} for source in unique_sources]
+
+        except Exception as e:
+            logger.error(f"Error retrieving all document sources from '{self.index_name}': {e}", exc_info=True)
             raise
 
 
@@ -249,6 +271,42 @@ def get_retriever(k: int = DEFAULT_TOP_K) -> BaseRetriever:
         index_name=settings.WEAVIATE_INDEX_NAME,
         k=k,
     )
+
+
+async def get_all_documents_for_source(source_filename: str) -> List[LangchainDocument]:
+    """
+    Retrieves all document chunks associated with a specific source filename from Weaviate.
+    """
+    client = get_weaviate_client()
+    collection = client.collections.get(settings.WEAVIATE_INDEX_NAME)
+
+    try:
+        response = collection.query.fetch_objects(
+            filters=wvc.query.Filter.by_property("source").equal(source_filename),
+            # Fetch all matching objects. Be cautious with very large result sets.
+            # Consider adding a limit if performance becomes an issue.
+            limit=1000,  # A reasonable upper limit for chunks per document
+        )
+
+        documents = [
+            LangchainDocument(
+                page_content=obj.properties["text"],
+                metadata={
+                    "source": obj.properties.get("source", "Unknown"),
+                    "chunk_index": obj.properties.get("chunk_index", -1),
+                },
+            )
+            for obj in response.objects
+        ]
+
+        # Sort by chunk_index to reconstruct the document order
+        documents.sort(key=lambda doc: doc.metadata.get("chunk_index", -1))
+
+        logger.info(f"Retrieved {len(documents)} document chunks for source: {source_filename}")
+        return documents
+    except Exception as e:
+        logger.error(f"Failed to retrieve all documents for source {source_filename}: {e}", exc_info=True)
+        return []
 
 
 def close_weaviate_connection():

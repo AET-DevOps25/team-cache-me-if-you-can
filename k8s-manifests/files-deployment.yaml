@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: files-service
+  namespace: cache-me-if-you-can-genai
+  labels:
+    app: files-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: files-service
+  template:
+    metadata:
+      labels:
+        app: files-service
+    spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for MySQL at mysql:3306..."
+              while ! nc -z mysql 3306; do
+                sleep 2
+              done
+              echo "MySQL is up!"
+      containers:
+        - name: files-service
+          image: ghcr.io/aet-devops25/team-cache-me-if-you-can/files-service:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql.cache-me-if-you-can-genai.svc.cluster.local:3306/files_database"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "files"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "Files123!"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 90
+            periodSeconds: 30

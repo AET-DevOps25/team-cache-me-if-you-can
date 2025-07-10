@@ -1,0 +1,166 @@
+
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\title{SPML Summer 2023}
+\author{Generative AI}
+\date{\today}
+\begin{document}
+\maketitle
+\section{Signal Processing and Machine Learning (SPML) – Summer 2023}
+
+The course has evolved from an introduction to basic ML concepts to cover Generative Modeling and Generative AI within the context of SP.
+
+\subsection{Tentative Outline}
+\begin{itemize}
+    \item \textbf{Part I – Estimation and Regression}
+    \item \textbf{Part II – Generative Modeling}
+    \item \textbf{Part III – Applications}
+\end{itemize}
+
+\subsection{Part I – Estimation and Regression}
+\begin{itemize}
+    \item What is the difference between estimation and regression?
+    \item Similarities and differences, basics of estimation theory.
+    \item Basics of regression analysis, including linear regression.
+    \item Parametric regression.
+    \item Neural network-based regression.
+\end{itemize}
+
+\section{Part I – Estimation and Regression}
+
+\subsection{Introduction}
+\begin{quote}
+What is the difference between estimation and regression? In both cases, we want to find the relationship between variables. Whereas estimation is solely based on observations of random variables, regression requires observations of pairs consisting of dependent and independent random variables.
+\end{quote}
+
+\subsection{Estimation}
+\begin{equation}
+x \xrightarrow{\text{Estimator}} y = 2
+\end{equation}
+
+Statistical models are represented explicitly via data samples:
+\begin{equation}
+\left( x_i, y_i \right) \in S, \quad |S|=s
+\end{equation}
+where the observed variable $x \in \mathbb{R}$ has the distribution
+\begin{equation}
+x_i \sim f(x_i) = \int f_{X,Y}(x_i, y) \, dy
+\end{equation}
+if a statistical model exists.
+
+The estimated variable $y \in \mathbb{R}^m$ is characterized by the conditional distribution
+\begin{equation}
+y_i \sim f_{Y|X}(y_i|x)
+\end{equation}
+
+\subsection{Model Assumptions and Estimation}
+In cases where a statistical model is partially or fully available, the statistical inference process (handled by the SSP team) aims to produce optimal solutions.  
+\paragraph{Maximum Likelihood (ML) Estimation}  
+When partial knowledge of the joint distribution $f_{x,y}(x, y)$ exists, the ML estimator is defined as:
+\begin{equation}
+\hat{y}_{ML} = \arg \max_{y \in Y} \sum_{x \in Q} \log f_{x|y}(x; y)
+\end{equation}
+assuming the observations $Q = \{x_1, x_2, \ldots, x_Q\}$ are i.i.d. and originate from the true unknown $y$ (see SSP course).
+
+\subsection{Further Assumptions and Asymptotic Properties}
+\begin{itemize}
+    \item Under the assumption that $x_i \approx f_{X_i}(x_i| y)$, fixed-condition ML estimators are asymptotically efficient:
+    \begin{equation}
+    \text{For } n \to \infty, \quad \hat{y}_{ML} \to \text{minimum achievable variance} \quad (\text{Cramér-Rao bound}).
+    \end{equation}
+\end{itemize}
+
+\subsection{Conditional Mean Estimation}
+\begin{equation}
+Y_{CME} = \int \int y \, f_{Y|X_{1..x_a}}(y|x_{1..x_a}) \, dx \, dy
+\end{equation}
+which is equivalently expressed as:
+\begin{equation}
+Y_{CME} = \mathbb{E}_{Y|X_{1..x_a}} \left[ y \mid X_{1..x_a} = x_{1..x_a} \right]
+\end{equation}
+
+\section{Conditional Mean Estimator}
+\begin{equation}
+\hat{Y}_{\text{CE}} = \mathbb{E}_{Y|X}[Y|X] = \int y \, f_{Y|X}(y|x) \, dy
+\end{equation}
+with the conditional density
+\begin{equation}
+f_{Y|X}(y|x) \propto f_{XY}(x, y) \, f_Y(y)
+\end{equation}
+where $f_Y(y)$ is the prior distribution of the variable to be estimated.
+
+\subsection{Optimality of Conditional Mean Estimator}
+\begin{equation}
+\boxed{
+\hat{Y}_{\text{CE}} = \arg \min_{Y} \, \mathbb{E}_Y \left[ (Y - \hat{Y})^2 \right]
+}
+\end{equation}
+This estimator minimizes the mean squared error (MSE).
+
+\section{Example: Gaussian Joint Distribution}
+Suppose $X$ and $Y$ are jointly Gaussian distributed:
+\begin{equation}
+Z = \begin{bmatrix} X \\ Y \end{bmatrix} \in \mathbb{R}^{d + m}
+\end{equation}
+with mean vector:
+\begin{equation}
+\boldsymbol{\mu}_Z = \begin{bmatrix} \boldsymbol{\mu}_X \\ \boldsymbol{\mu}_Y \end{bmatrix}
+\end{equation}
+and covariance matrix:
+\begin{equation}
+\boldsymbol{\Sigma}_Z = \begin{bmatrix} \boldsymbol{\Sigma}_{XX} & \boldsymbol{\Sigma}_{XY} \\ \boldsymbol{\Sigma}_{YX} & \boldsymbol{\Sigma}_{YY} \end{bmatrix}
+\end{equation}
+
+\subsection{Linear Minimum MSE Estimator}
+Define:
+\begin{align}
+C_x &= \operatorname{Var}[X] = E_x \left[ (X - \mu_x)^2 \right] \\
+C_y &= \operatorname{Var}[Y] = E_y \left[ (Y - \mu_y)^2 \right] \\
+C_{xy} &= \operatorname{Cov}[X,Y] = E_{x,y} \left[ (X - \mu_x)(Y - \mu_y) \right]
+\end{align}
+with $C_{xy} = C_{yx}$ (symmetry).  
+The linear Minimum Mean Square Error (MMSE) estimator for $Y$ given $X = x$ is:
+\begin{equation}
+\boxed{
+\hat{Y}_{\text{LMMSE}} = C_{yx} C_x^{-1} (x - \mu_x) + \mu_y
+}
+\end{equation}
+It provides the linear estimator with minimal MSE, adding the minimal MSE trace:
+\begin{equation}
+\operatorname{trace}\left[\operatorname{Cov}_Y - C_{yx} C_x^{-1} C_{xy}\right]
+\end{equation}
+
+\section{Conditional Priors}
+In many media applications and for methodological purposes, the prior distribution $f_Y(y)$ is available, expressed as:
+\begin{equation}
+f_Y(y) = \int f_{Y|X}(y|x) \, f_X(x) \, dx
+\end{equation}
+where $f_X(x)$ is known and $f_{Y|X}(y|x)$ is a conditional prior, often in a favorable shape.
+
+The expected value conditioned on $Y = y$ can be written as:
+\begin{equation}
+\mathbb{E}_{X|Y=x}[Y|X] = \mathbb{E}_{X|Y=x}[Y \mid X, f_{Y|X}=f_{Y|X=x}]
+\end{equation}
+
+\section{Proof Sketch}
+\begin{align}
+\mathbb{E}_{Y|X=x}[Y|X=x] &= \iint_{\triangle} \int_{x,y} x^2 f_{x,y}(x,y) \, dx \, dy \\
+&= \iint_{\triangle} \int_{x} f_{x|y}(x|y) \, dx \, dy \\
+&= \int_{y} \left( \int_{x} f_{x|y}(x|y) \, dx \right) f_Y(y) \, dy \\
+&= \int_{y} f_Y(y) \, dy \\
+&= \mathbb{E}_Y[X|Y]
+\end{align}
+This illustrates the relationship between joint and marginal distributions in the context of conditional expectations.
+
+\section{Conditional Prediction}
+The conditional point estimate (CPE) based on the prior is expressed as:
+\begin{equation}
+Y_{CPE} = \mathbb{E}_{d|x} \left[ \sum_{y} y \, f_{Y|X,Y}(y|x,y) \, dy \right]
+\end{equation}
+which is essentially an average over linear estimators, weighted by the conditional distributions.
+\end{document}

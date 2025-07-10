@@ -26,6 +26,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
+
+        // If no Authorization header or not a Bearer token, just pass it through.
+        // The permitAll() in SecurityConfig will handle it if it's a public endpoint.
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -36,6 +39,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            // Check if token is valid before setting authentication
             if (jwtService.isTokenValid(jwt, userDetails)) {
                 var authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
@@ -47,5 +51,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
+        // Exclude /actuator/** from this filter
+        String path = request.getRequestURI();
+        return path.startsWith("/actuator/") || path.startsWith("/api/auth/") ||  path.equals("/api/auth/register") || path.equals("/api/auth/login");
     }
 }

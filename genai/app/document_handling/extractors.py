@@ -13,7 +13,6 @@ from collections import Counter
 from typing import IO
 
 import fitz
-from PyPDF2 import PdfReader
 from docx import Document
 from pptx import Presentation
 
@@ -139,13 +138,6 @@ class TextExtractor:
 
             return "\n\n".join(page_strings).strip()
 
-    def _extract_pdf_pypdf2(self, file_io: IO[bytes]) -> str:
-        """Return plain text using PyPDF2 (fallback)."""
-        # This method might also benefit from the generic post-processor
-        reader = PdfReader(file_io)
-        text = "\n".join(filter(None, (page.extract_text() for page in reader.pages))).strip()
-        return text  # Post-processing will be applied later by the dispatcher
-
     def extract_from_pdf(self, file_io: IO[bytes]) -> str:
         """Extract text from a PDF *file_io* stream."""
         file_io.seek(0)
@@ -154,12 +146,11 @@ class TextExtractor:
             extracted_text = self._extract_pdf_pymupdf(data)
         except Exception as exc:
             logger.warning(
-                "PyMuPDF rawdict extraction failed (%s). Falling back to PyPDF2.",
+                "PyMuPDF rawdict extraction failed (%s).",
                 exc,
                 exc_info=True,
             )
-            file_io.seek(0)  # Reset for PyPDF2
-            extracted_text = self._extract_pdf_pypdf2(file_io)  # Pass the original file_io
+            return ""  # Return empty string on failure
 
         return extracted_text  # Post-processing will be applied by the main dispatcher
 

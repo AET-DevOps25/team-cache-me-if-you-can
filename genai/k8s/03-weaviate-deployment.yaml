@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: weaviate
-  namespace: cache-me-if-you-can-genai
+  namespace: dev
   labels:
     app: weaviate
 spec:
