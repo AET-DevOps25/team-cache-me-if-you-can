@@ -2,7 +2,9 @@ name: Server CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - workflows/publish-group-service-and-user
     paths:
       - 'server/**'
       - '.github/workflows/server-ci-cd.yml'
