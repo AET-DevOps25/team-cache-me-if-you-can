@@ -64,6 +64,13 @@ class DocumentProcessingService:
             # error types
             return 0, f"An unexpected error occurred while processing {filename}."
 
+    async def get_all_documents(self) -> list[dict]:
+        """
+        Retrieves a list of all unique document sources from the indexer.
+        """
+        logger.info("Retrieving all document sources.")
+        return await self.weaviate_indexer.get_all_document_sources()
+
 
 # Singleton instance (or use FastAPI dependency injection)
 _document_processing_service_instance: Optional[DocumentProcessingService] = None

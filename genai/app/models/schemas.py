@@ -9,6 +9,11 @@ class DocumentUploadResponse(BaseModel):
     error: Optional[str] = None
 
 
+class DocumentResponse(BaseModel):
+    filename: str
+    metadata: Dict[str, Any]
+
+
 class QueryRequest(BaseModel):
     question: str
     # session_id: Optional[str] = None # For chat history if needed later
@@ -29,6 +34,16 @@ class QueryResponse(BaseModel):
     answer: str
     source_documents: Optional[List[SourceDocument]] = None  # Updated to use SourceDocument
     error: Optional[str] = None
+
+
+class QueryTaskResponse(BaseModel):
+    task_id: str
+
+
+class TaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    result: Optional[QueryResponse] = None
 
 
 class HealthCheckResponse(BaseModel):

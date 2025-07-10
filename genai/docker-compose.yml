@@ -1,24 +1,46 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
   app:
     build: .
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - .:/app
     env_file:
       - .env
     environment:
-      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080} 
+      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
       - weaviate
+      - redis
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  celery-worker:
+    build: .
+    command: celery -A app.celery_app:celery_app worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - app
+      - redis
 
   weaviate:
     image: semitechnologies/weaviate:1.23.7
     ports:
-      - "8080:8080"
+      - "8081:8080"
       - "50051:50051" # gRPC
     volumes:
       - ./weaviate_data:/var/lib/weaviate
