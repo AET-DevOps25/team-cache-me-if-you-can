@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - workflows/publish-group-service-and-user
+      - files/implement-microservice
     paths:
       - 'server/**'
       - '.github/workflows/server-ci-cd.yml'
@@ -22,7 +22,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [user, group, gateway]
+        service: [user, group, gateway, files]   # ← added 'files'
       fail-fast: false
 
     steps:
@@ -72,7 +72,6 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: needs.build-and-push.result == 'success'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
