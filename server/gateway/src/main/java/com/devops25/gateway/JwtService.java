@@ -72,7 +72,6 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        // Ensure SECRET_KEY is not null or empty before decoding
         if (SECRET_KEY == null || SECRET_KEY.isEmpty()) {
             throw new IllegalStateException("JWT Secret Key is not configured.");
         }
