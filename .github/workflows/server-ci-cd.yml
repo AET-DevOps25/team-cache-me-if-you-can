@@ -22,7 +22,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [user, group, gateway, files]   # ← added 'files'
+        service: [user, group, gateway, files]
       fail-fast: false
 
     steps:
