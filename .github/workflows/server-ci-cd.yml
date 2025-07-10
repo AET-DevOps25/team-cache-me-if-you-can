@@ -88,24 +88,19 @@ jobs:
           KUBECONFIG: ~/.kube/config
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
+          echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
           chmod 600 ~/.kube/config
+          kubectl config use-context student
           kubectl config set-context --current --namespace=developmentv1
 
       - name: Terraform Init
+        run: terraform init
         working-directory: ./infra
-        env:
-          KUBECONFIG: ~/.kube/config
-        run: terraform init -input=false
 
       - name: Terraform Plan
+        run: terraform plan
         working-directory: ./infra
-        env:
-          KUBECONFIG: ~/.kube/config
-        run: terraform plan -input=false
 
       - name: Terraform Apply
-        working-directory: ./infra
-        env:
-          KUBECONFIG: ~/.kube/config
         run: terraform apply -auto-approve
+        working-directory: ./infra
