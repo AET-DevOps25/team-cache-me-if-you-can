@@ -69,7 +69,6 @@ public class SecurityConfig {
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring()
-                // Completely ignore /actuator/** for all security filters
                 .requestMatchers(new AntPathRequestMatcher("/actuator/**"))
                 .requestMatchers(new AntPathRequestMatcher("/api/auth/register"))
                 .requestMatchers(new AntPathRequestMatcher("/api/auth/login"))

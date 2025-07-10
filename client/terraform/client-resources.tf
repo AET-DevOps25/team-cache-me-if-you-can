@@ -2,7 +2,7 @@
 resource "kubernetes_deployment" "client" {
   metadata {
     name      = "client"
-    namespace = "dev"
+    namespace = "developmentv1"
     labels = {
       app = "client"
     }
@@ -43,7 +43,7 @@ resource "kubernetes_deployment" "client" {
 resource "kubernetes_service" "client_service" {
   metadata {
     name      = "client-service"
-    namespace = "dev"
+    namespace = "developmentv1"
   }
 
   spec {
@@ -65,7 +65,7 @@ resource "kubernetes_service" "client_service" {
 resource "kubernetes_ingress_v1" "client_ingress" {
   metadata {
     name      = "client-ingress"
-    namespace = "dev"
+    namespace = "developmentv1"
     annotations = {
       "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
@@ -76,12 +76,12 @@ resource "kubernetes_ingress_v1" "client_ingress" {
     ingress_class_name = "nginx"
 
     tls {
-      hosts       = ["dev-client.student.k8s.aet.cit.tum.de"]
+      hosts       = ["developmentv1-client.student.k8s.aet.cit.tum.de"]
       secret_name = "cache-me-if-you-can-client-tls"
     }
 
     rule {
-      host = "dev-client.student.k8s.aet.cit.tum.de"
+      host = "developmentv1-client.student.k8s.aet.cit.tum.de"
 
       http {
         path {

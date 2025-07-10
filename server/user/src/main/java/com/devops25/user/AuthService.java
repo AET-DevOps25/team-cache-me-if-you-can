@@ -62,7 +62,6 @@ public class AuthService {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtService.generateToken(userDetails);
 
-        // Fetch user from repository to get university for response
         User user = repository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new InvalidRequestException("User not found after authentication"));
 

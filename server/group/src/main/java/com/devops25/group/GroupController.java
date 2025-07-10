@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import com.devops25.group.JwtService;
 
 import java.util.List;
 
@@ -79,7 +78,6 @@ public class GroupController {
         try {
             authenticatedUsername = extractUsername(httpRequest);
         } catch (ResponseStatusException e) {
-            // Unauthenticated viewing allowed
         }
         GroupResponse group = groupService.getGroupById(id, authenticatedUsername);
         return ResponseEntity.ok(group);

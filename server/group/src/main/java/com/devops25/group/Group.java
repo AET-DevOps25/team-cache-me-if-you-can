@@ -31,12 +31,12 @@ public class Group {
 
     private String filesServiceUrl; // Placeholder for group-specific files
 
-    @Column(nullable = false) // Owner must always be present
+    @Column(nullable = false)
     private String ownerUsername;
 
     @Builder.Default
     @ElementCollection(fetch = FetchType.LAZY) // Use LAZY to avoid fetching all members unless needed
     @CollectionTable(name = "group_members", joinColumns = @JoinColumn(name = "group_id"))
     @Column(name = "username")
-    private Set<String> memberUsernames = new HashSet<>(); // Initialize to avoid null pointer
+    private Set<String> memberUsernames = new HashSet<>();
 }
