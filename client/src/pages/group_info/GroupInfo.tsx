@@ -2,6 +2,8 @@ import Navigator from "../../nav/Navigator";
 import { useParams } from "react-router-dom";
 import { useState } from "react";
 import "./group_info.css";
+import AIChat from "./components/AIChat";
+import Material from "./components/Material";
 
 export default function GroupInfo() {
   const { groupName } = useParams();
@@ -35,13 +37,9 @@ export default function GroupInfo() {
               {activeTab === "Group Name" && (
                 <p>Group information and settings for {groupName}</p>
               )}
-              {activeTab === "Materials" && (
-                <p>Study materials for this group</p>
-              )}
+              {activeTab === "Materials" && <Material />}
               {activeTab === "Chats" && <p>Chat history and messages</p>}
-              {activeTab === "AI Bot" && (
-                <p>AI assistant for this study group</p>
-              )}
+              {activeTab === "AI Bot" && <AIChat />}
             </div>
           </div>
         </div>
