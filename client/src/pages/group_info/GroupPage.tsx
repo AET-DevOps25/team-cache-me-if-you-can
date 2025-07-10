@@ -59,9 +59,9 @@ export default function GroupPage() {
     if (auth.user) {
       setTabs(["Group Info", "Materials", "Chats", "AI Bot"]);
     } else {
-      navigate("login");
+      setTabs(["Group Info"]);
     }
-  }, [auth.user, navigate]);
+  }, [auth.user]);
 
   if (loadingGroup) {
     return (
