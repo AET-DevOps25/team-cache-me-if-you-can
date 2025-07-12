@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: genai-app
-  namespace: development
+  namespace: developmentv1
   labels:
     app: genai-app
 spec:
