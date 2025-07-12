@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Header
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Header, Path, status
 from app.services.document_service import (
     DocumentProcessingService,
     get_document_processing_service,
@@ -8,9 +8,13 @@ from app.models.schemas import (
     DocumentUploadResponse,
     DocumentSourceResponse,
     TaskStatusResponse,
+    DocumentDeleteResponse,
+    DocumentTaskStatusResponse,
 )
 from app.celery_tasks.document_tasks import process_and_index_document_task
 from typing import List
+from celery.result import AsyncResult
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -36,7 +40,32 @@ def list_indexed_documents(
         raise HTTPException(status_code=500, detail="Failed to retrieve documents.")
 
 
-@router.post("/upload", response_model=DocumentUploadResponse)
+@router.delete("/{source_filename}", response_model=DocumentDeleteResponse)
+async def delete_document(
+    source_filename: str = Path(..., description="The filename of the document to delete."),
+    group_id: str = Header(..., alias="X-Group-ID"),
+    doc_service: DocumentProcessingService = Depends(get_document_processing_service),
+):
+    """
+    Deletes a document and all its associated indexed data for a given group.
+    """
+    logger.info(f"Received request to delete document: {source_filename} for group: {group_id}")
+    try:
+        success, message = await doc_service.delete_document(source_filename, group_id)
+        if not success and "not found" in message:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+        if not success:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+
+        return DocumentDeleteResponse(filename=source_filename, message=message)
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        logger.error(f"Error deleting document {source_filename}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to delete document: {source_filename}.")
+
+
+@router.post("/upload", response_model=DocumentUploadResponse, status_code=status.HTTP_202_ACCEPTED)
 async def upload_document(
     file: UploadFile = File(...),
     group_id: str = Header(..., alias="X-Group-ID"),
@@ -92,3 +121,24 @@ async def upload_document(
         )
     finally:
         await file.close()
+
+
+@router.get("/upload/status/{task_id}", response_model=DocumentTaskStatusResponse)
+def get_upload_status(task_id: str):
+    """
+    Checks the status of a document processing and indexing task.
+    """
+    task_result = AsyncResult(task_id, app=process_and_index_document_task.app)
+
+    result_data = task_result.result
+    if task_result.failed():
+        # Log the traceback if the task failed
+        logger.error(f"Task {task_id} failed with error: {task_result.traceback}")
+        # The result of a failed task is the exception object. Convert it to a string for the response.
+        result_data = {"error_message": str(task_result.result), "docs_indexed": 0, "filename": ""}
+
+    return DocumentTaskStatusResponse(
+        task_id=task_id,
+        status=task_result.status,
+        result=result_data,
+    )
