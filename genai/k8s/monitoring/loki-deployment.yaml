@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: loki-deployment
-  namespace: dev
+  namespace: developmentv1
 spec:
   replicas: 1
   selector:

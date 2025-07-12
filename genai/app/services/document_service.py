@@ -17,13 +17,13 @@ class DocumentProcessingService:
         self.weaviate_indexer: WeaviateIndexer = get_weaviate_indexer()  # Get pre-configured indexer
         logger.info("DocumentProcessingService initialized.")
 
-    async def process_and_index_document(self, file_content: bytes, filename: str) -> Tuple[int, Optional[str]]:
+    async def process_and_index_document(self, file_content: bytes, filename: str, tenant: str) -> Tuple[int, Optional[str]]:
         """
         Processes a document file (extracts text, splits, and indexes into Weaviate).
         Returns a tuple: (number_of_documents_indexed, error_message_if_any).
         """
         try:
-            logger.info(f"Starting processing for document: {filename}")
+            logger.info(f"Starting processing for document: {filename} in tenant '{tenant}'")
             file_io = io.BytesIO(file_content)
 
             # 1. Extract text
@@ -36,7 +36,7 @@ class DocumentProcessingService:
 
             # 2. Split text into documents
             # Pass filename in metadata for potential use in Weaviate
-            doc_metadata = {"source": filename}
+            doc_metadata = {"source": filename, "group_id": tenant}
             logger.debug(f"Splitting text from {filename} into documents...")
             documents = self.document_parser.split_text_to_documents(extracted_text, metadata=doc_metadata)
             if not documents:
@@ -45,11 +45,11 @@ class DocumentProcessingService:
             logger.info(f"Split text from {filename} into {len(documents)} documents.")
 
             # 3. Index documents into Weaviate
-            logger.debug(f"Indexing {len(documents)} documents from {filename} into Weaviate...")
+            logger.debug(f"Indexing {len(documents)} documents from {filename} into Weaviate for tenant '{tenant}'...")
             # The WeaviateIndexer now handles the actual indexing call to
             # Weaviate client
-            self.weaviate_indexer.index_documents(documents)
-            logger.info(f"Successfully initiated indexing for {len(documents)} documents from {filename}.")
+            self.weaviate_indexer.index_documents(documents, tenant)
+            logger.info(f"Successfully initiated indexing for {len(documents)} documents from {filename} in tenant '{tenant}'.")
 
             return len(documents), None  # Success
         except ValueError as ve:
@@ -59,17 +59,17 @@ class DocumentProcessingService:
                 f"Unsupported file type: {filename}. Only PDF, DOCX, PPTX are supported.",
             )
         except Exception as e:
-            logger.error(f"Error processing document {filename}: {e}", exc_info=True)
+            logger.error(f"Error processing document {filename} in tenant '{tenant}': {e}", exc_info=True)
             # In a production scenario, you might want to distinguish different
             # error types
             return 0, f"An unexpected error occurred while processing {filename}."
 
-    async def get_all_documents(self) -> list[dict]:
+    def get_all_documents(self, tenant: str) -> list[dict]:
         """
-        Retrieves a list of all unique document sources from the indexer.
+        Retrieves a list of all unique document sources from the indexer for the specified tenant.
         """
-        logger.info("Retrieving all document sources.")
-        return await self.weaviate_indexer.get_all_document_sources()
+        logger.info(f"Retrieving all document sources for tenant '{tenant}'.")
+        return self.weaviate_indexer.get_all_document_sources(tenant)
 
 
 # Singleton instance (or use FastAPI dependency injection)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
             get_weaviate_client()  # Ensures connection and schema
 
-            docs_indexed, error = await service.process_and_index_document(dummy_pdf_content, dummy_filename)
+            docs_indexed, error = await service.process_and_index_document(dummy_pdf_content, dummy_filename, "test_tenant")
 
             if error:
                 logger.error(f"Service test failed for {dummy_filename}: {error}")
@@ -148,7 +148,7 @@ if __name__ == "__main__":
             # Test with an unsupported file type
             unsupported_filename = "test.txt"
             dummy_txt_content = b"This is a plain text file."
-            docs_indexed_txt, error_txt = await service.process_and_index_document(dummy_txt_content, unsupported_filename)
+            docs_indexed_txt, error_txt = await service.process_and_index_document(dummy_txt_content, unsupported_filename, "test_tenant")
             logger.info(f"Service test for {unsupported_filename}: Docs={docs_indexed_txt}, Error='{error_txt}'")
             assert error_txt is not None and "Unsupported file type" in error_txt, "Expected error for unsupported .txt file"
             assert docs_indexed_txt == 0

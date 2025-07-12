@@ -2,14 +2,14 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: prometheus
-  namespace: dev
+  namespace: developmentv1
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: prometheus
-  namespace: dev
+  namespace: developmentv1
 rules:
   - apiGroups: [""]
     resources:
@@ -29,7 +29,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: prometheus
-  namespace: dev
+  namespace: developmentv1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -37,4 +37,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: prometheus
-    namespace: dev 
+    namespace: developmentv1

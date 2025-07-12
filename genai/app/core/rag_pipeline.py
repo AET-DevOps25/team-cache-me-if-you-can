@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List
+from typing import List, Optional
 
 from app.core.llm import get_llm_instance
 from app.vector_store.weaviate_connector import get_retriever
@@ -80,20 +80,37 @@ class RAGSystem:
 
         logger.info("RAG System initialized.")
 
-    async def invoke_chain(self, question: str) -> dict:
+    async def invoke_chain(self, question: str, tenant: Optional[str] = None) -> dict:
         """
         Invokes the RAG chain and, if necessary, the general knowledge chain.
         Returns a dictionary with the answer and the source documents.
         """
-        logger.debug(f"Invoking RAG chain with question: {question}")
+        if not tenant:
+            raise ValueError("Tenant must be provided to invoke_chain.")
+
+        logger.debug(f"Invoking RAG chain with question: {question} for tenant: {tenant}")
+
+        # Create a new retriever for this request and set the tenant
+        request_retriever = get_retriever()
+        request_retriever.tenant = tenant
+
+        # The primary RAG chain, configured for this specific request
+        rag_chain = (
+            {
+                "context": request_retriever | format_docs,
+                "question": RunnablePassthrough(),
+                "context_not_found_identifier": lambda _: CONTEXT_NOT_FOUND_IDENTIFIER,
+            }
+            | self.rag_prompt
+            | self.llm
+            | StrOutputParser()
+        )
 
         # Get the source documents first, so we can return them regardless of the answer
-        source_documents = await self.retriever.aget_relevant_documents(question)
-        # Manually format the context with source information for the prompt
-        formatted_context = "\n\n".join(f"source: {doc.metadata.get('source', 'Unknown')}, page: {doc.metadata.get('page_number', 'N/A')}\n{doc.page_content}" for doc in source_documents)
+        source_documents = await request_retriever.ainvoke(question)
 
-        # Invoke the RAG chain with the manually formatted context
-        rag_answer = await self.rag_chain.ainvoke({"question": question, "context": formatted_context})
+        # Invoke the RAG chain
+        rag_answer = await rag_chain.ainvoke(question)
 
         final_answer = ""
         if CONTEXT_NOT_FOUND_IDENTIFIER in rag_answer:
@@ -190,12 +207,12 @@ if __name__ == "__main__":
                 test_question = "What are AVL tree rotations used for?"
                 logger.info(f'Sending question to RAG system: "{test_question}"')
 
-                answer = await rag_system.invoke_chain(test_question)
+                answer = await rag_system.invoke_chain(test_question, tenant="test_tenant")
                 logger.info(f"RAG Answer: {answer}")
 
                 test_question_no_context = "What is the capital of France?"
                 logger.info(f'Sending question with no context to RAG system: "{test_question_no_context}"')
-                answer_no_context = await rag_system.invoke_chain(test_question_no_context)
+                answer_no_context = await rag_system.invoke_chain(test_question_no_context, tenant="test_tenant")
                 logger.info(f"RAG Answer (no context expected): {answer_no_context}")
 
             except RuntimeError as e:  # Catch errors from get_llm_instance if it failed
