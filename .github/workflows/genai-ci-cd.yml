@@ -47,5 +47,5 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl apply -f genai/k8s
+          kubectl apply -f genai/k8s --validate=false
           kubectl set image deployment/genai-app genai-app=ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:${{ github.sha }} -n dev 

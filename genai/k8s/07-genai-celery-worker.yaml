@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: genai-celery-worker
-  namespace: development
+  namespace: developmentv1
   labels:
     app: genai-celery-worker
 spec:
