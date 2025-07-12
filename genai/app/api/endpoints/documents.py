@@ -1,24 +1,35 @@
 import logging
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Header
 from app.services.document_service import (
     DocumentProcessingService,
     get_document_processing_service,
 )
-from app.models.schemas import DocumentUploadResponse, DocumentResponse
+from app.models.schemas import (
+    DocumentUploadResponse,
+    DocumentSourceResponse,
+    TaskStatusResponse,
+)
+from app.celery_tasks.document_tasks import process_and_index_document_task
+from typing import List
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/", response_model=list[DocumentResponse])
-async def list_indexed_documents(
+@router.get("/", response_model=List[DocumentSourceResponse])
+def list_indexed_documents(
+    group_id: str = Header(..., alias="X-Group-ID"),
     doc_service: DocumentProcessingService = Depends(get_document_processing_service),
 ):
     """
-    Retrieves a list of all indexed documents.
+    Lists all unique documents that have been indexed for a given group.
     """
+    logger.info(f"Received request to list documents for group: {group_id}")
     try:
-        documents = await doc_service.get_all_documents()
+        # This returns a list of source strings
+        source_names = doc_service.get_all_documents(group_id)
+        # We need to map this to the response model
+        documents = [{"source": name} for name in source_names]
         return documents
     except Exception as e:
         logger.error(f"Error retrieving documents: {e}", exc_info=True)
@@ -28,6 +39,7 @@ async def list_indexed_documents(
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(
     file: UploadFile = File(...),
+    group_id: str = Header(..., alias="X-Group-ID"),
     doc_service: DocumentProcessingService = Depends(get_document_processing_service),
 ):
     """
@@ -54,24 +66,16 @@ async def upload_document(
         )
 
     try:
-        logger.info(f"Received file for upload: {file.filename}")
+        logger.info(f"Received file for upload: {file.filename} with group_id: {group_id}")
         contents = await file.read()
 
-        docs_indexed, error_message = await doc_service.process_and_index_document(contents, file.filename)
+        task = process_and_index_document_task.delay(contents, file.filename, group_id)
+        logger.info(f"Started Celery task {task.id} for {file.filename} in group {group_id}")
 
-        if error_message:
-            logger.error(f"Error processing {file.filename}: {error_message}")
-            return DocumentUploadResponse(
-                filename=file.filename,
-                message="Failed to process document.",
-                error=error_message,
-            )
-
-        logger.info(f"Successfully processed and initiated indexing for {file.filename}. Documents created: {docs_indexed}")
         return DocumentUploadResponse(
             filename=file.filename,
-            message="Document processed and sent for indexing successfully.",
-            document_count=docs_indexed,
+            message="Document uploaded and processing started in background.",
+            task_id=task.id,
         )
 
     except HTTPException as http_exc:

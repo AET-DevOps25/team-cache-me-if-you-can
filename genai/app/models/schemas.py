@@ -7,6 +7,11 @@ class DocumentUploadResponse(BaseModel):
     message: str
     document_count: Optional[int] = None
     error: Optional[str] = None
+    task_id: Optional[str] = None
+
+
+class DocumentSourceResponse(BaseModel):
+    source: str
 
 
 class DocumentResponse(BaseModel):
@@ -16,6 +21,7 @@ class DocumentResponse(BaseModel):
 
 class QueryRequest(BaseModel):
     question: str
+    k: Optional[int] = None
     # session_id: Optional[str] = None # For chat history if needed later
 
 

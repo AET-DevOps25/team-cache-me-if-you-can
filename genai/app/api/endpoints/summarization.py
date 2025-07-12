@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Header
 from pydantic import BaseModel
 from app.services.summarization_service import (
     SummarizationService,
@@ -18,14 +18,15 @@ class SummaryResponse(BaseModel):
 @router.post("/{source_filename}/summarize", response_model=SummaryResponse)
 async def summarize_document_endpoint(
     source_filename: str = Path(..., description="The filename of the document to summarize, e.g., 'my_document.pdf'"),
+    group_id: str = Header(..., alias="X-Group-ID"),
     summary_service: SummarizationService = Depends(get_summarization_service),
 ):
     """
     Generates and returns a summary of a previously uploaded document.
     """
-    logger.info(f"Received request to summarize document: {source_filename}")
+    logger.info(f"Received request to summarize document: {source_filename} for group {group_id}")
     try:
-        summary = await summary_service.summarize_document(source_filename)
+        summary = await summary_service.summarize_document(source_filename, tenant=group_id)
 
         if summary.startswith("Could not find the document"):
             raise HTTPException(status_code=404, detail=summary)

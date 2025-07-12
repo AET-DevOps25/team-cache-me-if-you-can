@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import UploadFile
+from unittest.mock import MagicMock
 from app.main import app
 from app.services.document_service import (
     DocumentProcessingService,
@@ -50,22 +51,38 @@ def doc_test_client():
 
 
 # Update tests to use the client from the fixture
-def test_upload_document_success_pdf(doc_test_client: TestClient):
+def test_upload_document_success_pdf(doc_test_client: TestClient, mocker):
+    # Mock the Celery task
+    mock_task = MagicMock()
+    mock_task.id = "test-task-id-pdf"
+    mocker.patch(
+        "app.celery_tasks.document_tasks.process_and_index_document_task.delay",
+        return_value=mock_task,
+    )
+
     file_content = b"dummy pdf content"
     file_name = "success_test.pdf"
     response = doc_test_client.post(
         "/api/v1/documents/upload",
         files={"file": (file_name, io.BytesIO(file_content), "application/pdf")},
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == file_name
-    assert data["message"] == "Document processed and sent for indexing successfully."
-    assert data["document_count"] == 3
-    assert data["error"] is None
+    assert data["message"] == "Document uploaded and processing started in background."
+    assert "task_id" in data
 
 
-def test_upload_document_success_docx(doc_test_client: TestClient):
+def test_upload_document_success_docx(doc_test_client: TestClient, mocker):
+    # Mock the Celery task
+    mock_task = MagicMock()
+    mock_task.id = "test-task-id-docx"
+    mocker.patch(
+        "app.celery_tasks.document_tasks.process_and_index_document_task.delay",
+        return_value=mock_task,
+    )
+
     file_content = b"dummy docx content"
     file_name = "success_test.docx"
     response = doc_test_client.post(
@@ -77,16 +94,24 @@ def test_upload_document_success_docx(doc_test_client: TestClient):
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             )
         },
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == file_name
-    assert data["message"] == "Document processed and sent for indexing successfully."
-    assert data["document_count"] == 3
-    assert data["error"] is None
+    assert data["message"] == "Document uploaded and processing started in background."
+    assert "task_id" in data
 
 
-def test_upload_document_success_pptx(doc_test_client: TestClient):
+def test_upload_document_success_pptx(doc_test_client: TestClient, mocker):
+    # Mock the Celery task
+    mock_task = MagicMock()
+    mock_task.id = "test-task-id-pptx"
+    mocker.patch(
+        "app.celery_tasks.document_tasks.process_and_index_document_task.delay",
+        return_value=mock_task,
+    )
+
     file_content = b"dummy pptx content"
     file_name = "success_test.pptx"
     response = doc_test_client.post(
@@ -98,13 +123,13 @@ def test_upload_document_success_pptx(doc_test_client: TestClient):
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             )
         },
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == file_name
-    assert data["message"] == "Document processed and sent for indexing successfully."
-    assert data["document_count"] == 3
-    assert data["error"] is None
+    assert data["message"] == "Document uploaded and processing started in background."
+    assert "task_id" in data
 
 
 def test_upload_document_unsupported_type(doc_test_client: TestClient):
@@ -113,6 +138,7 @@ def test_upload_document_unsupported_type(doc_test_client: TestClient):
     response = doc_test_client.post(
         "/api/v1/documents/upload",
         files={"file": (file_name, io.BytesIO(file_content), "text/plain")},
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 400
     data = response.json()
@@ -125,25 +151,30 @@ def test_upload_document_no_extension(doc_test_client: TestClient):
     response = doc_test_client.post(
         "/api/v1/documents/upload",
         files={"file": (file_name, io.BytesIO(file_content), "application/octet-stream")},
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 400
     data = response.json()
     assert "File has no extension." in data["detail"]
 
 
-def test_upload_document_processing_error(doc_test_client: TestClient):
+def test_upload_document_processing_error(doc_test_client: TestClient, mocker):
+    mocker.patch(
+        "app.celery_tasks.document_tasks.process_and_index_document_task.delay",
+        side_effect=Exception("Celery error"),
+    )
     file_content = b"dummy pdf content for error"
     file_name = "error_test.pdf"
     response = doc_test_client.post(
         "/api/v1/documents/upload",
         files={"file": (file_name, io.BytesIO(file_content), "application/pdf")},
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == file_name
-    assert data["message"] == "Failed to process document."
-    assert data["error"] == "Simulated processing error"
-    assert data.get("document_count") is None or data.get("document_count") == 0
+    assert "An unexpected server error occurred." in data["message"]
+    assert "error" in data
 
 
 # Removed old module-level client, singleton resets at top of file, and teardown_module

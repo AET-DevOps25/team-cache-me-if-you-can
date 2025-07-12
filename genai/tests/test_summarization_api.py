@@ -6,7 +6,7 @@ from app.services.summarization_service import SummarizationService, get_summari
 
 # Mock SummarizationService
 class MockSummarizationService:
-    async def summarize_document(self, filename: str):
+    async def summarize_document(self, filename: str, tenant: str):
         if "non_existent.pdf" in filename:
             return "Could not find the document specified."
         if "error.pdf" in filename:
@@ -34,7 +34,10 @@ def test_summarize_document_success(summary_test_client: TestClient):
     Tests successful summarization of a document.
     """
     filename = "existing_document.pdf"
-    response = summary_test_client.post(f"/api/v1/summaries/{filename}/summarize")
+    response = summary_test_client.post(
+        f"/api/v1/summaries/{filename}/summarize",
+        headers={"X-Group-ID": "test_group"},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == filename
@@ -46,7 +49,10 @@ def test_summarize_document_not_found(summary_test_client: TestClient):
     Tests summarization when the document is not found.
     """
     filename = "non_existent.pdf"
-    response = summary_test_client.post(f"/api/v1/summaries/{filename}/summarize")
+    response = summary_test_client.post(
+        f"/api/v1/summaries/{filename}/summarize",
+        headers={"X-Group-ID": "test_group"},
+    )
     assert response.status_code == 404
     assert "Could not find the document" in response.json()["detail"]
 
@@ -56,6 +62,9 @@ def test_summarize_document_error(summary_test_client: TestClient):
     Tests summarization when an error occurs.
     """
     filename = "error.pdf"
-    response = summary_test_client.post(f"/api/v1/summaries/{filename}/summarize")
+    response = summary_test_client.post(
+        f"/api/v1/summaries/{filename}/summarize",
+        headers={"X-Group-ID": "test_group"},
+    )
     assert response.status_code == 500
     assert "An error occurred" in response.json()["detail"]

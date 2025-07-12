@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: weaviate
-  namespace: dev
+  namespace: development
   labels:
     app: weaviate
 spec:
