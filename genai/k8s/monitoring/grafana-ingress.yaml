@@ -10,10 +10,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - genai-dev.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+    - genai-developmentv1.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
     secretName: genai-dev-tls
   rules:
-  - host: genai-dev.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+  - host: genai-developmentv1.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
     http:
       paths:
       - path: /grafana
