@@ -7,6 +7,8 @@ import { useAuth } from "../../auth/AuthProvider";
 import { GroupInfo } from "./components/GroupInfo";
 import "./group_page.css";
 import { GroupData } from "../../models/GroupData";
+import AIChat from "./components/AIChat";
+import Material from "./components/Material";
 
 export default function GroupPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -65,71 +67,67 @@ export default function GroupPage() {
 
   if (loadingGroup) {
     return (
-        <>
-          <Navigator />
-          <div className="group-container">
-            <p>Loading group details...</p>
-          </div>
-        </>
+      <>
+        <Navigator />
+        <div className="group-container">
+          <p>Loading group details...</p>
+        </div>
+      </>
     );
   }
 
   if (groupError) {
     return (
-        <>
-          <Navigator />
-          <div className="group-container">
-            <p className="error-message">{groupError}</p>
-          </div>
-        </>
+      <>
+        <Navigator />
+        <div className="group-container">
+          <p className="error-message">{groupError}</p>
+        </div>
+      </>
     );
   }
 
   if (!currentGroup) {
     return (
-        <>
-          <Navigator />
-          <div className="group-container">
-            <p>No group selected or found.</p>
-          </div>
-        </>
+      <>
+        <Navigator />
+        <div className="group-container">
+          <p>No group selected or found.</p>
+        </div>
+      </>
     );
   }
 
   return (
-      <>
-        <Navigator />
-        <div className="group-container">
-          <div className="group-content">
-            <div className="sidebar">
-              <ul className="tab-list">
-                {tabs.map((tab) => (
-                    <li
-                        key={tab}
-                        className={`tab-item ${activeTab === tab ? "active" : ""}`}
-                        onClick={() => setActiveTab(tab)}
-                    >
-                      {tab}
-                    </li>
-                ))}
-              </ul>
-            </div>
+    <>
+      <Navigator />
+      <div className="group-container">
+        <div className="group-content">
+          <div className="sidebar">
+            <ul className="tab-list">
+              {tabs.map((tab) => (
+                <li
+                  key={tab}
+                  className={`tab-item ${activeTab === tab ? "active" : ""}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-            <div className="content-area">
-              <h2 className="group-title">{currentGroup.name}</h2>
-              <div className="tab-content">
-                {activeTab === "Group Info" && <GroupInfo />}
-                {activeTab === "Materials" && (
-                    <p>Study materials for this group</p>
-                )}
-                {activeTab === "Chats" && <p>Chat history and messages</p>}
-                {activeTab === "AI Bot" && (
-                    <p>AI assistant for this study group</p>
-                )}
-              </div>
+          <div className="content-area">
+            <h2 className="group-title">{currentGroup.name}</h2>
+            <div className="tab-content">
+              {activeTab === "Group Info" && <GroupInfo />}
+              {activeTab === "Materials" && <Material />}
+              {activeTab === "Chats" && <p>Chat history and messages</p>}
+              {activeTab === "AI Bot" && <AIChat />}
             </div>
           </div>
         </div>
-      </>
+      </div>
+    </>
   );
 }
