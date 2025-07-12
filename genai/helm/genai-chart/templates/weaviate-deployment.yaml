@@ -1,23 +1,27 @@
+{{- if .Values.weaviate.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: weaviate
-  namespace: developmentv1
+  name: {{ .Release.Name }}-weaviate
+  namespace: {{ .Release.Namespace }}
   labels:
-    app: weaviate
+    {{- include "genai-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: weaviate
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: weaviate
+      {{- include "genai-chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: weaviate
   template:
     metadata:
       labels:
-        app: weaviate
+        {{- include "genai-chart.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: weaviate
     spec:
       containers:
-      - name: weaviate
-        image: semitechnologies/weaviate:1.23.7
+      - name: {{ .Values.weaviate.name }}
+        image: "{{ .Values.weaviate.image.repository }}:{{ .Values.weaviate.image.tag }}"
         ports:
         - containerPort: 8080
           name: http
@@ -39,11 +43,17 @@ spec:
         - name: OPENAI_APIKEY
           valueFrom:
             secretKeyRef:
-              name: openai-credentials
+              name: {{ .Values.genai_app.env.OPENAI_API_KEY_SECRET_NAME }}
               key: OPENAI_API_KEY
         volumeMounts:
         - name: weaviate-data
           mountPath: /var/lib/weaviate
       volumes:
       - name: weaviate-data
-        emptyDir: {} # For persistence, you should use a PersistentVolumeClaim 
+      {{- if .Values.weaviate.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.weaviate.persistence.existingClaim | default (printf "%s-weaviate-pvc" (include "genai-chart.fullname" .)) }}
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
+{{- end }} 

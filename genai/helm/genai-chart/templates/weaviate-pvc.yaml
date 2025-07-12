@@ -1,0 +1,19 @@
+{{- if and .Values.weaviate.enabled .Values.weaviate.persistence.enabled (not .Values.weaviate.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-weaviate-pvc" (include "genai-chart.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "genai-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: weaviate
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.weaviate.persistence.size }}
+  {{- if .Values.weaviate.persistence.storageClass }}
+  storageClassName: {{ .Values.weaviate.persistence.storageClass }}
+  {{- end }}
+{{- end }} 

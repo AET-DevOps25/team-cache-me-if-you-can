@@ -1,0 +1,32 @@
+# Production specific values
+ingress:
+  enabled: true
+  hosts:
+    - host: genai.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+   - secretName: genai-prod-tls
+     hosts:
+       - genai.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+
+weaviate:
+  persistence:
+    enabled: true
+    size: 50Gi
+    # storageClass: "your-storage-class" # Important: specify your storage class
+
+# For production, you must use a managed redis or a highly available setup
+redis:
+  enabled: false
+
+genai_app:
+  env:
+    CELERY_BROKER_URL: "redis://your-prod-redis-url:6379/0"
+    CELERY_RESULT_BACKEND: "redis://your-prod-redis-url:6379/0"
+
+celery_worker:
+  env:
+    CELERY_BROKER_URL: "redis://your-prod-redis-url:6379/0"
+    CELERY_RESULT_BACKEND: "redis://your-prod-redis-url:6379/0" 

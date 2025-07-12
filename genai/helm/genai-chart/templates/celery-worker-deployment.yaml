@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "genai-chart.fullname" . }}-celery-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "genai-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: celery-worker
+spec:
+  replicas: {{ .Values.celery_worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "genai-chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: celery-worker
+  template:
+    metadata:
+      labels:
+        {{- include "genai-chart.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: celery-worker
+    spec:
+      containers:
+      - name: {{ .Values.celery_worker.name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["celery", "-A", "app.celery_worker.celery_app", "worker", "--loglevel=info"]
+        env:
+        - name: CELERY_BROKER_URL
+          value: {{ tpl .Values.celery_worker.env.CELERY_BROKER_URL . | quote }}
+        - name: CELERY_RESULT_BACKEND
+          value: {{ tpl .Values.celery_worker.env.CELERY_RESULT_BACKEND . | quote }}
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.celery_worker.env.OPENAI_API_KEY_SECRET_NAME }}
+              key: OPENAI_API_KEY
+        - name: WEAVIATE_URL
+          value: "http://{{ .Release.Name }}-weaviate-service:8080" 

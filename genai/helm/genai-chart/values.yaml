@@ -1,0 +1,141 @@
+# Default values for genai-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: "/metrics"
+  prometheus.io/port: "8000"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Application specific values
+genai_app:
+  name: genai-app
+  service_name: genai-app-service
+  env:
+    # WEAVIATE_URL will be constructed from the weaviate chart values
+    OPENAI_API_KEY_SECRET_NAME: openai-credentials
+    CELERY_BROKER_URL: "redis://{{ .Release.Name }}-redis:6379/0" # Assuming redis is deployed within the same namespace
+    CELERY_RESULT_BACKEND: "redis://{{ .Release.Name }}-redis:6379/0"
+
+celery_worker:
+  name: genai-celery-worker
+  replicaCount: 1
+  env:
+    # WEAVIATE_URL will be constructed from the weaviate chart values
+    OPENAI_API_KEY_SECRET_NAME: openai-credentials
+    CELERY_BROKER_URL: "redis://{{ .Release.Name }}-redis:6379/0"
+    CELERY_RESULT_BACKEND: "redis://{{ .Release.Name }}-redis:6379/0"
+
+weaviate:
+  enabled: true
+  name: weaviate
+  service_name: weaviate-service
+  image:
+    repository: semitechnologies/weaviate
+    tag: "1.23.7"
+  persistence:
+    enabled: false # Use emptyDir by default
+    # existingClaim: ""
+    # size: 8Gi
+    # storageClass: ""
+
+redis:
+  enabled: true
+  name: redis
+  image:
+    repository: redis
+    tag: "7-alpine"
+
+monitoring:
+  enabled: false
+  prometheus:
+    name: prometheus
+    service_name: prometheus-service
+    image: prom/prometheus:v2.37.0
+  grafana:
+    name: grafana
+    image: grafana/grafana:9.1.0
+    adminPassword: "" # Should be set via secret or CI/CD
+  loki:
+    name: loki
+    image: grafana/loki:2.6.1
+  promtail:
+    name: promtail
+    image: grafana/promtail:2.6.1 
