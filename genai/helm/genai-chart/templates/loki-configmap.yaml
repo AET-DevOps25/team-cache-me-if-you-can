@@ -1,8 +1,11 @@
+{{- if .Values.monitoring.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: loki-config
-  namespace: developmentv1
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.monitoring.loki.name }}
 data:
   loki-config.yaml: |
     auth_enabled: false
@@ -17,18 +20,15 @@ data:
           kvstore:
             store: inmemory
           replication_factor: 1
+        final_sleep: 0s
       chunk_idle_period: 5m
-      chunk_target_size: 1048576
-      chunk_retain_period: 1m
+      chunk_retain_period: 30s
       max_transfer_retries: 0
-      wal:
-        enabled: true
-        dir: /loki/wal
 
     schema_config:
       configs:
-        - from: 2020-10-24
-          store: boltdb-shipper
+        - from: 2020-01-20
+          store: boltdb
           object_store: filesystem
           schema: v11
           index:
@@ -36,19 +36,20 @@ data:
             period: 24h
 
     storage_config:
-      boltdb_shipper:
-        active_index_directory: /loki/boltdb-shipper-active
-        cache_location: /loki/boltdb-shipper-cache
-        cache_ttl: 24h
-        shared_store: filesystem
+      boltdb:
+        directory: /loki/index
       filesystem:
         directory: /loki/chunks
-
-    compactor:
-      working_directory: /loki/compactor
-      shared_store: filesystem
 
     limits_config:
       enforce_metric_name: false
       reject_old_samples: true
-      reject_old_samples_max_age: 168h 
+      reject_old_samples_max_age: 168h
+
+    chunk_store_config:
+      max_look_back_period: 0s
+
+    table_manager:
+      retention_deletes_enabled: false
+      retention_period: 0s
+{{- end }} 

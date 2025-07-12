@@ -1,0 +1,35 @@
+# Pre-production specific values
+ingress:
+  enabled: true
+  hosts:
+    - host: genai-preprod.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+   - secretName: genai-preprod-tls
+     hosts:
+       - genai-preprod.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+
+weaviate:
+  persistence:
+    enabled: true
+    size: 20Gi
+    # storageClass: "your-storage-class" # Important: specify your storage class
+
+# For pre-production, you might use a managed redis or a more robust setup
+# For now, we keep it disabled, assuming an external redis is used.
+# The celery_broker_url and celery_result_backend will have to be set in the CI/CD pipeline
+# or you can create a secret and reference it here.
+redis:
+  enabled: false
+
+genai_app:
+  env:
+    CELERY_BROKER_URL: "redis://your-preprod-redis-url:6379/0"
+    CELERY_RESULT_BACKEND: "redis://your-preprod-redis-url:6379/0"
+
+celery_worker:
+  env:
+    CELERY_BROKER_URL: "redis://your-preprod-redis-url:6379/0"
+    CELERY_RESULT_BACKEND: "redis://your-preprod-redis-url:6379/0" 
