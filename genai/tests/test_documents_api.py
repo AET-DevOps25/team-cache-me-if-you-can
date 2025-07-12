@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import UploadFile
+from unittest.mock import MagicMock
 from app.main import app
 from app.services.document_service import (
     DocumentProcessingService,
@@ -50,7 +51,15 @@ def doc_test_client():
 
 
 # Update tests to use the client from the fixture
-def test_upload_document_success_pdf(doc_test_client: TestClient):
+def test_upload_document_success_pdf(doc_test_client: TestClient, mocker):
+    # Mock the Celery task
+    mock_task = MagicMock()
+    mock_task.id = "test-task-id-pdf"
+    mocker.patch(
+        "app.celery_tasks.document_tasks.process_and_index_document_task.delay",
+        return_value=mock_task,
+    )
+
     file_content = b"dummy pdf content"
     file_name = "success_test.pdf"
     response = doc_test_client.post(
@@ -65,7 +74,15 @@ def test_upload_document_success_pdf(doc_test_client: TestClient):
     assert "task_id" in data
 
 
-def test_upload_document_success_docx(doc_test_client: TestClient):
+def test_upload_document_success_docx(doc_test_client: TestClient, mocker):
+    # Mock the Celery task
+    mock_task = MagicMock()
+    mock_task.id = "test-task-id-docx"
+    mocker.patch(
+        "app.celery_tasks.document_tasks.process_and_index_document_task.delay",
+        return_value=mock_task,
+    )
+
     file_content = b"dummy docx content"
     file_name = "success_test.docx"
     response = doc_test_client.post(
@@ -86,7 +103,15 @@ def test_upload_document_success_docx(doc_test_client: TestClient):
     assert "task_id" in data
 
 
-def test_upload_document_success_pptx(doc_test_client: TestClient):
+def test_upload_document_success_pptx(doc_test_client: TestClient, mocker):
+    # Mock the Celery task
+    mock_task = MagicMock()
+    mock_task.id = "test-task-id-pptx"
+    mocker.patch(
+        "app.celery_tasks.document_tasks.process_and_index_document_task.delay",
+        return_value=mock_task,
+    )
+
     file_content = b"dummy pptx content"
     file_name = "success_test.pptx"
     response = doc_test_client.post(
