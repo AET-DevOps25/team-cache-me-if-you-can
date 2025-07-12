@@ -56,13 +56,13 @@ def test_upload_document_success_pdf(doc_test_client: TestClient):
     response = doc_test_client.post(
         "/api/v1/documents/upload",
         files={"file": (file_name, io.BytesIO(file_content), "application/pdf")},
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == file_name
-    assert data["message"] == "Document processed and sent for indexing successfully."
-    assert data["document_count"] == 3
-    assert data["error"] is None
+    assert data["message"] == "Document uploaded and processing started in background."
+    assert "task_id" in data
 
 
 def test_upload_document_success_docx(doc_test_client: TestClient):
@@ -77,13 +77,13 @@ def test_upload_document_success_docx(doc_test_client: TestClient):
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             )
         },
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == file_name
-    assert data["message"] == "Document processed and sent for indexing successfully."
-    assert data["document_count"] == 3
-    assert data["error"] is None
+    assert data["message"] == "Document uploaded and processing started in background."
+    assert "task_id" in data
 
 
 def test_upload_document_success_pptx(doc_test_client: TestClient):
@@ -98,13 +98,13 @@ def test_upload_document_success_pptx(doc_test_client: TestClient):
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             )
         },
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == file_name
-    assert data["message"] == "Document processed and sent for indexing successfully."
-    assert data["document_count"] == 3
-    assert data["error"] is None
+    assert data["message"] == "Document uploaded and processing started in background."
+    assert "task_id" in data
 
 
 def test_upload_document_unsupported_type(doc_test_client: TestClient):
@@ -113,6 +113,7 @@ def test_upload_document_unsupported_type(doc_test_client: TestClient):
     response = doc_test_client.post(
         "/api/v1/documents/upload",
         files={"file": (file_name, io.BytesIO(file_content), "text/plain")},
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 400
     data = response.json()
@@ -125,25 +126,30 @@ def test_upload_document_no_extension(doc_test_client: TestClient):
     response = doc_test_client.post(
         "/api/v1/documents/upload",
         files={"file": (file_name, io.BytesIO(file_content), "application/octet-stream")},
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 400
     data = response.json()
     assert "File has no extension." in data["detail"]
 
 
-def test_upload_document_processing_error(doc_test_client: TestClient):
+def test_upload_document_processing_error(doc_test_client: TestClient, mocker):
+    mocker.patch(
+        "app.celery_tasks.document_tasks.process_and_index_document_task.delay",
+        side_effect=Exception("Celery error"),
+    )
     file_content = b"dummy pdf content for error"
     file_name = "error_test.pdf"
     response = doc_test_client.post(
         "/api/v1/documents/upload",
         files={"file": (file_name, io.BytesIO(file_content), "application/pdf")},
+        headers={"X-Group-ID": "test_group"},
     )
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == file_name
-    assert data["message"] == "Failed to process document."
-    assert data["error"] == "Simulated processing error"
-    assert data.get("document_count") is None or data.get("document_count") == 0
+    assert "An unexpected server error occurred." in data["message"]
+    assert "error" in data
 
 
 # Removed old module-level client, singleton resets at top of file, and teardown_module

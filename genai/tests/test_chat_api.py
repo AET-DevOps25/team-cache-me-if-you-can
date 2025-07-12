@@ -50,7 +50,7 @@ class MockRAGSystem:
 
         self.rag_chain = MockChain()
 
-    async def invoke_chain(self, query: str):
+    async def invoke_chain(self, query: str, tenant: str):
         if "error_query" in query:
             raise ValueError("Simulated RAG system error")
 
@@ -92,7 +92,11 @@ def test_query_document_success(chat_test_client: TestClient):
     Tests a successful query to the RAG pipeline.
     """
     query = "What is the capital of France?"
-    response = chat_test_client.post("/api/v1/chat/query/sync", json={"question": query})
+    response = chat_test_client.post(
+        "/api/v1/chat/query/sync",
+        json={"question": query},
+        headers={"X-Group-ID": "test_group"},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["answer"] == "This is a mocked answer to your question: " + query
@@ -110,7 +114,11 @@ def test_query_document_no_docs_retrieved(chat_test_client: TestClient, mocker):
         "app.core.rag_pipeline.RAGSystem.invoke_chain",
         return_value={"answer": "I don't know.", "source_documents": []},
     )
-    response = chat_test_client.post("/api/v1/chat/query/sync", json={"question": query})
+    response = chat_test_client.post(
+        "/api/v1/chat/query/sync",
+        json={"question": query},
+        headers={"X-Group-ID": "test_group"},
+    )
     assert response.status_code == 200
     data = response.json()
     assert "answer" in data
@@ -120,7 +128,11 @@ def test_query_document_empty_question(chat_test_client: TestClient):
     """
     Tests the behavior with an empty question.
     """
-    response = chat_test_client.post("/api/v1/chat/query/sync", json={"question": "   "})  # Empty or whitespace only
+    response = chat_test_client.post(
+        "/api/v1/chat/query/sync",
+        json={"question": "   "},
+        headers={"X-Group-ID": "test_group"},
+    )  # Empty or whitespace only
     assert response.status_code == 400
 
 
@@ -128,7 +140,7 @@ def test_query_document_no_question_field(chat_test_client: TestClient):
     """
     Tests the behavior when the question field is missing.
     """
-    response = chat_test_client.post("/api/v1/chat/query/sync", json={})  # Missing question field
+    response = chat_test_client.post("/api/v1/chat/query/sync", json={}, headers={"X-Group-ID": "test_group"})  # Missing question field
     # FastAPI should return 422 for validation error
     assert response.status_code == 422
 
@@ -142,7 +154,11 @@ def test_query_document_rag_system_error(chat_test_client: TestClient, mocker):
         "app.core.rag_pipeline.RAGSystem.invoke_chain",
         side_effect=Exception("RAG system failure"),
     )
-    response = chat_test_client.post("/api/v1/chat/query/sync", json={"question": query})
+    response = chat_test_client.post(
+        "/api/v1/chat/query/sync",
+        json={"question": query},
+        headers={"X-Group-ID": "test_group"},
+    )
     assert response.status_code == 500
 
 
@@ -154,12 +170,16 @@ def test_query_document_async_starts_task(chat_test_client: TestClient, mocker):
     mock_task.return_value = mocker.MagicMock(id="test_task_id")
 
     query = "What is the meaning of life, asynchronously?"
-    response = chat_test_client.post("/api/v1/chat/query/async", json={"question": query})
+    response = chat_test_client.post(
+        "/api/v1/chat/query/async",
+        json={"question": query},
+        headers={"X-Group-ID": "test_group"},
+    )
 
     assert response.status_code == 202
     data = response.json()
     assert data["task_id"] == "test_task_id"
-    mock_task.assert_called_once_with(query)
+    mock_task.assert_called_once_with(query, "test_group")
 
 
 def test_get_query_result_pending(chat_test_client: TestClient, mocker):

@@ -137,7 +137,7 @@ class WeaviateIndexer:
 
         try:
             collection = self.client.collections.get(self.index_name)
-            
+
             # Create tenant if not exists
             if tenant not in collection.tenants.get():
                 collection.tenants.create(tenants=[wvc.tenants.Tenant(name=tenant)])
@@ -188,7 +188,7 @@ class WeaviateIndexer:
             if tenant not in collection.tenants.get():
                 logger.warning(f"Tenant '{tenant}' not found in '{self.index_name}'. Returning empty list.")
                 return []
-            
+
             tenant_coll = collection.with_tenant(tenant)
             response = tenant_coll.query.fetch_objects(
                 filters=wvc.query.Filter.by_property("source").like("*"),
@@ -241,7 +241,7 @@ class WeaviateLangchainRetriever(BaseRetriever):
             if tenant not in collection.tenants.get():
                 logger.warning(f"Tenant '{tenant}' not found in '{self.index_name}'. Returning no documents.")
                 return []
-            
+
             query_embedding = self.embedding_model.embed_query(query)
 
             tenant_collection = collection.with_tenant(tenant)
@@ -282,6 +282,7 @@ class WeaviateLangchainRetriever(BaseRetriever):
 
     async def _aget_relevant_documents(self, query: str, **kwargs: Any) -> List[LangchainDocument]:
         import asyncio
+
         return await asyncio.to_thread(self._get_relevant_documents, query, **kwargs)
 
 
@@ -305,10 +306,7 @@ async def get_all_documents_for_source(source_filename: str, tenant: str) -> Lis
         collection = client.collections.get(settings.WEAVIATE_INDEX_NAME)
 
         if tenant not in collection.tenants.get():
-            logger.warning(
-                f"Tenant '{tenant}' not found for source '{source_filename}'. "
-                f"Cannot retrieve documents."
-            )
+            logger.warning(f"Tenant '{tenant}' not found for source '{source_filename}'. " f"Cannot retrieve documents.")
             return []
 
         tenant_collection = collection.with_tenant(tenant)
