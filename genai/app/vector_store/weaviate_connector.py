@@ -202,6 +202,43 @@ class WeaviateIndexer:
             logger.error(f"Error retrieving all document sources from '{self.index_name}' for tenant '{tenant}': {e}", exc_info=True)
             raise
 
+    def delete_documents_by_source(self, source: str, tenant: str) -> int:
+        """
+        Deletes all documents (objects) from Weaviate that match a specific source filename for a given tenant.
+        Returns the number of objects deleted.
+        """
+        if not source or not tenant:
+            logger.warning("Source filename and tenant must be provided for deletion.")
+            return 0
+
+        try:
+            collection = self.client.collections.get(self.index_name)
+            if tenant not in collection.tenants.get():
+                logger.warning(f"Tenant '{tenant}' not found in '{self.index_name}'. Cannot delete document '{source}'.")
+                return 0
+
+            tenant_coll = collection.with_tenant(tenant)
+
+            # Define the filter to target documents by their source
+            where_filter = wvc.query.Filter.by_property("source").equal(source)
+
+            # Perform the deletion
+            # Note: delete_many returns an object with details about the operation
+            result = tenant_coll.data.delete_many(where=where_filter)
+            successful_deletions = result.successful
+            failed_deletions = result.failed
+
+            if failed_deletions > 0:
+                logger.error(f"Encountered {failed_deletions} errors while deleting document chunks for source '{source}' in tenant '{tenant}'.")
+                # You could inspect result.errors for more details if needed
+
+            logger.info(f"Successfully deleted {successful_deletions} document chunks for source '{source}' in tenant '{tenant}'.")
+            return successful_deletions
+
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while deleting documents for source '{source}' in tenant '{tenant}': {e}", exc_info=True)
+            raise
+
 
 def get_weaviate_indexer() -> WeaviateIndexer:
     """Provides a WeaviateIndexer instance."""

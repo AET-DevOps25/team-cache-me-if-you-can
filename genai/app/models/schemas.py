@@ -14,6 +14,11 @@ class DocumentSourceResponse(BaseModel):
     source: str
 
 
+class DocumentDeleteResponse(BaseModel):
+    filename: str
+    message: str
+
+
 class DocumentResponse(BaseModel):
     filename: str
     metadata: Dict[str, Any]
@@ -50,6 +55,18 @@ class TaskStatusResponse(BaseModel):
     task_id: str
     status: str
     result: Optional[QueryResponse] = None
+
+
+class DocumentProcessingResult(BaseModel):
+    filename: str
+    docs_indexed: int
+    error_message: Optional[str] = None
+
+
+class DocumentTaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    result: Optional[DocumentProcessingResult] = None
 
 
 class HealthCheckResponse(BaseModel):

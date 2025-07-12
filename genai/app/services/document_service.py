@@ -71,6 +71,29 @@ class DocumentProcessingService:
         logger.info(f"Retrieving all document sources for tenant '{tenant}'.")
         return self.weaviate_indexer.get_all_document_sources(tenant)
 
+    async def delete_document(self, filename: str, tenant: str) -> tuple[bool, str]:
+        """
+        Deletes a document and its indexed data from the system for a specific tenant.
+        Returns a tuple of (success_status, message).
+        """
+        try:
+            logger.info(f"Attempting to delete document '{filename}' for tenant '{tenant}'.")
+            deleted_count = self.weaviate_indexer.delete_documents_by_source(source=filename, tenant=tenant)
+
+            if deleted_count > 0:
+                message = f"Successfully deleted {deleted_count} indexed chunks for document '{filename}'."
+                logger.info(message)
+                return True, message
+            else:
+                message = f"Document '{filename}' not found or already deleted for tenant '{tenant}'."
+                logger.warning(message)
+                return False, message
+
+        except Exception as e:
+            error_message = f"An unexpected error occurred while deleting document '{filename}' for tenant '{tenant}': {e}"
+            logger.error(error_message, exc_info=True)
+            return False, error_message
+
 
 # Singleton instance (or use FastAPI dependency injection)
 _document_processing_service_instance: Optional[DocumentProcessingService] = None
