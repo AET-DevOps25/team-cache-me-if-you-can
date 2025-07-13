@@ -29,7 +29,8 @@
         release_namespace: "{{ kubernetes_namespace }}"
         values_files:
           - "{{ helm_values_file }}"
-        set_values: "image.tag={{ image_tag }}"
+        set_values:
+          - { path: 'image.tag', value: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}" }
         state: present
         wait: yes
         timeout: "5m0s"
