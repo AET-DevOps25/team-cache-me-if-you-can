@@ -29,7 +29,7 @@
         release_namespace: "{{ kubernetes_namespace }}"
         values_files:
           - "{{ helm_values_file }}"
-        set_values: "image.tag={{ image_tag }}"
+        set_values: "{{ ['image.tag=' + image_tag] if image_tag else [] }}"
         state: present
         wait: yes
         timeout: "5m0s"
