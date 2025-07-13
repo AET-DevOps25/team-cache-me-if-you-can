@@ -52,7 +52,7 @@ jobs:
 
       - name: Install Ansible
         run: |
-          python3 -m pip install ansible
+          python3 -m pip install ansible kubernetes
           ansible-galaxy collection install kubernetes.core
 
       - name: Deploy to Kubernetes with Ansible
@@ -85,7 +85,7 @@ jobs:
   #
   #   - name: Install Ansible
   #     run: |
-  #       python3 -m pip install ansible
+  #       python3 -m pip install ansible kubernetes
   #       ansible-galaxy collection install kubernetes.core
   #
   #   - name: Deploy to Kubernetes with Ansible
@@ -119,7 +119,7 @@ jobs:
   #
   #   - name: Install Ansible
   #     run: |
-  #       python3 -m pip install ansible
+  #       python3 -m pip install ansible kubernetes
   #       ansible-galaxy collection install kubernetes.core
   #
   #   - name: Deploy to Kubernetes with Ansible
