@@ -45,22 +45,15 @@ jobs:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
 
-      - name: Install Ansible
+      - name: Deploy to Kubernetes with Helm
         run: |
-          python3 -m pip install ansible kubernetes
-          ansible-galaxy collection install kubernetes.core
-
-      - name: Deploy to Kubernetes with Ansible
-        run: |
-          ansible-playbook genai/ansible/deploy_genai.yml \
-            -i genai/ansible/inventory \
-            -e "target_env=development" \
-            -e "image_tag=${{ github.sha }}"
+          helm upgrade --install genai-dev ./genai/helm/genai-chart \
+            --namespace developmentv1 --create-namespace \
+            -f ./genai/helm/genai-chart/values-development.yaml \
+            --set image.tag=${{ github.sha }}
 
   # deploy_preprod:
   #   name: Deploy to Pre-production
@@ -69,32 +62,13 @@ jobs:
   #   if: startsWith(github.ref, 'refs/tags/v') # Example: trigger on tags like v1.2.3
   #
   #   steps:
-  #   - name: Check out code
-  #     uses: actions/checkout@v4
-  #
-  #   - name: Set up Kubeconfig
-  #     uses: azure/k8s-set-context@v4
-  #     with:
-  #       method: kubeconfig
-  #       kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
-  #
-  #   - name: Set up Python
-  #     uses: actions/setup-python@v5
-  #     with:
-  #       python-version: '3.10'
-  #
-  #   - name: Install Ansible
+  #   ... (similar to deploy_dev)
+  #   - name: Deploy to Kubernetes with Helm
   #     run: |
-  #       python3 -m pip install ansible kubernetes
-  #       ansible-galaxy collection install kubernetes.core
-  #
-  #   - name: Deploy to Kubernetes with Ansible
-  #     env:
-  #       IMAGE_TAG: ${{ github.ref_name }}
-  #     run: |
-  #       ansible-playbook genai/ansible/deploy_genai.yml \
-  #         -i genai/ansible/inventory \
-  #         -e "target_env=pre_prod"
+  #       helm upgrade --install genai-preprod ./genai/helm/genai-chart \
+  #         --namespace preprod --create-namespace \
+  #         -f ./genai/helm/genai-chart/values-preprod.yaml \
+  #         --set image.tag=${{ github.ref_name }} # Use tag as image version
   #
   # deploy_prod:
   #   name: Deploy to Production
@@ -104,29 +78,10 @@ jobs:
   #   if: startsWith(github.ref, 'refs/tags/v')
   #
   #   steps:
-  #   - name: Check out code
-  #     uses: actions/checkout@v4
-  #
-  #   - name: Set up Kubeconfig
-  #     uses: azure/k8s-set-context@v4
-  #     with:
-  #       method: kubeconfig
-  #       kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
-  #
-  #   - name: Set up Python
-  #     uses: actions/setup-python@v5
-  #     with:
-  #       python-version: '3.10'
-  #
-  #   - name: Install Ansible
+  #   ... (similar to deploy_dev)
+  #   - name: Deploy to Kubernetes with Helm
   #     run: |
-  #       python3 -m pip install ansible kubernetes
-  #       ansible-galaxy collection install kubernetes.core
-  #
-  #   - name: Deploy to Kubernetes with Ansible
-  #     env:
-  #       IMAGE_TAG: ${{ github.ref_name }}
-  #     run: |
-  #       ansible-playbook genai/ansible/deploy_genai.yml \
-  #         -i genai/ansible/inventory \
-  #         -e "target_env=prod" 
+  #       helm upgrade --install genai-prod ./genai/helm/genai-chart \
+  #         --namespace prod --create-namespace \
+  #         -f ./genai/helm/genai-chart/values-prod.yaml \
+  #         --set image.tag=${{ github.ref_name }} 
