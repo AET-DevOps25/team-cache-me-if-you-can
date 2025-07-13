@@ -29,8 +29,7 @@
         release_namespace: "{{ kubernetes_namespace }}"
         values_files:
           - "{{ helm_values_file }}"
-        set_values:
-          - { path: 'image.tag', value: "{{ image_tag | default(omit) }}" }
+        set_values: "image.tag={{ image_tag }}"
         state: present
         wait: yes
         timeout: "5m0s"
