@@ -1,0 +1,43 @@
+---
+- name: Deploy GenAI Microservice
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Ensure target environment is specified
+      fail:
+        msg: "Please specify the target environment by passing '-e target_env=<env>' to the ansible-playbook command. Valid environments are: development, pre_prod, prod"
+      when: target_env is not defined or target_env not in ['development', 'pre_prod', 'prod']
+
+    - name: Set environment specific variables
+      include_vars:
+        file: "inventory/group_vars/{{ target_env }}.yml"
+
+    - name: Ensure Kubernetes namespace exists
+      kubernetes.core.k8s:
+        name: "{{ kubernetes_namespace }}"
+        api_version: v1
+        kind: Namespace
+        state: present
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    - name: Deploy or upgrade the genai-chart
+      kubernetes.core.helm:
+        name: "{{ release_name }}"
+        chart_ref: "{{ helm_chart_path }}"
+        release_namespace: "{{ kubernetes_namespace }}"
+        values_files:
+          - "{{ helm_values_file }}"
+        set_values:
+          - { path: 'image.tag', value: "{{ image_tag | default(omit) }}" }
+        state: present
+        wait: yes
+        timeout: "5m0s"
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      register: helm_release_status
+
+    - name: Print Helm release status
+      debug:
+        var: helm_release_status.stdout_lines 

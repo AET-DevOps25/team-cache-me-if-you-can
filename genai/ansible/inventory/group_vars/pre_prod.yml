@@ -1,0 +1,4 @@
+---
+# Settings for the pre-production environment
+kubernetes_namespace: "pre-prod"
+helm_values_file: "{{ helm_chart_path }}/values-preprod.yaml" 
