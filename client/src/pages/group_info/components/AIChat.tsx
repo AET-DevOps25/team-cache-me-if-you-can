@@ -33,6 +33,7 @@ const AIChat: React.FC = () => {
   const simulateServerResponse = async (
     userMessage: string
   ): Promise<string> => {
+    console.log(userMessage);
     await new Promise((resolve) =>
       setTimeout(resolve, 1000 + Math.random() * 2000)
     );
@@ -74,6 +75,7 @@ const AIChat: React.FC = () => {
       };
 
       setMessages((prev) => [...prev, botMessage]);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -94,17 +96,6 @@ const AIChat: React.FC = () => {
       handleSendMessage();
     }
   };
-
-  const ThinkingIndicator = () => (
-    <div className="flex items-start space-x-3">
-      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-        <Bot className="w-5 h-5 text-white" />
-      </div>
-      <div className="bg-gray-100 rounded-lg px-4 py-2 max-w-xs animate-pulse">
-        <span className="text-gray-600">Thinking...</span>
-      </div>
-    </div>
-  );
 
   return (
     <div className="ai-chat-wrapper">
