@@ -8,6 +8,10 @@ resource "kubernetes_deployment" "client" {
     }
   }
 
+  annotations = {
+      "redeploy-trigger" = var.redeploy_id
+    }
+
   spec {
     replicas = 3
 
@@ -23,6 +27,10 @@ resource "kubernetes_deployment" "client" {
           app = "client"
         }
       }
+
+      annotations = {
+      "redeploy-trigger" = var.redeploy_id
+    }
 
       spec {
         container {
