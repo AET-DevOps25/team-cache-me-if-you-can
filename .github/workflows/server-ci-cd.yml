@@ -3,11 +3,10 @@ name: Server CI/CD
 on:
   push:
     branches:
+      - '**'
+  pull_request:
+    branches:
       - main
-      - workflows/publish-group-service-and-user
-    paths:
-      - 'server/**'
-      - '.github/workflows/server-ci-cd.yml'
 
 env:
   GHCR_REGISTRY: ghcr.io
@@ -22,7 +21,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [user, group, gateway]
+        service: [user, group, gateway, files]
       fail-fast: false
 
     steps:
@@ -72,7 +71,6 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: needs.build-and-push.result == 'success'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

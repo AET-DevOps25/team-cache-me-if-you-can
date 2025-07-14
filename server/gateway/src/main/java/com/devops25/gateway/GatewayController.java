@@ -129,8 +129,45 @@ public class GatewayController {
                 );
     }
 
+    @RequestMapping(value = "/api/files/**", method = {
+            RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE })
+    public Mono<ResponseEntity<byte[]>> routeToFilesService(
+            ServerHttpRequest request,
+            @RequestBody(required = false) byte[] bodyBytes) {
 
-    // Route to User Service
+        // Build the target URL: preserve path + query
+        URI uri = request.getURI();
+        String path = uri.getPath();
+        String query = uri.getRawQuery();
+        String target = filesServiceUrl + path + (query != null ? "?" + query : "");
+
+        // Forward method, headers, and optional body
+        return webClient
+                .method(request.getMethod())
+                .uri(target)
+                .headers(headers -> {
+                    // Copy all incoming headers except host
+                    request.getHeaders().forEach((name, values) -> {
+                        if (!name.equalsIgnoreCase("host")) {
+                            headers.put(name, values);
+                        }
+                    });
+                })
+                .body(bodyBytes != null
+                        ? BodyInserters.fromValue(bodyBytes)
+                        : BodyInserters.empty())
+                .exchangeToMono(clientResp ->
+                        clientResp.toEntity(byte[].class)
+                )
+                .onErrorResume(e ->
+                        Mono.just(ResponseEntity
+                                .status(HttpStatus.BAD_GATEWAY)
+                                .body(("Files service unavailable: " + e.getMessage()).getBytes())
+                        )
+                );
+    }
+
+
     @RequestMapping(value = "/api/users/**", method = {
             RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.DELETE
@@ -177,6 +214,7 @@ public class GatewayController {
         }
     }
 
+    /*
     // Route to Files Service
     @RequestMapping(value = "/api/files/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public Mono<ResponseEntity<String>> routeToFilesService(
@@ -219,7 +257,7 @@ public class GatewayController {
                     .onErrorReturn(ResponseEntity.status(500)
                             .body("{\"error\": \"Files service unavailable\"}"));
         }
-    }
+    }*/
 
     // Route to GenAI Service
     @RequestMapping(value = "/ai/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})

@@ -1,6 +1,8 @@
 FROM openjdk:17-slim
 
 WORKDIR /files
+RUN mkdir -p /uploads
+VOLUME /uploads
 ADD ./build/libs/files-0.0.1-SNAPSHOT.jar /files/files.jar
 ENV SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/files_database
 ENV SPRING_DATASOURCE_USERNAME=files

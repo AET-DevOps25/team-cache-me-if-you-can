@@ -1,4 +1,3 @@
-
 resource "kubernetes_deployment" "user" {
   metadata {
     name      = "user-service"
@@ -14,7 +13,6 @@ resource "kubernetes_deployment" "user" {
         container {
           name  = "user-service"
           image = "ghcr.io/aet-devops25/team-cache-me-if-you-can/user-service:${var.image_tag_user}"
-          # <-- Use 'port', not 'ports'
           port {
             container_port = 8081
           }
@@ -107,6 +105,56 @@ resource "kubernetes_deployment" "gateway" {
             http_get {
               path = "/actuator/health/readiness"
               port = 8080
+            }
+            initial_delay_seconds = 10
+            period_seconds        = 5
+          }
+        }
+      }
+    }
+  }
+}
+resource "kubernetes_deployment" "files" {
+  metadata {
+    name      = "files-service"
+    namespace = var.namespace
+    labels    = { app = "files-service" }
+  }
+  spec {
+    replicas = 1
+    selector { match_labels = { app = "files-service" } }
+    template {
+      metadata { labels = { app = "files-service" } }
+      spec {
+        # mount a directory for uploads (ephemeral emptyDir)
+        volume {
+          name = "uploads"
+          empty_dir {}
+        }
+
+        container {
+          name  = "files-service"
+          image = "ghcr.io/aet-devops25/team-cache-me-if-you-can/files-service:${var.image_tag_files}"
+          port {
+            container_port = 8082
+          }
+
+          env_from {
+            secret_ref {
+              name = kubernetes_secret.files_env.metadata[0].name
+            }
+          }
+
+          # expose the upload volume
+          volume_mount {
+            name       = "uploads"
+            mount_path = "/uploads"
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/actuator/health"
+              port = 8082
             }
             initial_delay_seconds = 10
             period_seconds        = 5

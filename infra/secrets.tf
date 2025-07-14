@@ -30,7 +30,6 @@
     type = "Opaque"
   }
 
-  # gateway-service environment secret
   resource "kubernetes_secret" "gateway_env" {
     metadata {
       name      = "gateway-env-secret"
@@ -39,6 +38,20 @@
     data = {
       JWT_SECRET_KEY         = var.jwt_secret_key
       SPRING_PROFILES_ACTIVE = var.spring_profile
+    }
+    type = "Opaque"
+  }
+  resource "kubernetes_secret" "files_env" {
+    metadata {
+      name      = "files-env-secret"
+      namespace = var.namespace
+    }
+    data = {
+      SPRING_DATASOURCE_URL      = "jdbc:mysql://${kubernetes_service.mysql.metadata[0].name}.${var.namespace}.svc.cluster.local:3306/${var.mysql_database_files}"
+      SPRING_DATASOURCE_USERNAME = var.mysql_user_files
+      SPRING_DATASOURCE_PASSWORD = var.mysql_password_files
+      JWT_SECRET_KEY             = var.jwt_secret_key
+      SPRING_PROFILES_ACTIVE     = var.spring_profile
     }
     type = "Opaque"
   }

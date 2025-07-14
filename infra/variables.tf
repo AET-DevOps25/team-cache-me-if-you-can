@@ -92,3 +92,10 @@ variable "spring_profile" {
   type        = string
   default     = "developmentv1"
 }
+
+variable "image_tag_files" {
+  description = "Image tag for files-service"
+  type        = string
+  default     = "latest"
+}
+

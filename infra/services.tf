@@ -45,3 +45,19 @@ resource "kubernetes_service" "gateway" {
     type = "ClusterIP"
   }
 }
+
+resource "kubernetes_service" "files" {
+  metadata {
+    name      = "files-service"
+    namespace = var.namespace
+    labels    = { app = "files-service" }
+  }
+  spec {
+    selector = { app = "files-service" }
+    port {
+      port        = 8082
+      target_port = 8082
+    }
+    type = "ClusterIP"
+  }
+}

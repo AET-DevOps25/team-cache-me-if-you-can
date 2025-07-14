@@ -27,6 +27,8 @@ public class Group {
     @Column(nullable = false)
     private String university;
 
+    @Lob
+    @Column(name = "image_url", columnDefinition = "LONGTEXT")
     private String imageUrl;
 
     private String filesServiceUrl; // Placeholder for group-specific files
