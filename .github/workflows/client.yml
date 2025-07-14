@@ -126,3 +126,8 @@ jobs:
         working-directory: ./client/terraform
         env:
           KUBECONFIG: $HOME/.kube/config
+
+      - name: Force Kubernetes Redeploy
+  run: kubectl rollout restart deployment client -n developmentv1
+  env:
+    KUBECONFIG: $HOME/.kube/config
