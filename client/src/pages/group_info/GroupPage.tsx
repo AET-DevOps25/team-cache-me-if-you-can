@@ -45,6 +45,7 @@ export default function GroupPage() {
 
         const data: GroupData = await res.json();
         setCurrentGroup(data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.error("Error fetching group:", err);
         setGroupError(err.message || "Could not load group.");
@@ -122,7 +123,7 @@ export default function GroupPage() {
             <div className="tab-content">
               {activeTab === "Group Info" && <GroupInfo />}
               {activeTab === "Materials" && <Material />}
-              {activeTab === "Chats" && <p>Chat history and messages</p>}
+              {activeTab === "Chats" && <p>Group Chat</p>}
               {activeTab === "AI Bot" && <AIChat />}
             </div>
           </div>
