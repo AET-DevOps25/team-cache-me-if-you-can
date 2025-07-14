@@ -110,7 +110,7 @@ jobs:
       - name: Configure kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
       - name: Terraform Init
