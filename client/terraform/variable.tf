@@ -1,4 +1,5 @@
 variable "redeploy_id" {
-  description = "Changes to this trigger redeploys"
+  description = "A unique identifier to force redeployment (e.g., GitHub SHA)"
   type        = string
+  default     = "latest" # Optional: Provide a default if not passed
 }

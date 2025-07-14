@@ -118,11 +118,11 @@ jobs:
         working-directory: ./client/terraform
 
       - name: Terraform Plan
-        run: terraform plan -var="redeploy_id=${{ github.run_id }}"
+        run: terraform plan -var="redeploy_id=${{ github.sha }}"
         working-directory: ./client/terraform
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var="redeploy_id=${{ github.run_id }}"
+        run: terraform apply -auto-approve -var="redeploy_id=${{ github.sha }}"
         working-directory: ./client/terraform
         env:
           KUBECONFIG: $HOME/.kube/config
