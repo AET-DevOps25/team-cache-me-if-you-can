@@ -1,0 +1,49 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Values.monitoring.promtail.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.monitoring.promtail.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.monitoring.promtail.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.monitoring.promtail.name }}
+    spec:
+      serviceAccountName: promtail-service-account
+      containers:
+      - name: {{ .Values.monitoring.promtail.name }}
+        image: {{ .Values.monitoring.promtail.image }}
+        args:
+        - -config.file=/etc/promtail/promtail-config.yaml
+        volumeMounts:
+        - name: promtail-config
+          mountPath: /etc/promtail
+        - name: var-log
+          mountPath: /var/log
+        - name: var-lib-docker-containers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      volumes:
+      - name: promtail-config
+        configMap:
+          name: promtail-config
+      - name: var-log
+        hostPath:
+          path: /var/log
+      - name: var-lib-docker-containers
+        hostPath:
+          path: /var/lib/docker/containers
+{{- end }} 

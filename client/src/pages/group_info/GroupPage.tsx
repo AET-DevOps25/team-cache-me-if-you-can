@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { GroupInfo } from "./components/GroupInfo";
 import { Material } from "./Material";
 import "./group_page.css";
+import AIChat from "./components/AIChat";
 
 export default function GroupPage() {
     const { groupId } = useParams<{ groupId: string }>();
@@ -187,7 +188,7 @@ export default function GroupPage() {
 
                         {activeTab === "AI Bot" && (
                             hasAccess() ? (
-                                <p>(Your AI Bot UI…)</p>
+                                <AIChat />
                             ) : (
                                 <p className="access-message">
                                     You must be a member (or owner) to access the AI Bot.

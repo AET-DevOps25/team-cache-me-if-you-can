@@ -7,6 +7,16 @@ class DocumentUploadResponse(BaseModel):
     message: str
     document_count: Optional[int] = None
     error: Optional[str] = None
+    task_id: Optional[str] = None
+
+
+class DocumentSourceResponse(BaseModel):
+    source: str
+
+
+class DocumentDeleteResponse(BaseModel):
+    filename: str
+    message: str
 
 
 class DocumentResponse(BaseModel):
@@ -16,6 +26,7 @@ class DocumentResponse(BaseModel):
 
 class QueryRequest(BaseModel):
     question: str
+    k: Optional[int] = None
     # session_id: Optional[str] = None # For chat history if needed later
 
 
@@ -44,6 +55,18 @@ class TaskStatusResponse(BaseModel):
     task_id: str
     status: str
     result: Optional[QueryResponse] = None
+
+
+class DocumentProcessingResult(BaseModel):
+    filename: str
+    docs_indexed: int
+    error_message: Optional[str] = None
+
+
+class DocumentTaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    result: Optional[DocumentProcessingResult] = None
 
 
 class HealthCheckResponse(BaseModel):

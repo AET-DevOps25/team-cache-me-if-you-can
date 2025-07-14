@@ -29,23 +29,59 @@ jobs:
       - name: Run tests
         run: pytest genai/tests
 
-  deploy:
-    name: Deploy to Kubernetes
+  deploy_dev:
+    name: Deploy to Development
     runs-on: ubuntu-latest
-    needs: test # Ensure tests pass before deploying (only for pushes to main)
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' # Only run on push to main
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
       - name: Set up Kubeconfig
-        uses: azure/k8s-set-context@v4 # A common action to set up kubectl
+        uses: azure/k8s-set-context@v4
         with:
           method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }} # IMPORTANT: You'll need to create this secret
+          kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
 
-      - name: Deploy to Kubernetes
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Deploy to Kubernetes with Helm
         run: |
-          kubectl apply -f genai/k8s
-          kubectl set image deployment/genai-app genai-app=ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:${{ github.sha }} -n dev 
+          helm upgrade --install genai-dev ./genai/helm/genai-chart \
+            --namespace developmentv1 --create-namespace \
+            -f ./genai/helm/genai-chart/values-development.yaml \
+            --set image.tag=${{ github.sha }}
+
+  # deploy_preprod:
+  #   name: Deploy to Pre-production
+  #   runs-on: ubuntu-latest
+  #   needs: test
+  #   if: startsWith(github.ref, 'refs/tags/v') # Example: trigger on tags like v1.2.3
+  #
+  #   steps:
+  #   ... (similar to deploy_dev)
+  #   - name: Deploy to Kubernetes with Helm
+  #     run: |
+  #       helm upgrade --install genai-preprod ./genai/helm/genai-chart \
+  #         --namespace preprod --create-namespace \
+  #         -f ./genai/helm/genai-chart/values-preprod.yaml \
+  #         --set image.tag=${{ github.ref_name }} # Use tag as image version
+  #
+  # deploy_prod:
+  #   name: Deploy to Production
+  #   runs-on: ubuntu-latest
+  #   needs: deploy_preprod # Chain deployments
+  #   environment: production # Use GitHub environments for protection rules
+  #   if: startsWith(github.ref, 'refs/tags/v')
+  #
+  #   steps:
+  #   ... (similar to deploy_dev)
+  #   - name: Deploy to Kubernetes with Helm
+  #     run: |
+  #       helm upgrade --install genai-prod ./genai/helm/genai-chart \
+  #         --namespace prod --create-namespace \
+  #         -f ./genai/helm/genai-chart/values-prod.yaml \
+  #         --set image.tag=${{ github.ref_name }} 

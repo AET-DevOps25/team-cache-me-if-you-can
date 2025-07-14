@@ -27,7 +27,7 @@ resource "kubernetes_deployment" "client" {
       spec {
         container {
           name  = "client"
-          image = "ghcr.io/aet-devops25/team-cache-me-if-you-can/client:amd64-latest"
+          image = "ghcr.io/aet-devops25/team-cache-me-if-you-can/client:${var.redeploy_id}"
           image_pull_policy = "Always"
 
           port {

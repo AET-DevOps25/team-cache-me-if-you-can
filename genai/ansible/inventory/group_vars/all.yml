@@ -1,0 +1,4 @@
+---
+# Common variables for all environments
+helm_chart_path: "{{ inventory_dir }}/../../helm/genai-chart"
+release_name: "genai-app" 

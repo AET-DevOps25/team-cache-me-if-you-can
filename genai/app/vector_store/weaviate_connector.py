@@ -10,6 +10,7 @@ from langchain_core.documents import (
 )
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import ConfigurableField
 from weaviate.exceptions import (
     WeaviateClosedClientError,
     WeaviateConnectionError,
@@ -18,12 +19,13 @@ from weaviate.exceptions import (
 logger = logging.getLogger(__name__)
 
 _weaviate_client: Optional[weaviate.WeaviateClient] = None
+_schema_checked = False
 DEFAULT_TOP_K = 5
 
 
 def get_weaviate_client() -> weaviate.WeaviateClient:
     """Initializes and returns a Weaviate v4 client instance."""
-    global _weaviate_client
+    global _weaviate_client, _schema_checked
     if _weaviate_client is None or not _weaviate_client.is_connected():
         logger.info(f"Attempting to connect to Weaviate at {settings.WEAVIATE_URL}")
         headers = {}
@@ -59,7 +61,9 @@ def get_weaviate_client() -> weaviate.WeaviateClient:
                 raise WeaviateConnectionError("Weaviate client connected but instance is not ready.")
 
             logger.info(f"Successfully connected to Weaviate v4 client at {settings.WEAVIATE_URL}.")
-            ensure_weaviate_schema(client=_weaviate_client, index_name=settings.WEAVIATE_INDEX_NAME)
+            if not _schema_checked:
+                ensure_weaviate_schema(client=_weaviate_client, index_name=settings.WEAVIATE_INDEX_NAME)
+                _schema_checked = True
         except Exception as e:
             logger.error(f"Failed to connect to Weaviate or ensure schema: {e}", exc_info=True)
             _weaviate_client = None  # Reset on failure
@@ -68,39 +72,43 @@ def get_weaviate_client() -> weaviate.WeaviateClient:
     return _weaviate_client
 
 
+# In ensure_weaviate_schema, force delete and recreate if exists to enable multi-tenancy
 def ensure_weaviate_schema(client: weaviate.WeaviateClient, index_name: str):
     """
     Ensures that the specified Weaviate collection (schema) exists, creating it if necessary.
     Uses v4 client API.
     """
     try:
-        if not client.collections.exists(index_name):
-            logger.info(f"Collection '{index_name}' does not exist. Creating now...")
+        if client.collections.exists(index_name):
+            logger.info(f"Collection '{index_name}' already exists. Skipping creation.")
+            # Optionally, you could check here if multi-tenancy is enabled and recreate if not
+            return
 
-            # Define properties for the collection.
-            # The 'text' property will store the document content.
-            properties = [
-                wvc.config.Property(name="text", data_type=wvc.config.DataType.TEXT),
-                wvc.config.Property(name="source", data_type=wvc.config.DataType.TEXT),  # Example: filename
-                wvc.config.Property(name="chunk_index", data_type=wvc.config.DataType.INT),  # Example
-                # Add other metadata properties as needed. Ensure they are
-                # simple types.
-            ]
+        logger.info(f"Creating collection '{index_name}' with multi-tenancy...")
 
-            vectorizer_config = wvc.config.Configure.Vectorizer.text2vec_openai(
-                model=settings.OPENAI_EMBEDDING_MODEL_NAME,  # type="text", # Usually default
-            )
+        # Define properties for the collection.
+        # The 'text' property will store the document content.
+        properties = [
+            wvc.config.Property(name="text", data_type=wvc.config.DataType.TEXT),
+            wvc.config.Property(name="source", data_type=wvc.config.DataType.TEXT),  # Example: filename
+            wvc.config.Property(name="chunk_index", data_type=wvc.config.DataType.INT),  # Example
+            # Add other metadata properties as needed. Ensure they are
+            # simple types.
+        ]
 
-            client.collections.create(
-                name=index_name,
-                properties=properties,
-                vectorizer_config=vectorizer_config,
-                # generative_config=generative_config, # If using Weaviate's generative search
-                # Can add other configurations like vector_index_config, sharding_config, etc.
-            )
-            logger.info(f"Successfully created collection '{index_name}'.")
-        else:
-            logger.info(f"Collection '{index_name}' already exists.")
+        vectorizer_config = wvc.config.Configure.Vectorizer.text2vec_openai(
+            model=settings.OPENAI_EMBEDDING_MODEL_NAME,  # type="text", # Usually default
+        )
+
+        client.collections.create(
+            name=index_name,
+            properties=properties,
+            vectorizer_config=vectorizer_config,
+            multi_tenancy_config=wvc.config.Configure.multi_tenancy(enabled=True),
+            # generative_config=generative_config, # If using Weaviate's generative search
+            # Can add other configurations like vector_index_config, sharding_config, etc.
+        )
+        logger.info(f"Successfully created collection '{index_name}' with multi-tenancy.")
     except Exception as e:
         logger.error(f"Error ensuring Weaviate schema for '{index_name}': {e}", exc_info=True)
         raise
@@ -115,19 +123,31 @@ class WeaviateIndexer:
         self.batch_size = batch_size
         logger.info(f"WeaviateIndexer initialized for collection '{index_name}' with batch_size={batch_size}.")
 
-    def index_documents(self, documents: List[LangchainDocument]):
+    def index_documents(self, documents: List[LangchainDocument], tenant: str):
         """
-        Indexes a list of Langchain Documents into the Weaviate collection.
+        Indexes a list of Langchain Documents into the Weaviate collection under the specified tenant.
         Uses v4 batching.
         """
         if not documents:
             logger.info("No documents provided for indexing.")
             return
 
+        if not tenant:
+            raise ValueError("Tenant must be provided for indexing.")
+
         try:
             collection = self.client.collections.get(self.index_name)
+
+            # Create tenant if not exists
+            if tenant not in collection.tenants.get():
+                collection.tenants.create(tenants=[wvc.tenants.Tenant(name=tenant)])
+                logger.info(f"Created tenant '{tenant}' in collection '{self.index_name}'.")
+
+            # Get a client for the specific tenant
+            tenant_collection = collection.with_tenant(tenant)
+
             # For v4, batching is typically done via the collection object
-            with collection.batch.fixed_size(batch_size=self.batch_size) as batch:
+            with tenant_collection.batch.fixed_size(batch_size=self.batch_size) as batch:
                 for i, doc in enumerate(documents):
                     properties = {"text": doc.page_content}
                     # Add metadata from LangchainDocument to properties
@@ -146,39 +166,77 @@ class WeaviateIndexer:
                     batch.add_object(properties=properties)
 
                     if (i + 1) % self.batch_size == 0:
-                        logger.info(f"Added {(i + 1)}/{len(documents)} documents to current Weaviate batch.")
+                        logger.info(f"Added {(i + 1)}/{len(documents)} documents to current Weaviate batch for tenant '{tenant}'.")
 
-            if collection.batch.failed_objects:
-                logger.error(f"Failed to index {len(collection.batch.failed_objects)} documents.")
-                for failed_obj in collection.batch.failed_objects:
+            if tenant_collection.batch.failed_objects:
+                logger.error(f"Failed to index {len(tenant_collection.batch.failed_objects)} documents for tenant '{tenant}'.")
+                for failed_obj in tenant_collection.batch.failed_objects:
                     logger.error(f"  Failed object: {failed_obj.message}, original_uuid: {failed_obj.original_uuid}")
             else:
-                logger.info(f"Successfully indexed {len(documents)} documents into '{self.index_name}'.")
+                logger.info(f"Successfully indexed {len(documents)} documents into '{self.index_name}' for tenant '{tenant}'.")
 
         except Exception as e:
-            logger.error(f"Error indexing documents into '{self.index_name}': {e}", exc_info=True)
+            logger.error(f"Error indexing documents into '{self.index_name}' for tenant '{tenant}': {e}", exc_info=True)
             raise
 
-    async def get_all_document_sources(self) -> List[dict]:
+    def get_all_document_sources(self, tenant: str) -> List[str]:
         """
-        Retrieves a list of unique source documents from Weaviate.
+        Retrieves a list of unique source documents from Weaviate for the specified tenant.
         """
         try:
             collection = self.client.collections.get(self.index_name)
+            if tenant not in collection.tenants.get():
+                logger.warning(f"Tenant '{tenant}' not found in '{self.index_name}'. Returning empty list.")
+                return []
 
-            # Use a query to fetch distinct source properties
-            response = collection.query.fetch_objects(
+            tenant_coll = collection.with_tenant(tenant)
+            response = tenant_coll.query.fetch_objects(
+                filters=wvc.query.Filter.by_property("source").like("*"),
                 return_properties=["source"],
+                limit=1000,
             )
+            # Use a set to get unique sources, as one source can have multiple chunks
+            sources = {obj.properties["source"] for obj in response.objects}
+            return list(sources)
+        except Exception as e:
+            logger.error(f"Error retrieving all document sources from '{self.index_name}' for tenant '{tenant}': {e}", exc_info=True)
+            raise
 
-            # Process the response to get unique source filenames
-            unique_sources = {obj.properties["source"] for obj in response.objects if "source" in obj.properties}
+    def delete_documents_by_source(self, source: str, tenant: str) -> int:
+        """
+        Deletes all documents (objects) from Weaviate that match a specific source filename for a given tenant.
+        Returns the number of objects deleted.
+        """
+        if not source or not tenant:
+            logger.warning("Source filename and tenant must be provided for deletion.")
+            return 0
 
-            # Return a list of dictionaries as per the DocumentResponse model
-            return [{"filename": source, "metadata": {}} for source in unique_sources]
+        try:
+            collection = self.client.collections.get(self.index_name)
+            if tenant not in collection.tenants.get():
+                logger.warning(f"Tenant '{tenant}' not found in '{self.index_name}'. Cannot delete document '{source}'.")
+                return 0
+
+            tenant_coll = collection.with_tenant(tenant)
+
+            # Define the filter to target documents by their source
+            where_filter = wvc.query.Filter.by_property("source").equal(source)
+
+            # Perform the deletion
+            # Note: delete_many returns an object with details about the operation
+            result = tenant_coll.data.delete_many(where=where_filter)
+            successful_deletions = result.successful
+            failed_deletions = result.failed
+
+            if failed_deletions > 0:
+                logger.error(f"Encountered {failed_deletions} errors while deleting document chunks for source '{source}' in tenant '{tenant}'.")
+                # You could inspect result.errors for more details if needed
+
+            logger.info(f"Successfully deleted {successful_deletions} document chunks for source '{source}' in tenant '{tenant}'.")
+            return successful_deletions
 
         except Exception as e:
-            logger.error(f"Error retrieving all document sources from '{self.index_name}': {e}", exc_info=True)
+            logger.error(f"An unexpected error occurred while deleting documents for source '{source}' in tenant '{tenant}': {e}", exc_info=True)
             raise
 
 
@@ -195,6 +253,7 @@ class WeaviateLangchainRetriever(BaseRetriever):
     embedding_model: Embeddings
     index_name: str
     k: int
+    tenant: Optional[str] = None
 
     def __init__(
         self,
@@ -208,39 +267,42 @@ class WeaviateLangchainRetriever(BaseRetriever):
             logger.error("Weaviate client is not ready in WeaviateLangchainRetriever.")
 
     def _get_relevant_documents(self, query: str, **kwargs: Any) -> List[LangchainDocument]:
-        """Retrieve relevant documents from Weaviate based on the query."""
-        try:
-            query_vector = self.embedding_model.embed_query(query)
-            collection = self.client.collections.get(self.index_name)
+        """Retrieve relevant documents from Weaviate based on the query for the specified tenant."""
+        logger.info(f"kwargs in _get_relevant_documents: {kwargs}")
+        tenant = self.tenant or kwargs.get("tenant")
+        if not tenant:
+            raise ValueError("Tenant must be provided for retrieval.")
 
-            response = collection.query.near_vector(
-                near_vector=query_vector,
+        try:
+            collection = self.client.collections.get(self.index_name)
+            if tenant not in collection.tenants.get():
+                logger.warning(f"Tenant '{tenant}' not found in '{self.index_name}'. Returning no documents.")
+                return []
+
+            query_embedding = self.embedding_model.embed_query(query)
+
+            tenant_collection = collection.with_tenant(tenant)
+
+            response = tenant_collection.query.near_vector(
+                near_vector=query_embedding,
                 limit=self.k,
                 return_metadata=wvc.query.MetadataQuery(distance=True),
-                # Example metadata
-                return_properties=[
-                    "text",
-                    "source",
-                    "chunk_index",
-                ],
-                # Specify properties to retrieve
             )
 
             documents = []
             for item in response.objects:
-                content = item.properties.get("text", "")
-                metadata = {
-                    "source": item.properties.get("source"),
-                    "chunk_index": item.properties.get("chunk_index"),
-                }
-                # Filter out None metadata values
-                metadata = {k: v for k, v in metadata.items() if v is not None}
+                langchain_doc = LangchainDocument(
+                    page_content=item.properties.get("text", ""),
+                    metadata={
+                        "source": item.properties.get("source"),
+                        "chunk_index": item.properties.get("chunk_index"),
+                    },
+                )
                 if item.metadata and item.metadata.distance is not None:
-                    metadata["distance"] = item.metadata.distance
+                    langchain_doc.metadata["distance"] = item.metadata.distance
+                documents.append(langchain_doc)
 
-                documents.append(LangchainDocument(page_content=content, metadata=metadata))
-
-            logger.info(f"Retrieved {len(documents)} documents from '{self.index_name}' for query: '{query}'")
+            logger.info(f"Retrieved {len(documents)} documents from '{self.index_name}' for query: '{query}' in tenant '{tenant}'")
             return documents
         except WeaviateClosedClientError:
             logger.error("Weaviate client is closed. Attempting to reconnect and retry.")
@@ -252,12 +314,13 @@ class WeaviateLangchainRetriever(BaseRetriever):
             # handling
             return self._get_relevant_documents(query, **kwargs)
         except Exception as e:
-            logger.error(f"Error retrieving documents from Weaviate: {e}", exc_info=True)
+            logger.error(f"Error retrieving documents from Weaviate for tenant '{tenant}': {e}", exc_info=True)
             return []  # Return empty list on error
 
     async def _aget_relevant_documents(self, query: str, **kwargs: Any) -> List[LangchainDocument]:
-        logger.warning("Async retrieval called, using synchronous implementation as fallback.")
-        return self._get_relevant_documents(query, **kwargs)
+        import asyncio
+
+        return await asyncio.to_thread(self._get_relevant_documents, query, **kwargs)
 
 
 def get_retriever(k: int = DEFAULT_TOP_K) -> BaseRetriever:
@@ -273,39 +336,36 @@ def get_retriever(k: int = DEFAULT_TOP_K) -> BaseRetriever:
     )
 
 
-async def get_all_documents_for_source(source_filename: str) -> List[LangchainDocument]:
-    """
-    Retrieves all document chunks associated with a specific source filename from Weaviate.
-    """
-    client = get_weaviate_client()
-    collection = client.collections.get(settings.WEAVIATE_INDEX_NAME)
-
+async def get_all_documents_for_source(source_filename: str, tenant: str) -> List[LangchainDocument]:
+    """Retrieves all document chunks for a given source filename from Weaviate for the specified tenant."""
     try:
-        response = collection.query.fetch_objects(
+        client = get_weaviate_client()
+        collection = client.collections.get(settings.WEAVIATE_INDEX_NAME)
+
+        if tenant not in collection.tenants.get():
+            logger.warning(f"Tenant '{tenant}' not found for source '{source_filename}'. " f"Cannot retrieve documents.")
+            return []
+
+        tenant_collection = collection.with_tenant(tenant)
+        response = tenant_collection.query.fetch_objects(
             filters=wvc.query.Filter.by_property("source").equal(source_filename),
-            # Fetch all matching objects. Be cautious with very large result sets.
-            # Consider adding a limit if performance becomes an issue.
-            limit=1000,  # A reasonable upper limit for chunks per document
+            limit=1000,  # Adjust limit based on expected max chunks per document
+            return_properties=["text", "source", "chunk_index"],
         )
 
-        documents = [
-            LangchainDocument(
-                page_content=obj.properties["text"],
-                metadata={
-                    "source": obj.properties.get("source", "Unknown"),
-                    "chunk_index": obj.properties.get("chunk_index", -1),
-                },
-            )
-            for obj in response.objects
-        ]
+        documents = []
+        for item in response.objects:
+            content = item.properties.get("text", "")
+            metadata = {
+                "source": item.properties.get("source"),
+                "chunk_index": item.properties.get("chunk_index"),
+            }
+            documents.append(LangchainDocument(page_content=content, metadata=metadata))
 
-        # Sort by chunk_index to reconstruct the document order
-        documents.sort(key=lambda doc: doc.metadata.get("chunk_index", -1))
-
-        logger.info(f"Retrieved {len(documents)} document chunks for source: {source_filename}")
+        logger.info(f"Retrieved {len(documents)} document chunks for source '{source_filename}' in tenant '{tenant}'.")
         return documents
     except Exception as e:
-        logger.error(f"Failed to retrieve all documents for source {source_filename}: {e}", exc_info=True)
+        logger.error(f"Error retrieving document chunks for source {source_filename} in tenant '{tenant}': {e}", exc_info=True)
         return []
 
 
@@ -366,7 +426,7 @@ if __name__ == "__main__":
                     metadata={"source": "crew.txt", "chunk_index": 0},
                 ),
             ]
-            indexer.index_documents(sample_docs_lc)
+            indexer.index_documents(sample_docs_lc, tenant="test_tenant")
 
             import time
 
@@ -375,7 +435,7 @@ if __name__ == "__main__":
             logger.info("--- Test: Retrieving Documents ---")
             retriever = get_retriever(k_results=2)
             query = "Who was on Apollo 11?"
-            retrieved_docs = retriever.get_relevant_documents(query)
+            retrieved_docs = retriever.get_relevant_documents(query, tenant="test_tenant")
 
             logger.info(f"Query: {query}")
             if retrieved_docs:
@@ -385,7 +445,7 @@ if __name__ == "__main__":
                 logger.info("  No documents retrieved.")
 
             query2 = "What was Apollo 11?"
-            retrieved_docs2 = retriever.get_relevant_documents(query2)
+            retrieved_docs2 = retriever.get_relevant_documents(query2, tenant="test_tenant")
             logger.info(f"Query: {query2}")
             if retrieved_docs2:
                 for i, doc in enumerate(retrieved_docs2):

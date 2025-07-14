@@ -1,0 +1,59 @@
+{{- if .Values.weaviate.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-weaviate
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "genai-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: weaviate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "genai-chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: weaviate
+  template:
+    metadata:
+      labels:
+        {{- include "genai-chart.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: weaviate
+    spec:
+      containers:
+      - name: {{ .Values.weaviate.name }}
+        image: "{{ .Values.weaviate.image.repository }}:{{ .Values.weaviate.image.tag }}"
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 50051
+          name: grpc
+        env:
+        - name: QUERY_DEFAULTS_LIMIT
+          value: "25"
+        - name: AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED
+          value: "true"
+        - name: PERSISTENCE_DATA_PATH
+          value: "/var/lib/weaviate"
+        - name: DEFAULT_VECTORIZER_MODULE
+          value: "text2vec-openai"
+        - name: ENABLE_MODULES
+          value: "text2vec-openai,generative-openai"
+        - name: CLUSTER_HOSTNAME
+          value: "node1"
+        - name: OPENAI_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.genai_app.env.OPENAI_API_KEY_SECRET_NAME }}
+              key: OPENAI_API_KEY
+        volumeMounts:
+        - name: weaviate-data
+          mountPath: /var/lib/weaviate
+      volumes:
+      - name: weaviate-data
+      {{- if .Values.weaviate.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.weaviate.persistence.existingClaim | default (printf "%s-weaviate-pvc" (include "genai-chart.fullname" .)) }}
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
+{{- end }} 

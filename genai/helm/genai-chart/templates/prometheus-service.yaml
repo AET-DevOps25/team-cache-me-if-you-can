@@ -1,0 +1,14 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.monitoring.prometheus.service_name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: {{ .Values.monitoring.prometheus.name }}
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+{{- end }} 

@@ -11,7 +11,7 @@ from app.models.schemas import (
     QueryTaskResponse,
     TaskStatusResponse,
 )
-from fastapi import APIRouter, HTTPException, Depends, Body, status
+from fastapi import APIRouter, HTTPException, Depends, Body, status, Header
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -20,6 +20,7 @@ router = APIRouter()
 @router.post("/query/sync", response_model=QueryResponse)
 async def query_document_sync(
     query_request: QueryRequest = Body(...),
+    group_id: str = Header(..., alias="X-Group-ID"),
     rag_system: RAGSystem = Depends(get_rag_system_instance),
 ):
     """
@@ -30,10 +31,10 @@ async def query_document_sync(
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
     try:
-        logger.info(f"Received query: {query_request.question}")
+        logger.info(f"Received query: {query_request.question} for group {group_id}")
 
         # The rag_system now returns a dictionary with the answer and source documents
-        result = await rag_system.invoke_chain(query_request.question)
+        result = await rag_system.invoke_chain(query_request.question, tenant=group_id)
 
         answer = result.get("answer", "An error occurred while generating the answer.")
         context_docs = result.get("source_documents", [])
@@ -65,6 +66,7 @@ async def query_document_sync(
 @router.post("/query/async", response_model=QueryTaskResponse, status_code=status.HTTP_202_ACCEPTED)
 async def query_document_async(
     query_request: QueryRequest = Body(...),
+    group_id: str = Header(..., alias="X-Group-ID"),
 ):
     """
     Endpoint to ask a question about the indexed documents asynchronously.
@@ -74,8 +76,8 @@ async def query_document_async(
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
     try:
-        logger.info(f"Received async query: {query_request.question}")
-        task = process_query_task.delay(query_request.question)
+        logger.info(f"Received async query: {query_request.question} for group {group_id}")
+        task = process_query_task.delay(query_request.question, group_id)
         return QueryTaskResponse(task_id=task.id)
 
     except Exception as e:
