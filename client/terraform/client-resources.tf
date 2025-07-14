@@ -6,9 +6,6 @@ resource "kubernetes_deployment" "client" {
     labels = {
       app = "client"
     }
-    annotations = {
-      "redeploy-trigger" = var.redeploy_id
-    }
   }
 
   spec {
@@ -24,9 +21,6 @@ resource "kubernetes_deployment" "client" {
       metadata {
         labels = {
           app = "client"
-        }
-        annotations = {
-          "redeploy-trigger" = var.redeploy_id
         }
       }
 
