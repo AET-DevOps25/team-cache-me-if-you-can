@@ -39,6 +39,7 @@ resource "kubernetes_deployment" "client" {
   }
 }
 
+# Service
 resource "kubernetes_service" "client_service" {
   metadata {
     name      = "client-service"
