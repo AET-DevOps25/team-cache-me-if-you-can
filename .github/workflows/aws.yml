@@ -30,6 +30,11 @@ jobs:
         run: terraform init
         working-directory: ./aws
 
+      - name: Terraform Import ECS Role
+        run: |
+          terraform import aws_iam_role.ecs_task_execution_role ecsTaskExecutionRole || echo "Already imported"
+        working-directory: ./aws
+
       - name: Terraform Plan
         run: terraform plan
         working-directory: ./aws
