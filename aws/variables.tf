@@ -4,10 +4,5 @@ variable "aws_region" {
 
 variable "client_image" {
   description = "GHCR Docker image"
-  default     = "ghcr.io/your-username/your-repo:latest"
-}
-
-variable "ghcr_username" {}
-variable "ghcr_token" {
-  sensitive = true
+  default     = "ghcr.io/aet-devops25/team-cache-me-if-you-can/client"
 }
