@@ -12,16 +12,16 @@ jobs:
 
       - name: Write private key to file
         run: |
-          mkdir -p /home/runner/.ssh
-          echo "${{ secrets.AWS_EC2_PRIVATE_KEY }}" > /home/runner/.ssh/key
-          chmod 600 /home/runner/.ssh/key
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
       - name: Copy docker compose file to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key_path: /home/runner/.ssh/key
+          key_path: ~/.ssh/id_rsa
           source: "./docker-compose.yml"
           target: home/ubuntu
 
@@ -30,7 +30,7 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key_path: /home/runner/.ssh/key
+          key_path: ~/.ssh/id_rsa
           source: "./client/"
           target: home/ubuntu
 
@@ -39,7 +39,7 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key_path: /home/runner/.ssh/key
+          key_path: ~/.ssh/id_rsa
           source: "./server/"
           target: home/ubuntu
 
@@ -48,7 +48,7 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key_path: /home/runner/.ssh/key
+          key_path: ~/.ssh/id_rsa
           source: "./environment/"
           target: home/ubuntu
 
@@ -57,7 +57,7 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key_path: /home/runner/.ssh/key
+          key_path: ~/.ssh/id_rsa
           script: |
             rm -f .env.prod
             touch .env.prod
@@ -70,7 +70,7 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key_path: /home/runner/.ssh/key
+          key_path: ~/.ssh/id_rsa
           script: |
             cd home/ubuntu
             echo "Logging into Docker registry..."
