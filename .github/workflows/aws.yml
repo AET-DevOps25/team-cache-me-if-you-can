@@ -25,8 +25,8 @@ jobs:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
           key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
-          source: "./environment/*"
-          target: /home/${{ vars.AWS_EC2_USER }}/environment/
+          source: "./environment/"
+          target: /home/${{ vars.AWS_EC2_USER }}
 
       - name: SSH to VM and Create .env.prod
         uses: appleboy/ssh-action@v1.0.3
