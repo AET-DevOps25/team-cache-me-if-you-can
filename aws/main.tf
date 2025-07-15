@@ -225,11 +225,6 @@ resource "aws_lb_listener" "client" {
   }
 }
 
-# ECS Task Definitions & Services
-module "ecs_component" {
-  source = "./modules/ecs-component" # optionally modularize each service
-}
-
 # EFS for file uploads
 resource "aws_efs_file_system" "uploads" {
   creation_token = "team-cache-uploads"
