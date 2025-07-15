@@ -2,8 +2,8 @@ name: Deploy to AWS ECS with Terraform
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
 
 jobs:
   deploy:
