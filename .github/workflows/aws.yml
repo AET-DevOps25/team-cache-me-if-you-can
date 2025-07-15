@@ -10,12 +10,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Write private key to file
+        run: |
+          echo "${{ secrets.AWS_EC2_PRIVATE_KEY }}" > ~/.ssh/key
+          chmod 600 ~/.ssh/key
+
       - name: Copy docker compose file to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+          key_path: ~/.ssh/key
           source: "./docker-compose.yml"
           target: /home/${{ vars.AWS_EC2_USER }}
 
@@ -24,7 +29,7 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+          key_path: ~/.ssh/key
           source: "./client/"
           target: /home/${{ vars.AWS_EC2_USER }}
 
@@ -33,7 +38,7 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+          key_path: ~/.ssh/key
           source: "./server/"
           target: /home/${{ vars.AWS_EC2_USER }}
 
@@ -42,7 +47,7 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+          key_path: ~/.ssh/key
           source: "./environment/"
           target: /home/${{ vars.AWS_EC2_USER }}
 
@@ -51,7 +56,7 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+          key_path: ~/.ssh/key
           script: |
             rm -f .env.prod
             touch .env.prod
@@ -64,9 +69,9 @@ jobs:
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
-          key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+          key_path: ~/.ssh/key
           script: |
-            cd /home/ec2-user
+            cd /home/${{ vars.AWS_EC2_USER }}
             echo "Logging into Docker registry..."
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "Starting Docker Compose..."
