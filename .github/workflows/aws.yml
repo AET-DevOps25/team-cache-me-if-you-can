@@ -18,10 +18,9 @@ jobs:
           key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
           source: |
             ./docker-compose.yml
-            ./environment/
             ./client/
             ./server/
-          target: /home/${{ vars.AWS_EC2_USER }}/app
+          target: /home/${{ vars.AWS_EC2_USER }}
 
       - name: Copy environment directory to VM Host
         uses: appleboy/scp-action@v0.1.7
