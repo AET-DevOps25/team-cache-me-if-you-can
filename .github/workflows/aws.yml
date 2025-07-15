@@ -2,8 +2,8 @@ name: Deploy to AWS ECS with Terraform
 
 on:
   push:
-    # branches:
-    #   - main
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -32,10 +32,21 @@ jobs:
         run: terraform init
         working-directory: ./aws
 
+      - name: Terraform Import Existing Resources
+        run: |
+          terraform import aws_iam_role.ecs_task_execution ecsTaskExecutionRole || true
+          terraform import aws_lb.client_alb $(aws elbv2 describe-load-balancers --query 'LoadBalancers[?contains(LoadBalancerName, `client-alb`)].LoadBalancerArn' --output text) || true
+          terraform import aws_lb_target_group.client_tg $(aws elbv2 describe-target-groups --query 'TargetGroups[?contains(TargetGroupName, `client-tg`)].TargetGroupArn' --output text) || true
+        working-directory: ./aws
+
       - name: Terraform Plan
         run: terraform plan
         working-directory: ./aws
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
+        working-directory: ./aws
+
+      - name: Output Client URL
+        run: terraform output client_url
         working-directory: ./aws

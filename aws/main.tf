@@ -2,6 +2,10 @@ provider "aws" {
   region = "us-east-1"
 }
 
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 # -------------------------------------
 # 1. VPC + Networking
 # -------------------------------------
@@ -42,7 +46,7 @@ resource "aws_route_table_association" "a" {
 # 2. Security Group
 # -------------------------------------
 resource "aws_security_group" "ecs_sg" {
-  name        = "ecs-sg"
+  name        = "ecs-sg-${random_id.suffix.hex}"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -64,7 +68,7 @@ resource "aws_security_group" "ecs_sg" {
 # 3. IAM Role for ECS
 # -------------------------------------
 resource "aws_iam_role" "ecs_task_execution" {
-  name = "ecsTaskExecutionRole"
+  name = "ecsTaskExecutionRole-${random_id.suffix.hex}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -87,14 +91,14 @@ resource "aws_iam_role_policy_attachment" "ecs_policy" {
 # 4. ECS Cluster
 # -------------------------------------
 resource "aws_ecs_cluster" "main" {
-  name = "multi-service-cluster"
+  name = "multi-service-cluster-${random_id.suffix.hex}"
 }
 
 # -------------------------------------
 # 5. ALB for client
 # -------------------------------------
 resource "aws_lb" "client_alb" {
-  name               = "client-alb"
+  name               = "client-alb-${random_id.suffix.hex}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.ecs_sg.id]
@@ -102,7 +106,7 @@ resource "aws_lb" "client_alb" {
 }
 
 resource "aws_lb_target_group" "client_tg" {
-  name        = "client-tg"
+  name        = "client-tg-${random_id.suffix.hex}"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
@@ -132,7 +136,6 @@ resource "aws_lb_listener" "client_listener" {
 # -------------------------------------
 # 6. ECS Task + Services for Each Container
 # -------------------------------------
-
 locals {
   services = [
     {
@@ -184,7 +187,7 @@ locals {
 
 resource "aws_ecs_task_definition" "services" {
   for_each                 = { for svc in local.services : svc.name => svc }
-  family                   = each.value.name
+  family                   = "${each.value.name}-${random_id.suffix.hex}"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "512"
@@ -211,7 +214,7 @@ resource "aws_ecs_service" "services" {
   health_check_grace_period_seconds = 60
 
   for_each        = aws_ecs_task_definition.services
-  name            = each.key
+  name            = "${each.key}-${random_id.suffix.hex}"
   cluster         = aws_ecs_cluster.main.id
   task_definition = each.value.arn
   desired_count   = 1
@@ -233,4 +236,8 @@ resource "aws_ecs_service" "services" {
   }
 
   depends_on = [aws_lb_listener.client_listener]
+}
+
+output "client_url" {
+  value = "http://${aws_lb.client_alb.dns_name}"
 }
