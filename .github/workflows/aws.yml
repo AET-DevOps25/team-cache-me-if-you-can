@@ -48,6 +48,7 @@ jobs:
           username: ${{ vars.AWS_EC2_USER }}
           key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
           script: |
+            cd /home/${{ vars.AWS_EC2_USER }}
             echo "Logging into Docker registry..."
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "Starting Docker Compose..."
