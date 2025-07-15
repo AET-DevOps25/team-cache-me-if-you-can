@@ -12,6 +12,7 @@ jobs:
 
       - name: Write private key to file
         run: |
+          mkdir -p ~/.ssh
           echo "${{ secrets.AWS_EC2_PRIVATE_KEY }}" > ~/.ssh/key
           chmod 600 ~/.ssh/key
 
