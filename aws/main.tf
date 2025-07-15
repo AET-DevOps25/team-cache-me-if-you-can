@@ -102,11 +102,20 @@ resource "aws_lb" "client_alb" {
 }
 
 resource "aws_lb_target_group" "client_tg" {
-  name     = "client-tg"
-  port     = 3000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  name        = "client-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
   target_type = "ip"
+
+  health_check {
+    path                = "/health"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200-399"
+  }
 }
 
 resource "aws_lb_listener" "client_listener" {
@@ -141,7 +150,7 @@ locals {
     {
       name   = "gateway"
       port   = 8080
-      image  = "hcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:latest"
+      image  = "ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:latest"
     },
     {
       name   = "files"
@@ -157,7 +166,7 @@ locals {
     {
       name   = "genai"
       port   = 8000
-      image  = "hcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:latest"
+      image  = "ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:latest"
     },
     {
       name   = "mysql"
@@ -174,13 +183,13 @@ locals {
 }
 
 resource "aws_ecs_task_definition" "services" {
-  for_each               = { for svc in local.services : svc.name => svc }
-  family                 = each.value.name
+  for_each                 = { for svc in local.services : svc.name => svc }
+  family                   = each.value.name
   requires_compatibilities = ["FARGATE"]
-  network_mode           = "awsvpc"
-  cpu                    = "512"
-  memory                 = "1024"
-  execution_role_arn     = aws_iam_role.ecs_task_execution.arn
+  network_mode             = "awsvpc"
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
 
   container_definitions = jsonencode([
     {
@@ -196,17 +205,22 @@ resource "aws_ecs_task_definition" "services" {
 }
 
 resource "aws_ecs_service" "services" {
-  for_each               = aws_ecs_task_definition.services
-  name                   = each.key
-  cluster                = aws_ecs_cluster.main.id
-  task_definition        = each.value.arn
-  desired_count          = 1
-  launch_type            = "FARGATE"
+  deployment_controller {
+    type = "ECS"
+  }
+  health_check_grace_period_seconds = 60
+
+  for_each        = aws_ecs_task_definition.services
+  name            = each.key
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = each.value.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = aws_subnet.public[*].id
+    subnets          = aws_subnet.public[*].id
     assign_public_ip = true
-    security_groups = [aws_security_group.ecs_sg.id]
+    security_groups  = [aws_security_group.ecs_sg.id]
   }
 
   dynamic "load_balancer" {
