@@ -1,14 +1,6 @@
-name: Deploy Docker Images to AWS
-
-on:
-  push:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: AWS
-      url: "https://client.${{ vars.EC2_PUBLIC_IP }}.nip.io"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -22,6 +14,15 @@ jobs:
           source: "./docker-compose.yml"
           target: /home/${{ vars.AWS_EC2_USER }}
 
+      - name: Copy environment directory to VM Host
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.EC2_PUBLIC_IP }}
+          username: ${{ vars.AWS_EC2_USER }}
+          key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+          source: "./environment/"
+          target: /home/${{ vars.AWS_EC2_USER }}/environment/
+
       - name: SSH to VM and Create .env.prod
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -29,7 +30,7 @@ jobs:
           username: ${{ vars.AWS_EC2_USER }}
           key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
           script: |
-            rm .env.prod
+            rm -f .env.prod
             touch .env.prod
             echo "CLIENT_HOST=client.${{ vars.EC2_PUBLIC_IP }}.nip.io" >> .env.prod
             echo "SERVER_HOST=api.${{ vars.EC2_PUBLIC_IP }}.nip.io" >> .env.prod
