@@ -55,5 +55,5 @@ jobs:
             echo "Logging into Docker registry..."
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "Starting Docker Compose..."
-            docker compose -f docker-compose.yml --env-file=.env.prod pull
-            docker compose -f docker-compose.yml --env-file=.env.prod up -d
+            docker compose -f docker-compose-prod.yml --env-file=.env.prod pull
+            docker compose -f docker-compose-prod.yml --env-file=.env.prod up -d
