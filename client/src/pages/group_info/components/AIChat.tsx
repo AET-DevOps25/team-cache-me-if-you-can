@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, User } from "lucide-react";
 import "./ai_chat.css";
+import { useParams } from "react-router-dom";
+import { useAuth } from "../../../auth/AuthProvider";
+import { queryGenai } from "../../../services/genaiApi";
+import { message as antdMessage } from 'antd';
 
 interface Message {
   id: string;
@@ -10,6 +14,8 @@ interface Message {
 }
 
 const AIChat: React.FC = () => {
+  const { groupId } = useParams<{ groupId: string }>();
+  const auth = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -30,28 +36,12 @@ const AIChat: React.FC = () => {
     scrollToBottom();
   }, [messages, isThinking]);
 
-  const simulateServerResponse = async (
-    userMessage: string
-  ): Promise<string> => {
-    console.log(userMessage);
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1000 + Math.random() * 2000)
-    );
-
-    const responses = [
-      "That's interesting! Tell me more.",
-      "I understand what you're saying.",
-      "Thanks for sharing that with me.",
-      "I see your point. What do you think about it?",
-      "That's a great question. Let me think about it.",
-      "I appreciate you bringing this up.",
-    ];
-
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
-
   const handleSendMessage = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || !groupId || !auth.token) {
+        if (!groupId) antdMessage.error("Group ID is missing.");
+        if (!auth.token) antdMessage.error("Authentication token is missing.");
+        return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -61,25 +51,25 @@ const AIChat: React.FC = () => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = inputText;
     setInputText("");
     setIsThinking(true);
 
     try {
-      const response = await simulateServerResponse(inputText);
+      const response = await queryGenai(groupId, currentInput, auth.token);
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: response,
+        text: response.answer,
         sender: "bot",
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, botMessage]);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Sorry, I encountered an error. Please try again.",
+        text: error.message || "Sorry, I encountered an error. Please try again.",
         sender: "bot",
         timestamp: new Date(),
       };

@@ -3,6 +3,9 @@ package com.devops25.group;
 import com.devops25.group.dto.CreateGroupRequest;
 import com.devops25.group.dto.GroupResponse;
 import com.devops25.group.dto.UpdateGroupRequest;
+import com.devops25.group.dto.GenaiQueryRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,21 +13,31 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/v1/groups")
 public class GroupController {
 
+    private static final Logger logger = LoggerFactory.getLogger(GroupController.class);
     private final GroupService groupService;
+    private final GenaiService genaiService;
     private final JwtService jwtService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public GroupController(GroupService groupService, JwtService jwtService) {
+    public GroupController(GroupService groupService, GenaiService genaiService, JwtService jwtService, ObjectMapper objectMapper) {
         this.groupService = groupService;
+        this.genaiService = genaiService;
         this.jwtService = jwtService;
+        this.objectMapper = objectMapper;
     }
 
     private String extractUsername(HttpServletRequest httpRequest) {
@@ -137,5 +150,54 @@ public class GroupController {
         String authenticatedUsername = extractUsername(httpRequest);
         GroupResponse response = groupService.leaveGroup(id, authenticatedUsername);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{groupId}/documents")
+    public Mono<ResponseEntity<Object>> uploadDocument(
+            @PathVariable Long groupId,
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest httpRequest) {
+        extractUsername(httpRequest);
+        logger.info("Received document upload request for group ID: {}. Filename: {}, Size: {} bytes",
+                groupId, file.getOriginalFilename(), file.getSize());
+
+        if (file.isEmpty()) {
+            logger.warn("Uploaded file is empty for group ID: {}", groupId);
+            return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File cannot be empty."));
+        }
+
+        try {
+            return genaiService.uploadDocument(String.valueOf(groupId), file)
+                    .map(response -> {
+                        try {
+                            return ResponseEntity.ok(objectMapper.readTree(response));
+                        } catch (JsonProcessingException e) {
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+                        }
+                    })
+                    .map(response -> (ResponseEntity<Object>) response)
+                    .defaultIfEmpty(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+        } catch (IOException e) {
+            logger.error("Error processing document upload for group ID: {}", groupId, e);
+            return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{groupId}/chat")
+    public Mono<ResponseEntity<Object>> chat(
+            @PathVariable Long groupId,
+            @RequestBody GenaiQueryRequest queryRequest,
+            HttpServletRequest httpRequest) {
+        extractUsername(httpRequest);
+        return genaiService.query(String.valueOf(groupId), queryRequest.getQuestion())
+                .map(response -> {
+                    try {
+                        return ResponseEntity.ok(objectMapper.readTree(response));
+                    } catch (JsonProcessingException e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+                    }
+                })
+                .map(response -> (ResponseEntity<Object>) response)
+                .defaultIfEmpty(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
     }
 }

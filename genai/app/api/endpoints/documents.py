@@ -74,7 +74,10 @@ async def upload_document(
     """
     Endpoint to upload a document (PDF, DOCX, PPTX) for processing and indexing.
     """
+    logger.info(f"Received request to /upload. Group-ID: {group_id}, Filename: {file.filename}, Content-Type: {file.content_type}")
+
     if not file.filename:
+        logger.warning("Upload attempt with no filename.")
         raise HTTPException(status_code=400, detail="No file name provided.")
 
     allowed_extensions = {".pdf", ".docx", ".pptx"}
@@ -97,6 +100,12 @@ async def upload_document(
     try:
         logger.info(f"Received file for upload: {file.filename} with group_id: {group_id}")
         contents = await file.read()
+        logger.info(f"Read {len(contents)} bytes from uploaded file: {file.filename}")
+
+        if not contents:
+            logger.warning(f"File content is empty for {file.filename}. Aborting processing.")
+            raise HTTPException(status_code=400, detail="Uploaded file content is empty.")
+
 
         task = process_and_index_document_task.delay(contents, file.filename, group_id)
         logger.info(f"Started Celery task {task.id} for {file.filename} in group {group_id}")

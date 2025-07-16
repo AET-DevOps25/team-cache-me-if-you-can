@@ -145,6 +145,8 @@ services:
       - "8083:8083"
     container_name: group-service
     env_file: "environment/.env.docker.group"
+    environment:
+      GENAI_SERVICE_URL: http://genai-app:8000/api/v1
     depends_on:
       mysql:
         condition: service_healthy
