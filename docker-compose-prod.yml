@@ -1,0 +1,131 @@
+services:
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - gateway
+    container_name: team-cache-me-if-you-can-client
+    entrypoint:
+      - /bin/sh
+      - -lc
+      - |
+        npm install &&
+        npm run dev -- --host 0.0.0.0 --port 3000
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - app-network # Add to network
+
+  user:
+    build:
+      context: ./server/user
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    container_name: user-service
+    env_file: "environment/.env.docker.user"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network # Add to network
+
+  gateway:
+    build:
+      context: ./server/gateway
+    ports: ["8080:8080"]
+    container_name: gateway-service
+    depends_on:
+      - user
+      - files
+    environment:
+      USER_SERVICE_URL: http://user-service:8081
+      FILES_SERVICE_URL: http://files-service:8082
+      GENAI_SERVICE_URL: http://genai-app:8000
+      GROUP_SERVICE_URL: http://group:8083
+    networks:
+      - app-network # Add to network
+
+  files:
+    build:
+      context: ./server/files
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    container_name: files-service
+    env_file: "environment/.env.docker.files"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./server/files/uploads:/uploads
+    networks:
+      - app-network # Add to network
+
+  group:
+    build:
+      context: ./server/group
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    container_name: group-service
+    env_file: "environment/.env.docker.group"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command:
+      [
+        "-Dspring.profiles.active=dev",
+        "-Dlogging.level.root=DEBUG",
+        "-Dlogging.level.org.springframework=DEBUG",
+        "-Dlogging.level.com.devops25=TRACE",
+      ]
+    networks:
+      - app-network # Add to network
+
+  mysql:
+    image: mysql:8.0.33
+    container_name: mysql
+    user: "999:999"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./environment/db_init:/docker-entrypoint-initdb.d
+      - ./environment/volume/conf.d:/etc/mysql/conf.d
+    env_file: "environment/.env.docker.mysql"
+    command:
+      - --lower-case-table-names=1
+      - --socket=/tmp/mysql.sock
+      - --pid-file=/tmp/mysql.pid
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge

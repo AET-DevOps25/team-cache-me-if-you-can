@@ -14,36 +14,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run build-all.sh
-        run: |
-          chmod +x ./build-all.sh
-          ./build-all.sh
-
       - name: Copy docker compose file to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ vars.EC2_PUBLIC_IP }}
           username: ${{ vars.AWS_EC2_USER }}
           key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
-          source: "docker-compose.yml"
-          target: ./
-
-      - name: Copy client directory to VM Host
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ vars.EC2_PUBLIC_IP }}
-          username: ${{ vars.AWS_EC2_USER }}
-          key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
-          source: "./client/"
-          target: ./
-
-      - name: Copy server directory to VM Host
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ vars.EC2_PUBLIC_IP }}
-          username: ${{ vars.AWS_EC2_USER }}
-          key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
-          source: "./server/"
+          source: "docker-compose-prod.yml"
           target: ./
 
       - name: Copy environment directory to VM Host
@@ -78,4 +55,5 @@ jobs:
             echo "Logging into Docker registry..."
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "Starting Docker Compose..."
-            docker compose -f docker-compose.yml --env-file=.env.prod up --pull=always -d
+            docker compose -f docker-compose.yml --env-file=.env.prod pull
+            docker compose -f docker-compose.yml --env-file=.env.prod up -d
