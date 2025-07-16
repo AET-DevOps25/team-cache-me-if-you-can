@@ -106,7 +106,6 @@ async def upload_document(
             logger.warning(f"File content is empty for {file.filename}. Aborting processing.")
             raise HTTPException(status_code=400, detail="Uploaded file content is empty.")
 
-
         task = process_and_index_document_task.delay(contents, file.filename, group_id)
         logger.info(f"Started Celery task {task.id} for {file.filename} in group {group_id}")
 

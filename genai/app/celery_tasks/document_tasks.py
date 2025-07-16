@@ -7,6 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @celery_app.task
 def process_document_task(pdf_path: str):
     """
