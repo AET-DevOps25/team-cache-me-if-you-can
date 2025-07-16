@@ -1,29 +1,14 @@
 services:
   client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/client:latest
     ports:
       - "3000:3000"
-    depends_on:
-      - gateway
     container_name: team-cache-me-if-you-can-client
-    entrypoint:
-      - /bin/sh
-      - -lc
-      - |
-        npm install &&
-        npm run dev -- --host 0.0.0.0 --port 3000
-    volumes:
-      - ./client:/app
-      - /app/node_modules
     networks:
-      - app-network # Add to network
+      - app-network
 
   user:
-    build:
-      context: ./server/user
-      dockerfile: Dockerfile
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/user-service:latest
     ports:
       - "8081:8081"
     container_name: user-service
@@ -32,12 +17,12 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - app-network # Add to network
+      - app-network
 
   gateway:
-    build:
-      context: ./server/gateway
-    ports: ["8080:8080"]
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:latest
+    ports:
+      - "8080:8080"
     container_name: gateway-service
     depends_on:
       - user
@@ -48,12 +33,10 @@ services:
       GENAI_SERVICE_URL: http://genai-app:8000
       GROUP_SERVICE_URL: http://group:8083
     networks:
-      - app-network # Add to network
+      - app-network
 
   files:
-    build:
-      context: ./server/files
-      dockerfile: Dockerfile
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/files-service:latest
     ports:
       - "8082:8082"
     container_name: files-service
@@ -64,12 +47,10 @@ services:
     volumes:
       - ./server/files/uploads:/uploads
     networks:
-      - app-network # Add to network
+      - app-network
 
   group:
-    build:
-      context: ./server/group
-      dockerfile: Dockerfile
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/group-service:latest
     ports:
       - "8083:8083"
     container_name: group-service
@@ -77,16 +58,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    command:
-      [
-        "-Dspring.profiles.active=dev",
-        "-Dlogging.level.root=DEBUG",
-        "-Dlogging.level.org.springframework=DEBUG",
-        "-Dlogging.level.com.devops25=TRACE",
-      ]
     networks:
-      - app-network # Add to network
-
+      - app-network
   mysql:
     image: mysql:8.0.33
     container_name: mysql
