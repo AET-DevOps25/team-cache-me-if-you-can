@@ -35,6 +35,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	// Micrometer for Prometheus
+	implementation 'io.micrometer:micrometer-registry-prometheus'
 
 	// Database
 	runtimeOnly 'com.mysql:mysql-connector-j'
@@ -59,7 +63,6 @@ dependencies {
 	testImplementation 'org.testcontainers:mysql:1.19.7'
 
 
-	implementation 'org.springframework.boot:spring-boot-starter-actuator' // Make sure this is present
 }
 
 tasks.named('test') {

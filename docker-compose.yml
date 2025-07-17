@@ -190,9 +190,65 @@ services:
     networks:
       - app-network # Add to network
 
+  prometheus:
+    image: prom/prometheus:v2.37.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./environment/prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:9.1.0
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./environment/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./environment/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - app-network
+
+  loki:
+    image: grafana/loki:2.6.1
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./environment/loki:/etc/loki
+      - loki-data:/tmp/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    user: "0:0"  # Run as root to avoid permission issues
+    networks:
+      - app-network
+
+  promtail:
+    image: grafana/promtail:2.6.1
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./environment/promtail:/etc/promtail
+    command: -config.file=/etc/promtail/promtail-config.yaml
+    depends_on:
+      loki:
+        condition: service_started
+    networks:
+      - app-network
+
 volumes:
   mysql_data:
   genai-weaviate-data:
+  loki-data:
 
 networks:
   app-network:

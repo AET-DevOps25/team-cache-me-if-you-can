@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "group-service.fullname" . }}
+  namespace: cache-me-if-you-can-genai
+  labels:
+    app.kubernetes.io/name: {{ include "group-service.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    chart: {{ include "group-service.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "group-service.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8083"
+      labels:
+        app.kubernetes.io/name: {{ include "group-service.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      # (Optionally wait for MySQL to be reachable)
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for MySQL at mysql:3306..."
+              while ! nc -z mysql 3306; do
+                sleep 2
+              done
+              echo "MySQL is up!"
+      containers:
+        - name: group-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+         # imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: Always # <--- CHANGE THIS TO 'Always' TEMPORARILY
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            # → Use exactly the names Spring Boot expects:
+            - name: SPRING_DATASOURCE_URL
+              value: {{ .Values.env.DB_URL | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.env.DB_USERNAME | quote }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: {{ .Values.env.DB_PASSWORD | quote }}
+          # (Optionally readinessProbe so Kubernetes restarts if Spring never becomes healthy)
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
