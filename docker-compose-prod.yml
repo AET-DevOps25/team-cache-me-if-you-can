@@ -7,6 +7,74 @@ services:
     networks:
       - app-network
 
+  genai-app:
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:latest
+    ports:
+      - "8001:8000"
+    container_name: genai-app
+    env_file:
+      - environment/.env.docker.genai
+    environment:
+      - WEAVIATE_URL=http://genai-weaviate:8080
+      - CELERY_BROKER_URL=redis://genai-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://genai-redis:6379/0
+    depends_on:
+      - genai-weaviate
+      - genai-redis
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  genai-celery-worker:
+    build:
+      context: ./genai
+      dockerfile: Dockerfile
+    container_name: genai-celery-worker
+    command: celery -A app.celery_app:celery_app worker --loglevel=info
+    volumes:
+      - ./genai:/app
+    env_file:
+      - environment/.env.docker.genai
+    environment:
+      - WEAVIATE_URL=http://genai-weaviate:8080
+      - CELERY_BROKER_URL=redis://genai-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://genai-redis:6379/0
+    depends_on:
+      - genai-app
+      - genai-redis
+    networks:
+      - app-network
+
+  genai-redis:
+    image: redis:7-alpine
+    container_name: genai-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  genai-weaviate:
+    image: semitechnologies/weaviate:1.23.7
+    container_name: genai-weaviate
+    ports:
+      - "8084:8080"
+      - "50051:50051" # gRPC
+    volumes:
+      - genai-weaviate-data:/var/lib/weaviate
+    restart: on-failure:0
+    env_file:
+      - environment/.env.docker.genai
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "text2vec-openai" # Using OpenAI for vectorization
+      ENABLE_MODULES: "text2vec-openai,generative-openai"
+      CLUSTER_HOSTNAME: "node1"
+    networks:
+      - app-network
+
   user:
     image: ghcr.io/aet-devops25/team-cache-me-if-you-can/user-service:latest
     ports:
