@@ -380,3 +380,4 @@ sketch
 
 # Local Weaviate data
 genai/weaviate_data/
+environment/.env.docker.genai

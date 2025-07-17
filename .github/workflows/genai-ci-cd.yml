@@ -50,9 +50,9 @@ jobs:
 
       - name: Deploy to Kubernetes with Helm
         run: |
-          helm upgrade --install genai-dev ./genai/helm/genai-chart \
+          helm upgrade --install genai-dev ./helm/genai-chart \
             --namespace developmentv1 --create-namespace \
-            -f ./genai/helm/genai-chart/values-development.yaml \
+            -f ./helm/genai-chart/values-development.yaml \
             --set image.tag=${{ github.sha }}
 
   # deploy_preprod:

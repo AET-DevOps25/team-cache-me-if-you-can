@@ -22,6 +22,10 @@ class DocumentProcessingService:
         Processes a document file (extracts text, splits, and indexes into Weaviate).
         Returns a tuple: (number_of_documents_indexed, error_message_if_any).
         """
+        logger.info(f"Starting processing for document: {filename} in tenant '{tenant}' with {len(file_content)} bytes.")
+        if not file_content:
+            logger.error(f"File content for {filename} is empty. Cannot process.")
+            return 0, "File content is empty."
         try:
             logger.info(f"Starting processing for document: {filename} in tenant '{tenant}'")
             file_io = io.BytesIO(file_content)

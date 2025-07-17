@@ -6,6 +6,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-base \
     texlive-latex-base \
     texlive-fonts-recommended \
+    libgl1-mesa-glx \
+    libgl1-mesa-dri \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

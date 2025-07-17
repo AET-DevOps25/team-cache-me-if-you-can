@@ -17,10 +17,12 @@ import java.util.stream.Collectors;
 public class GroupService {
 
     private final GroupRepository groupRepository;
+    private final GenaiService genaiService;
 
     @Autowired
-    public GroupService(GroupRepository groupRepository) {
+    public GroupService(GroupRepository groupRepository, GenaiService genaiService) {
         this.groupRepository = groupRepository;
+        this.genaiService = genaiService;
     }
 
     @Transactional
