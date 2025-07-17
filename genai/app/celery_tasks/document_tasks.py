@@ -3,6 +3,9 @@ from app.services.document_processor import process_pdf_to_latex_pdf
 import asyncio
 from app.services.document_service import DocumentProcessingService
 from typing import Dict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task

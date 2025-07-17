@@ -167,6 +167,21 @@ public class GatewayController {
                 );
     }
 
+    @PostMapping(value = "/api/v1/documents/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<byte[]>> uploadDocument(ServerHttpRequest request) {
+        String targetUrl = genaiServiceUrl + "/api/v1/documents/upload";
+
+        return webClient.post()
+                .uri(targetUrl)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .headers(h -> {
+                    h.addAll(request.getHeaders());
+                    h.remove("host");
+                })
+                .body(request.getBody(), org.springframework.core.io.buffer.DataBuffer.class)
+                .exchangeToMono(response -> response.toEntity(byte[].class));
+    }
+
 
     @RequestMapping(value = "/api/users/**", method = {
             RequestMethod.GET, RequestMethod.POST,
