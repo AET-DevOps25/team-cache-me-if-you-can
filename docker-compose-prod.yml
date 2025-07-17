@@ -166,6 +166,7 @@ services:
 
 volumes:
   mysql_data:
+  genai-weaviate-data:
 
 networks:
   app-network:
