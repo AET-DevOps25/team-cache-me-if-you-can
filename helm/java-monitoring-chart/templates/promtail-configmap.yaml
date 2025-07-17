@@ -1,0 +1,49 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.monitoring.promtail.name }}
+data:
+  promtail-config.yaml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+
+    positions:
+      filename: /tmp/positions.yaml
+
+    clients:
+      - url: http://{{ .Values.monitoring.loki.name }}-service:3100/loki/api/v1/push
+
+    scrape_configs:
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+      - role: pod
+      pipeline_stages:
+      - docker: {}
+      - match:
+          selector: '{job="kubernetes-pods"}'
+          stages:
+          - json:
+              expressions:
+                output: log
+                stream: stream
+                timestamp: time
+          - labelmap:
+              mapping:
+                output:
+                stream:
+                timestamp:
+          - output:
+              source: output
+    - job_name: kubernetes-pods-static
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels:
+        - __meta_kubernetes_pod_label_app
+        target_label: 'app'
+{{- end }} 

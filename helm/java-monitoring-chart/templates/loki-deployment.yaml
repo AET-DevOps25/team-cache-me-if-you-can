@@ -1,0 +1,33 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.monitoring.loki.name }}-deployment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.monitoring.loki.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.monitoring.loki.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.monitoring.loki.name }}
+    spec:
+      containers:
+      - name: {{ .Values.monitoring.loki.name }}
+        image: {{ .Values.monitoring.loki.image }}
+        args:
+          - -config.file=/etc/loki/loki-config.yaml
+        ports:
+        - containerPort: 3100
+        volumeMounts:
+        - name: loki-config
+          mountPath: /etc/loki
+      volumes:
+      - name: loki-config
+        configMap:
+          name: loki-config
+{{- end }} 

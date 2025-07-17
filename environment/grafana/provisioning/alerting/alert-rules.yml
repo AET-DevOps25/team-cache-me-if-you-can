@@ -1,0 +1,31 @@
+groups:
+  - name: service-alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
+
+      - alert: HighRequestLatency
+        expr: http_server_requests_seconds_sum{job=~".*-service"} / http_server_requests_seconds_count{job=~".*-service"} > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency on {{ $labels.job }}"
+          description: "The 5m average request latency for {{ $labels.job }} is over 0.5s."
+
+  - name: loki-alerts
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate({job=~".*"} |= "ERROR" [5m])) by (job) / sum(rate({job=~".*"} [5m])) by (job) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate in {{ $labels.job }} logs"
+          description: "More than 10% of log entries for {{ $labels.job }} are errors." 

@@ -1,0 +1,27 @@
+{{- if and .Values.monitoring.enabled .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.monitoring.grafana.name }}-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+  - hosts:
+    - {{ (first .Values.ingress.hosts).host | quote }}
+    secretName: {{ (first .Values.ingress.tls).secretName }}-grafana
+  rules:
+  - host: {{ (first .Values.ingress.hosts).host | quote }}
+    http:
+      paths:
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.monitoring.grafana.name }}-service
+            port:
+              number: 3000
+{{- end }} 

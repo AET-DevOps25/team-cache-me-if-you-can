@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.monitoring.promtail.name }}-config
+  labels:
+    app: {{ .Values.monitoring.promtail.name }}
+data:
+  promtail-config.yaml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+    positions:
+      filename: /tmp/positions.yaml
+    clients:
+      - url: http://{{ .Values.monitoring.loki.name }}:3100/loki/api/v1/push
+    scrape_configs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels:
+              - __meta_kubernetes_pod_label_app
+            target_label: __service__
+          - source_labels:
+              - __meta_kubernetes_pod_node_name
+            target_label: __host__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - action: replace
+            source_labels:
+            - __meta_kubernetes_namespace
+            target_label: namespace
+          - action: replace
+            source_labels:
+            - __meta_kubernetes_pod_name
+            target_label: instance
+          - action: replace
+            source_labels:
+            - __meta_kubernetes_pod_container_name
+            target_label: container_name
+          - replacement: /var/log/pods/*$1/*.log
+            source_labels:
+            - __meta_kubernetes_pod_uid
+            - __meta_kubernetes_pod_container_name
+            target_label: __path__
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Values.monitoring.promtail.name }}
+  labels:
+    app: {{ .Values.monitoring.promtail.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.monitoring.promtail.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.monitoring.promtail.name }}
+    spec:
+      serviceAccountName: {{ .Values.monitoring.promtail.name }}-sa
+      containers:
+        - name: promtail
+          image: {{ .Values.monitoring.promtail.image }}
+          args:
+            - "-config.file=/etc/promtail/promtail-config.yaml"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/promtail
+            - name: run
+              mountPath: /run/promtail
+            - name: pods
+              mountPath: /var/log/pods
+              readOnly: true
+            - name: docker-containers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.monitoring.promtail.name }}-config
+        - name: run
+          hostPath:
+            path: /run/promtail
+        - name: pods
+          hostPath:
+            path: /var/log/pods
+        - name: docker-containers
+          hostPath:
+            path: /var/lib/docker/containers
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.monitoring.promtail.name }}-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.monitoring.promtail.name }}-role
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - nodes
+      - nodes/proxy
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.monitoring.promtail.name }}-rb
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.monitoring.promtail.name }}-sa
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Values.monitoring.promtail.name }}-role
+  apiGroup: rbac.authorization.k8s.io 
