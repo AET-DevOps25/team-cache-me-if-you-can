@@ -49,9 +49,12 @@ jobs:
           script: |
             rm -f .env.prod
             touch .env.prod
-            echo "CLIENT_HOST=client.${{ vars.EC2_PUBLIC_IP }}.nip.io" >> .env.prod
-            echo "SERVER_HOST=api.${{ vars.EC2_PUBLIC_IP }}.nip.io" >> .env.prod
-            echo "PUBLIC_API_URL=https://api.${{ vars.EC2_PUBLIC_IP }}.nip.io/api" >> .env.prod
+            echo "WEAVIATE_URL=${{ secrets.WEAVIATE_URL }}" >> .env.prod
+            echo "WEAVIATE_QUERY_DEFAULTS_LIMIT=${{ secrets.WEAVIATE_QUERY_DEFAULTS_LIMIT }}" >> .env.prod
+            echo "WEAVIATE_AUTH_ANONYMOUS_ENABLED=${{ secrets.WEAVIATE_AUTH_ANONYMOUS_ENABLED }}" >> .env.prod
+            echo "WEAVIATE_DEFAULT_VECTORIZER_MODULE=${{ secrets.WEAVIATE_DEFAULT_VECTORIZER_MODULE }}" >> .env.prod
+            echo "WEAVIATE_ENABLE_MODULES=${{ secrets.WEAVIATE_ENABLE_MODULES }}" >> .env.prod
+            echo "OPENAI_APIKEY=${{ secrets.OPENAI_APIKEY }}" >> .env.prod
 
       - name: SSH to VM and Execute Docker-Compose Up
         uses: appleboy/ssh-action@v1.0.3

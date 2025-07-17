@@ -12,12 +12,15 @@ services:
     ports:
       - "8001:8000"
     container_name: genai-app
-    env_file:
-      - environment/.env.docker.genai
     environment:
       - WEAVIATE_URL=http://genai-weaviate:8080
       - CELERY_BROKER_URL=redis://genai-redis:6379/0
       - CELERY_RESULT_BACKEND=redis://genai-redis:6379/0
+      - QUERY_DEFAULTS_LIMIT=${WEAVIATE_QUERY_DEFAULTS_LIMIT}
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=${WEAVIATE_AUTH_ANONYMOUS_ENABLED}
+      - DEFAULT_VECTORIZER_MODULE=${WEAVIATE_DEFAULT_VECTORIZER_MODULE}
+      - ENABLE_MODULES=${WEAVIATE_ENABLE_MODULES}
+      - OPENAI_APIKEY=${OPENAI_APIKEY}
     depends_on:
       - genai-weaviate
       - genai-redis
@@ -34,12 +37,15 @@ services:
     command: celery -A app.celery_app:celery_app worker --loglevel=info
     volumes:
       - ./genai:/app
-    env_file:
-      - environment/.env.docker.genai
     environment:
       - WEAVIATE_URL=http://genai-weaviate:8080
       - CELERY_BROKER_URL=redis://genai-redis:6379/0
       - CELERY_RESULT_BACKEND=redis://genai-redis:6379/0
+      - QUERY_DEFAULTS_LIMIT=${WEAVIATE_QUERY_DEFAULTS_LIMIT}
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=${WEAVIATE_AUTH_ANONYMOUS_ENABLED}
+      - DEFAULT_VECTORIZER_MODULE=${WEAVIATE_DEFAULT_VECTORIZER_MODULE}
+      - ENABLE_MODULES=${WEAVIATE_ENABLE_MODULES}
+      - OPENAI_APIKEY=${OPENAI_APIKEY}
     depends_on:
       - genai-app
       - genai-redis
