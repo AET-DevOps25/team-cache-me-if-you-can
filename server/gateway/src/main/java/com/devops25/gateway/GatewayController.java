@@ -20,8 +20,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.net.ConnectException;
 import java.net.URI;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
@@ -57,7 +55,7 @@ public class GatewayController {
         this.webClientBuilder = webClientBuilder1;
         this.jwtService = jwtService;
         HttpClient httpClient = HttpClient.create()
-                .responseTimeout(Duration.ofSeconds(15));
+                .responseTimeout(Duration.ofSeconds(60)); // Increased timeout for file uploads
 
         this.webClient = webClientBuilder
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
@@ -168,18 +166,88 @@ public class GatewayController {
     }
 
     @PostMapping(value = "/api/v1/documents/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Mono<ResponseEntity<byte[]>> uploadDocument(ServerHttpRequest request) {
+    public Mono<ResponseEntity<String>> uploadDocument(ServerHttpRequest request) {
         String targetUrl = genaiServiceUrl + "/api/v1/documents/upload";
 
+        // Build the target URL with query parameters if present
+        URI uri = request.getURI();
+        String query = uri.getRawQuery();
+        String fullTargetUrl = targetUrl + (query != null ? "?" + query : "");
+
+        // Forward the raw request body without reading it
         return webClient.post()
-                .uri(targetUrl)
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .uri(fullTargetUrl)
                 .headers(h -> {
-                    h.addAll(request.getHeaders());
-                    h.remove("host");
+                    // Copy all incoming headers except host and content-length
+                    request.getHeaders().forEach((name, values) -> {
+                        if (!name.equalsIgnoreCase("host") && !name.equalsIgnoreCase("content-length")) {
+                            h.put(name, values);
+                        }
+                    });
                 })
+                // Stream the request body without reading it into memory
                 .body(request.getBody(), org.springframework.core.io.buffer.DataBuffer.class)
-                .exchangeToMono(response -> response.toEntity(byte[].class));
+                .exchangeToMono(clientResponse -> clientResponse.toEntity(String.class))
+                .map(response -> ResponseEntity.status(response.getStatusCode()).body(response.getBody()))
+                .doOnError(error -> {
+                    System.err.println("Error forwarding document upload: " + error.getMessage());
+                    error.printStackTrace();
+                })
+                .onErrorReturn(ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body("{\"error\":\"Document upload service unavailable\"}"));
+    }
+
+    // Route to GenAI Service - Documents endpoints
+    @RequestMapping(value = {"/api/v1/documents", "/api/v1/documents/", "/api/v1/documents/**"}, 
+                   method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
+    public Mono<ResponseEntity<String>> routeToGenaiService(
+            ServerHttpRequest request,
+            @RequestBody(required = false) String body) {
+
+        String path = request.getPath().pathWithinApplication().value();
+        HttpMethod method = request.getMethod();
+
+        System.out.println("=== ROUTING TO GENAI SERVICE ===");
+        System.out.println("Method: " + method);
+        System.out.println("Path: " + path);
+        System.out.println("Target: " + genaiServiceUrl + path);
+
+        WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
+        requestSpec.headers(h -> {
+            var incoming = request.getHeaders();
+            if (incoming.getContentType() != null) {
+                h.setContentType(incoming.getContentType());
+            }
+            incoming.getOrEmpty("Authorization")
+                    .stream().findFirst()
+                    .ifPresent(token -> h.set("Authorization", token));
+            incoming.getOrEmpty("X-Group-ID")
+                    .stream().findFirst()
+                    .ifPresent(groupId -> h.set("X-Group-ID", groupId));
+        });
+
+        if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
+            return requestSpec
+                    .uri(genaiServiceUrl + path)
+                    .body(BodyInserters.fromValue(body))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"GenAI service unavailable\"}"));
+        } else {
+            return requestSpec
+                    .uri(genaiServiceUrl + path)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"GenAI service unavailable\"}"));
+        }
     }
 
 
@@ -274,50 +342,46 @@ public class GatewayController {
         }
     }*/
 
-    // Route to GenAI Service
-    @RequestMapping(value = "/ai/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
-    public Mono<ResponseEntity<String>> routeToGenaiService(
+    @PostMapping(value = "/api/v1/groups/{groupId}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<String>> uploadGroupDocument(
             ServerHttpRequest request,
-            @RequestBody(required = false) String body) {
+            @PathVariable String groupId) {
+        
+        String targetUrl = "http://group:8083/api/v1/groups/" + groupId + "/documents";
 
-        String path = request.getPath().pathWithinApplication().value();
-        HttpMethod method = request.getMethod();
+        // Build the target URL with query parameters if present
+        URI uri = request.getURI();
+        String query = uri.getRawQuery();
+        String fullTargetUrl = targetUrl + (query != null ? "?" + query : "");
 
-        WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
-        requestSpec.headers(h -> {
-            var incoming = request.getHeaders();
-            if (incoming.getContentType() != null) {
-                h.setContentType(incoming.getContentType());
-            }
-            incoming.getOrEmpty("Authorization")
-                    .stream().findFirst()
-                    .ifPresent(token -> h.set("Authorization", token));
-        });
+        System.out.println("=== DEDICATED MULTIPART ENDPOINT CALLED ===");
+        System.out.println("Group ID: " + groupId);
+        System.out.println("Target URL: " + fullTargetUrl);
+        System.out.println("Content-Type: " + request.getHeaders().getContentType());
 
-        if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
-            return requestSpec
-                    .uri(genaiServiceUrl + path)
-                    .body(BodyInserters.fromValue(body))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .map(response -> ResponseEntity.ok()
-                            .header("Content-Type", "application/json")
-                            .body(response))
-                    .onErrorReturn(ResponseEntity.status(500)
-                            .body("{\"error\": \"GenAI service unavailable\"}"));
-        } else {
-            return requestSpec
-                    .uri(genaiServiceUrl + path)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .map(response -> ResponseEntity.ok()
-                            .header("Content-Type", "application/json")
-                            .body(response))
-                    .onErrorReturn(ResponseEntity.status(500)
-                            .body("{\"error\": \"GenAI service unavailable\"}"));
-        }
+        // Forward the raw request body without reading it
+        return webClient
+                .method(HttpMethod.POST)
+                .uri(fullTargetUrl)
+                .headers(headers -> {
+                    // Copy all incoming headers except host
+                    request.getHeaders().forEach((name, values) -> {
+                        if (!name.equalsIgnoreCase("host")) {
+                            headers.put(name, values);
+                        }
+                    });
+                })
+                // Use the raw body stream directly without reading it
+                .body(request.getBody(), org.springframework.core.io.buffer.DataBuffer.class)
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(response -> ResponseEntity.ok(response))
+                .onErrorReturn(ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body("{\"error\":\"Group service unavailable\"}"));
     }
-    @RequestMapping("/api/v1/groups/**")
+
+    @RequestMapping(value = {"/api/v1/groups/**"}, method = {
+            RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public Mono<ResponseEntity<String>> routeToGroupService(
             ServerHttpRequest request,
             @RequestBody(required = false) String body) {
@@ -327,7 +391,23 @@ public class GatewayController {
         String query    = requestUri.getRawQuery();
         String targetUrl   = "http://group:8083" + incomingPath + (query != null ? "?" + query : "");
         String incomingMethod = request.getMethod().name();
-        System.out.println("--- Gateway Routing to Group Service ---");
+        
+        // Skip multipart requests - they should be handled by the dedicated endpoint above
+        MediaType contentType = request.getHeaders().getContentType();
+        if (contentType != null && contentType.getType().equals("multipart")) {
+            System.out.println("=== MULTIPART REQUEST INTERCEPTED BY GENERAL ROUTE - THIS SHOULD NOT HAPPEN ===");
+            return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\":\"Multipart requests should use dedicated endpoint\"}"));
+        }
+        
+        // Skip document uploads - they should be handled by the dedicated endpoint
+        if (incomingPath.contains("/documents") && "POST".equals(incomingMethod)) {
+            System.out.println("=== DOCUMENT UPLOAD INTERCEPTED BY GENERAL ROUTE - THIS SHOULD NOT HAPPEN ===");
+            return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\":\"Document uploads should use dedicated endpoint\"}"));
+        }
+        
+        System.out.println("=== GENERAL GROUP SERVICE ROUTE ===");
         System.out.println("Incoming Path: "       + incomingPath);
         System.out.println("Incoming Method: "     + incomingMethod);
         System.out.println("Target URL: "          + targetUrl);
@@ -337,7 +417,6 @@ public class GatewayController {
 
         System.out.println("Incoming Auth header: "
                 + request.getHeaders().getFirst("Authorization"));
-
 
         // If it's a POST, JWT exists, and we have a body -> inject ownerUsername
         if ("POST".equalsIgnoreCase(incomingMethod)
