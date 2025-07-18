@@ -71,3 +71,39 @@ class DocumentTaskStatusResponse(BaseModel):
 
 class HealthCheckResponse(BaseModel):
     status: str = "OK"
+
+
+# New schemas for handwritten document processing
+class HandwrittenUploadResponse(BaseModel):
+    task_id: str
+    filename: str
+    message: str
+    error: Optional[str] = None
+
+
+class HandwrittenDocument(BaseModel):
+    task_id: str
+    original_filename: str
+    processed_filename: Optional[str] = None
+    status: str  # PENDING, SUCCESS, FAILURE
+    upload_timestamp: str
+    group_id: str
+    error_message: Optional[str] = None
+
+
+class HandwrittenListResponse(BaseModel):
+    processing: List[HandwrittenDocument]
+    completed: List[HandwrittenDocument]
+
+
+class HandwrittenStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    original_filename: str
+    processed_filename: Optional[str] = None
+    error_message: Optional[str] = None
+
+
+class HandwrittenDeleteResponse(BaseModel):
+    task_id: str
+    message: str

@@ -3,12 +3,15 @@ package com.devops25.group;
 import com.devops25.group.dto.CreateGroupRequest;
 import com.devops25.group.dto.GroupResponse;
 import com.devops25.group.dto.UpdateGroupRequest;
+import com.devops25.group.dto.ChatMessageRequest;
+import com.devops25.group.dto.ChatMessageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,11 +21,13 @@ public class GroupService {
 
     private final GroupRepository groupRepository;
     private final GenaiService genaiService;
+    private final ChatMessageRepository chatMessageRepository;
 
     @Autowired
-    public GroupService(GroupRepository groupRepository, GenaiService genaiService) {
+    public GroupService(GroupRepository groupRepository, GenaiService genaiService, ChatMessageRepository chatMessageRepository) {
         this.groupRepository = groupRepository;
         this.genaiService = genaiService;
+        this.chatMessageRepository = chatMessageRepository;
     }
 
     @Transactional
@@ -157,6 +162,69 @@ public class GroupService {
                 .ownerUsername(group.getOwnerUsername())
                 .memberUsernames(group.getMemberUsernames()) // Include all member usernames
                 .isMember(isMember) // Indicate if the current authenticated user is a member
+                .build();
+    }
+
+    // Chat-related methods
+    public List<ChatMessageResponse> getGroupChatMessages(Long groupId, String authenticatedUsername) {
+        // Verify the group exists and the user has access
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found with ID: " + groupId));
+        
+        // Check if user is a member or owner
+        if (!group.getOwnerUsername().equals(authenticatedUsername) && 
+            !group.getMemberUsernames().contains(authenticatedUsername)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You must be a member to view group chat");
+        }
+
+        return chatMessageRepository.findByGroupIdOrderByTimestampAsc(groupId).stream()
+                .map(this::mapToChatMessageResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public ChatMessageResponse sendChatMessage(Long groupId, ChatMessageRequest request, String authenticatedUsername) {
+        // Verify the group exists and the user has access
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found with ID: " + groupId));
+        
+        // Check if user is a member or owner
+        if (!group.getOwnerUsername().equals(authenticatedUsername) && 
+            !group.getMemberUsernames().contains(authenticatedUsername)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You must be a member to send messages");
+        }
+
+        ChatMessage chatMessage = ChatMessage.builder()
+                .groupId(groupId)
+                .username(authenticatedUsername)
+                .content(request.getContent())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
+        return mapToChatMessageResponse(savedMessage);
+    }
+
+    @Transactional
+    public void deleteGroupChat(Long groupId, String authenticatedUsername) {
+        // Verify the group exists and the user is the owner
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found with ID: " + groupId));
+        
+        // Only owner can delete chat history
+        if (!group.getOwnerUsername().equals(authenticatedUsername)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the group owner can delete chat history");
+        }
+
+        chatMessageRepository.deleteByGroupId(groupId);
+    }
+
+    private ChatMessageResponse mapToChatMessageResponse(ChatMessage chatMessage) {
+        return ChatMessageResponse.builder()
+                .id(chatMessage.getId())
+                .username(chatMessage.getUsername())
+                .content(chatMessage.getContent())
+                .timestamp(chatMessage.getTimestamp())
                 .build();
     }
 }
