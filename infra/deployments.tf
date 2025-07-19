@@ -35,6 +35,17 @@ resource "kubernetes_deployment" "user" {
       }
     }
   }
+  
+  lifecycle {
+    ignore_changes = [
+      metadata[0].resource_version,
+      metadata[0].uid,
+      metadata[0].generation,
+      spec[0].template[0].metadata[0].annotations,
+      spec[0].template[0].spec[0].container[0].termination_message_path,
+      spec[0].template[0].spec[0].container[0].termination_message_policy
+    ]
+  }
 }
 
 resource "kubernetes_deployment" "group" {
@@ -73,6 +84,17 @@ resource "kubernetes_deployment" "group" {
         }
       }
     }
+  }
+  
+  lifecycle {
+    ignore_changes = [
+      metadata[0].resource_version,
+      metadata[0].uid,
+      metadata[0].generation,
+      spec[0].template[0].metadata[0].annotations,
+      spec[0].template[0].spec[0].container[0].termination_message_path,
+      spec[0].template[0].spec[0].container[0].termination_message_policy
+    ]
   }
 }
 

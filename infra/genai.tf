@@ -192,6 +192,16 @@ resource "kubernetes_deployment" "genai_app" {
       }
     }
   }
+  
+  lifecycle {
+    ignore_changes = [
+      metadata[0].resource_version,
+      metadata[0].uid,
+      metadata[0].generation,
+      spec[0].template[0].spec[0].container[0].termination_message_path,
+      spec[0].template[0].spec[0].container[0].termination_message_policy
+    ]
+  }
 }
 
 resource "kubernetes_service" "genai_app" {
@@ -255,4 +265,15 @@ resource "kubernetes_deployment" "genai_celery_worker" {
   depends_on = [
     kubernetes_deployment.genai_app
   ]
+  
+  lifecycle {
+    ignore_changes = [
+      metadata[0].resource_version,
+      metadata[0].uid,
+      metadata[0].generation,
+      spec[0].template[0].metadata[0].annotations,
+      spec[0].template[0].spec[0].container[0].termination_message_path,
+      spec[0].template[0].spec[0].container[0].termination_message_policy
+    ]
+  }
 } 
