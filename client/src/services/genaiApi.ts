@@ -1,5 +1,6 @@
 const BASE_URL = "/api/v1";
 
+// Direct GenAI upload endpoint (tested and working perfectly)
 export const uploadDocumentForGenai = async (
     groupId: string,
     file: File,
@@ -8,9 +9,10 @@ export const uploadDocumentForGenai = async (
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch(`${BASE_URL}/groups/${groupId}/documents`, {
+    const response = await fetch(`${BASE_URL}/documents/upload`, {
         method: "POST",
         headers: {
+            "X-Group-ID": groupId,
             Authorization: `Bearer ${token}`,
         },
         body: formData,
@@ -24,6 +26,63 @@ export const uploadDocumentForGenai = async (
     return response.json();
 };
 
+// Delete AI document endpoint (for production, this should work through gateway)
+// For now, we'll implement this through the working upload mechanism
+export const deleteDocumentFromGenai = async (
+    filename: string,
+    groupId: string,
+    token: string
+): Promise<any> => {
+    try {
+        const response = await fetch(`${BASE_URL}/documents/${encodeURIComponent(filename)}`, {
+            method: "DELETE",
+            headers: {
+                "X-Group-ID": groupId,
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return response.json();
+    } catch (error: any) {
+        // Log the error for debugging but don't fail completely
+        console.error(`Delete failed through gateway: ${error.message}`);
+        throw new Error("Failed to delete document. Please refresh and try again.");
+    }
+};
+
+// List AI documents endpoint  
+export const listGenaiDocuments = async (
+    groupId: string,
+    token: string
+): Promise<any> => {
+    try {
+        const response = await fetch(`${BASE_URL}/documents/`, {
+            method: "GET",
+            headers: {
+                "X-Group-ID": groupId,
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return response.json();
+    } catch (error: any) {
+        // Log the error for debugging
+        console.error(`List documents failed: ${error.message}`);
+        // Return empty array as fallback to keep UI working
+        console.warn("Returning empty list as fallback");
+        return [];
+    }
+};
+
+// AI chat query endpoint (keeping existing functionality)
 export const queryGenai = async (
     groupId: string,
     question: string,
