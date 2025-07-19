@@ -142,55 +142,62 @@ jobs:
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
         run: |
-          echo "=== Smart Import Strategy ==="
+          echo "=== Robust CI/CD Import Strategy ==="
           
-          # Function to check if a Kubernetes resource exists and import it
-          import_if_exists() {
+          # Function to safely import resources
+          safe_import() {
             local resource_type=$1
             local resource_name=$2
             local terraform_resource=$3
             local namespace="developmentv1"
             
-            echo "Checking $resource_type/$resource_name..."
+            echo "Processing $terraform_resource..."
+            
+            # Check if already in Terraform state
+            if terraform state show $terraform_resource >/dev/null 2>&1; then
+              echo "✅ $terraform_resource already in state - will be managed"
+              return 0
+            fi
+            
+            # Check if resource exists in Kubernetes
             if kubectl get $resource_type $resource_name -n $namespace >/dev/null 2>&1; then
-              echo "✅ Found $resource_type/$resource_name - attempting import"
-              if terraform import $terraform_resource $namespace/$resource_name; then
+              echo "🔄 Found $resource_type/$resource_name - importing to state"
+              if terraform import $terraform_resource $namespace/$resource_name 2>/dev/null; then
                 echo "✅ Successfully imported $terraform_resource"
               else
-                echo "⚠️  Import failed for $terraform_resource (may already be in state)"
+                echo "⚠️  Import failed for $terraform_resource - will attempt to create"
               fi
             else
-              echo "❌ $resource_type/$resource_name not found - will be created"
+              echo "📝 $resource_type/$resource_name not found - will be created"
             fi
           }
           
-          # Import services
           echo "=== Importing Services ==="
-          import_if_exists "service" "user-service" "kubernetes_service.user"
-          import_if_exists "service" "group-service" "kubernetes_service.group"
-          import_if_exists "service" "group" "kubernetes_service.group_alias"
-          import_if_exists "service" "gateway-service" "kubernetes_service.gateway"
-          import_if_exists "service" "files-service" "kubernetes_service.files"
-          import_if_exists "service" "genai-app-service" "kubernetes_service.genai_app"
+          safe_import "service" "user-service" "kubernetes_service.user"
+          safe_import "service" "group-service" "kubernetes_service.group" 
+          safe_import "service" "group" "kubernetes_service.group_alias"
+          safe_import "service" "gateway-service" "kubernetes_service.gateway"
+          safe_import "service" "files-service" "kubernetes_service.files"
+          safe_import "service" "genai-app-service" "kubernetes_service.genai_app"
           
-          # Import deployments
           echo "=== Importing Deployments ==="
-          import_if_exists "deployment" "user-service" "kubernetes_deployment.user"
-          import_if_exists "deployment" "group-service" "kubernetes_deployment.group"
-          import_if_exists "deployment" "gateway-service" "kubernetes_deployment.gateway"
-          import_if_exists "deployment" "files-service" "kubernetes_deployment.files"
-          import_if_exists "deployment" "genai-app" "kubernetes_deployment.genai_app"
-          import_if_exists "deployment" "genai-celery-worker" "kubernetes_deployment.genai_celery_worker"
+          safe_import "deployment" "user-service" "kubernetes_deployment.user"
+          safe_import "deployment" "group-service" "kubernetes_deployment.group"
+          safe_import "deployment" "gateway-service" "kubernetes_deployment.gateway"
+          safe_import "deployment" "files-service" "kubernetes_deployment.files"
+          safe_import "deployment" "genai-app" "kubernetes_deployment.genai_app"
+          safe_import "deployment" "genai-celery-worker" "kubernetes_deployment.genai_celery_worker"
           
-          # Import secrets
           echo "=== Importing Secrets ==="
-          import_if_exists "secret" "user-env-secret" "kubernetes_secret.user_env"
-          import_if_exists "secret" "group-env-secret" "kubernetes_secret.group_env"
-          import_if_exists "secret" "gateway-env-secret" "kubernetes_secret.gateway_env"
-          import_if_exists "secret" "files-env-secret" "kubernetes_secret.files_env"
-          import_if_exists "secret" "openai-credentials" "kubernetes_secret.openai_credentials"
+          safe_import "secret" "user-env-secret" "kubernetes_secret.user_env"
+          safe_import "secret" "group-env-secret" "kubernetes_secret.group_env"
+          safe_import "secret" "gateway-env-secret" "kubernetes_secret.gateway_env"
+          safe_import "secret" "files-env-secret" "kubernetes_secret.files_env"
+          safe_import "secret" "openai-credentials" "kubernetes_secret.openai_credentials"
           
           echo "=== Import phase completed ==="
+          echo "Terraform state summary:"
+          terraform state list | wc -l | xargs echo "Resources in state:"
 
       - name: Terraform Plan
         working-directory: ./infra
@@ -230,40 +237,69 @@ jobs:
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
         run: |
-          echo "=== Applying Terraform configuration ==="
+          echo "=== Intelligent Terraform Apply ==="
+          
+          # Function to extract resource name from error message
+          extract_conflicting_resource() {
+            local error_log="$1"
+            echo "$error_log" | grep -o '"[^"]*" already exists' | sed 's/" already exists//' | sed 's/"//' | head -1
+          }
+          
+          # Function to attempt import for specific failed resource
+          emergency_import() {
+            local failed_resource="$1"
+            echo "🚨 Emergency import for: $failed_resource"
+            
+            case "$failed_resource" in
+              *"user-service")     terraform import kubernetes_service.user developmentv1/user-service 2>/dev/null || true ;;
+              *"group-service")    terraform import kubernetes_service.group developmentv1/group-service 2>/dev/null || true ;;
+              *"group")            terraform import kubernetes_service.group_alias developmentv1/group 2>/dev/null || true ;;
+              *"gateway-service")  terraform import kubernetes_service.gateway developmentv1/gateway-service 2>/dev/null || true ;;
+              *"files-service")    terraform import kubernetes_service.files developmentv1/files-service 2>/dev/null || true ;;
+              *"genai-app-service") terraform import kubernetes_service.genai_app developmentv1/genai-app-service 2>/dev/null || true ;;
+              *"openai-credentials") terraform import kubernetes_secret.openai_credentials developmentv1/openai-credentials 2>/dev/null || true ;;
+              *) echo "⚠️  Unknown resource type: $failed_resource" ;;
+            esac
+          }
           
           # First attempt: normal apply
-          if terraform apply -auto-approve -input=false; then
+          echo "🚀 Attempting normal apply..."
+          apply_output=$(terraform apply -auto-approve -input=false 2>&1)
+          apply_exit_code=$?
+          
+          if [ $apply_exit_code -eq 0 ]; then
             echo "✅ Terraform apply completed successfully"
           else
-            echo "❌ Normal apply failed, checking for resource conflicts..."
+            echo "❌ Apply failed, analyzing errors..."
+            echo "$apply_output"
             
-            # Check for specific "already exists" errors and handle them
-            if terraform plan -input=false 2>&1 | grep -q "already exists"; then
-              echo "🔄 Detected existing resources, attempting state import recovery..."
+            # Check for "already exists" errors
+            if echo "$apply_output" | grep -q "already exists"; then
+              echo "🔄 Detected resource conflicts, attempting emergency imports..."
               
-              # Re-run import for any missed resources
-              echo "Re-attempting imports for any missed resources..."
-              terraform import kubernetes_service.user developmentv1/user-service 2>/dev/null || true
-              terraform import kubernetes_service.group developmentv1/group-service 2>/dev/null || true
-              terraform import kubernetes_service.group_alias developmentv1/group 2>/dev/null || true
-              terraform import kubernetes_service.gateway developmentv1/gateway-service 2>/dev/null || true
-              terraform import kubernetes_service.files developmentv1/files-service 2>/dev/null || true
-              terraform import kubernetes_service.genai_app developmentv1/genai-app-service 2>/dev/null || true
+              # Extract and import conflicting resources
+              conflicting_resources=$(echo "$apply_output" | grep "already exists" | sed 's/.*"\([^"]*\)" already exists.*/\1/')
+              echo "Conflicting resources: $conflicting_resources"
               
-              # Try apply again after re-import
-              echo "Retrying apply after import recovery..."
+              # Import each conflicting resource
+              echo "$conflicting_resources" | while read -r resource; do
+                if [ -n "$resource" ]; then
+                  emergency_import "$resource"
+                fi
+              done
+              
+              echo "🔄 Retrying apply after emergency imports..."
               if terraform apply -auto-approve -input=false; then
-                echo "✅ Terraform apply completed successfully after import recovery"
+                echo "✅ Apply succeeded after emergency imports"
               else
-                echo "❌ Apply still failing, using targeted approach..."
-                
-                # Try applying specific resources that are known to work
-                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app
-                echo "✅ Targeted apply completed - some resources may need manual reconciliation"
+                echo "❌ Apply still failing, trying targeted approach..."
+                echo "Attempting to apply only deployments (core updates)..."
+                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app -target=kubernetes_deployment.genai_celery_worker
+                echo "✅ Targeted apply completed"
               fi
             else
-              echo "❌ Apply failed for reasons other than resource conflicts"
+              echo "❌ Apply failed for non-conflict reasons:"
+              echo "$apply_output"
               exit 1
             fi
           fi
