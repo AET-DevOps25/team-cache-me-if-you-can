@@ -1,15 +1,12 @@
-# DISABLED: Client deployment is now integrated into server-ci-cd.yml
-# This workflow is preserved for reference but not actively used
-#
-# Client building, testing, and deployment now happens as part of the 
-# unified CI/CD pipeline in server-ci-cd.yml for better coordination
-# and to avoid permission conflicts between separate Terraform states.
-
-name: check format for React App (DISABLED)
+name: check format for React App
 
 on:
-  # Disabled - no longer triggers
-  workflow_dispatch: # Manual trigger only for testing
+  push:
+    paths:
+      - "client/**"
+  pull_request:
+    paths:
+      - "client/**"
 
 jobs:
   client-check-format:
@@ -62,7 +59,7 @@ jobs:
         run: npm test
 
   client-docker-build-push:
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/workflow/enhance-cicd-and-helm-configurations') && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: [client-check-format, client-run-tests]
     permissions:
@@ -98,7 +95,7 @@ jobs:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
     needs: [client-check-format, client-run-tests, client-docker-build-push]
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/workflow/enhance-cicd-and-helm-configurations') && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
       - name: Checkout Code

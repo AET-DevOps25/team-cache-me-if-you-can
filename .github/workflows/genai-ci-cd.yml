@@ -52,7 +52,7 @@ jobs:
           echo "Waiting for server infrastructure to be ready..."
           timeout=300
           while [ $timeout -gt 0 ]; do
-            if kubectl get secret openai-credentials -n developmentv1 >/dev/null 2>&1; then
+            if kubectl get secret openai-credentials -n devel >/dev/null 2>&1; then
               echo "✅ Infrastructure ready - OpenAI secret found"
               break
             fi
@@ -70,6 +70,6 @@ jobs:
         run: |
           # Deploy with Helm (infrastructure should have created openai-credentials secret)
           helm upgrade --install genai-dev ./helm/genai-chart \
-            --namespace developmentv1 --create-namespace \
+            --namespace devel --create-namespace \
             -f ./helm/genai-chart/values-development.yaml \
             --set image.tag=latest 

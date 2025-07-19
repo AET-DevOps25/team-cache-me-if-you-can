@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "group-service.fullname" . }}
-  namespace: developmentv1
+  namespace: devel
   labels:
     app.kubernetes.io/name: {{ include "group-service.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

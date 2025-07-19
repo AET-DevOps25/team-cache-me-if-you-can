@@ -2,7 +2,7 @@
 variable "namespace" {
   description = "Kubernetes namespace to deploy into"
   type        = string
-  default     = "developmentv1"
+  default     = "devel"
 }
 
 # Docker image tags
@@ -29,13 +29,7 @@ variable "image_tag_files" {
 
 # GenAI image tags
 variable "image_tag_genai" {
-  description = "Docker image tag for GenAI service"
-  type        = string
-  default     = "latest"
-}
-
-variable "image_tag_client" {
-  description = "Docker image tag for Client service"
+  description = "Image tag for genai-app"
   type        = string
   default     = "latest"
 }
@@ -108,7 +102,7 @@ variable "jwt_secret_key" {
 variable "spring_profile" {
   description = "Active Spring profile"
   type        = string
-  default     = "developmentv1"
+  default     = "devel"
 }
 
 # OpenAI API Key for GenAI service

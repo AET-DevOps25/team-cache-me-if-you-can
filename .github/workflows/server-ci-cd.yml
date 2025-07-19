@@ -41,7 +41,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [user, group, gateway, files, genai, client]
+        service: [user, group, gateway, files, genai]
       fail-fast: false
 
     steps:
@@ -49,37 +49,24 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17 (for Java services)
-        if: matrix.service != 'genai' && matrix.service != 'client'
+        if: matrix.service != 'genai'
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: temurin
 
       - name: Build Java service (skip tests)
-        if: matrix.service != 'genai' && matrix.service != 'client'
+        if: matrix.service != 'genai'
         working-directory: ./server/${{ matrix.service }}
         run: |
           export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
           ./gradlew clean build -x test
 
       - name: Run Java tests (allow failures)
-        if: matrix.service != 'genai' && matrix.service != 'client'
+        if: matrix.service != 'genai'
         working-directory: ./server/${{ matrix.service }}
         continue-on-error: true
         run: ./gradlew test --info
-
-      - name: Set up Node.js (for client)
-        if: matrix.service == 'client'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Build client
-        if: matrix.service == 'client'
-        working-directory: ./client
-        run: |
-          npm ci
-          npm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -92,7 +79,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push Java service image
-        if: matrix.service != 'genai' && matrix.service != 'client'
+        if: matrix.service != 'genai'
         uses: docker/build-push-action@v5
         with:
           context: ./server/${{ matrix.service }}
@@ -114,18 +101,6 @@ jobs:
           tags: |
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:latest
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:${{ github.sha }}
-
-      - name: Build & push Client service image
-        if: matrix.service == 'client'
-        uses: docker/build-push-action@v5
-        with:
-          context: ./client
-          file: ./client/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:latest
-            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:${{ github.sha }}
 
   terraform-deploy:
     name: Terraform Deploy to Kubernetes
@@ -166,7 +141,6 @@ jobs:
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
-          TF_VAR_image_tag_client: ${{ github.sha }}
         run: |
           echo "=== Smart Import Strategy ==="
           
@@ -175,7 +149,7 @@ jobs:
             local resource_type=$1
             local resource_name=$2
             local terraform_resource=$3
-            local namespace="developmentv1"
+            local namespace="devel"
             
             echo "Checking $resource_type/$resource_name..."
             if kubectl get $resource_type $resource_name -n $namespace >/dev/null 2>&1; then
@@ -203,7 +177,6 @@ jobs:
           import_if_exists "service" "prometheus" "kubernetes_service.prometheus"
           import_if_exists "service" "grafana" "kubernetes_service.grafana"
           import_if_exists "service" "loki" "kubernetes_service.loki"
-          import_if_exists "service" "client-service" "kubernetes_service.client"
           
           # Import deployments
           echo "=== Importing Deployments ==="
@@ -219,7 +192,6 @@ jobs:
           import_if_exists "deployment" "grafana" "kubernetes_deployment.grafana"
           import_if_exists "deployment" "loki" "kubernetes_deployment.loki"
           import_if_exists "deployment" "promtail" "kubernetes_deployment.promtail"
-          import_if_exists "deployment" "client" "kubernetes_deployment.client"
           
           # Import secrets
           echo "=== Importing Secrets ==="
@@ -229,14 +201,11 @@ jobs:
           import_if_exists "secret" "files-env-secret" "kubernetes_secret.files_env"
           import_if_exists "secret" "openai-credentials" "kubernetes_secret.openai_credentials"
           import_if_exists "secret" "grafana-admin" "kubernetes_secret.grafana_admin"
-          import_if_exists "secret" "client-env-secret" "kubernetes_secret.client_env"
           
           # Import ingress resources
           echo "=== Importing Ingress ==="
           import_if_exists "ingress" "grafana-ingress" "kubernetes_ingress_v1.grafana_ingress"
           import_if_exists "ingress" "genai-dev-ingress" "kubernetes_ingress_v1.genai_ingress"
-          import_if_exists "ingress" "prometheus-ingress" "kubernetes_ingress_v1.prometheus_ingress"
-          import_if_exists "ingress" "client-ingress" "kubernetes_ingress_v1.client_ingress"
           
           echo "=== Import phase completed ==="
 
@@ -250,7 +219,6 @@ jobs:
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
-          TF_VAR_image_tag_client: ${{ github.sha }}
         run: |
           echo "=== Refreshing Terraform state ==="
           terraform refresh -input=false
@@ -278,7 +246,6 @@ jobs:
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
-          TF_VAR_image_tag_client: ${{ github.sha }}
         run: |
           echo "=== Applying Terraform configuration ==="
           
@@ -294,23 +261,21 @@ jobs:
               
               # Re-run import for any missed resources
               echo "Re-attempting imports for any missed resources..."
-              terraform import kubernetes_service.user developmentv1/user-service 2>/dev/null || true
-              terraform import kubernetes_service.group developmentv1/group-service 2>/dev/null || true
-              terraform import kubernetes_service.group_alias developmentv1/group 2>/dev/null || true
-              terraform import kubernetes_service.gateway developmentv1/gateway-service 2>/dev/null || true
-              terraform import kubernetes_service.files developmentv1/files-service 2>/dev/null || true
-              terraform import kubernetes_service.genai_app developmentv1/genai-app-service 2>/dev/null || true
-              terraform import kubernetes_service.redis developmentv1/redis 2>/dev/null || true
-              terraform import kubernetes_service.weaviate developmentv1/weaviate-service 2>/dev/null || true
-              terraform import kubernetes_service.prometheus developmentv1/prometheus 2>/dev/null || true
-              terraform import kubernetes_service.grafana developmentv1/grafana 2>/dev/null || true
-              terraform import kubernetes_service.loki developmentv1/loki 2>/dev/null || true
-              terraform import kubernetes_service.client developmentv1/client-service 2>/dev/null || true
-              terraform import kubernetes_secret.grafana_admin developmentv1/grafana-admin 2>/dev/null || true
-              terraform import kubernetes_secret.client_env developmentv1/client-env-secret 2>/dev/null || true
+              terraform import kubernetes_service.user devel/user-service 2>/dev/null || true
+              terraform import kubernetes_service.group devel/group-service 2>/dev/null || true
+              terraform import kubernetes_service.group_alias devel/group 2>/dev/null || true
+              terraform import kubernetes_service.gateway devel/gateway-service 2>/dev/null || true
+              terraform import kubernetes_service.files devel/files-service 2>/dev/null || true
+              terraform import kubernetes_service.genai_app devel/genai-app-service 2>/dev/null || true
+              terraform import kubernetes_service.redis devel/redis 2>/dev/null || true
+              terraform import kubernetes_service.weaviate devel/weaviate-service 2>/dev/null || true
+              terraform import kubernetes_service.prometheus devel/prometheus 2>/dev/null || true
+              terraform import kubernetes_service.grafana devel/grafana 2>/dev/null || true
+              terraform import kubernetes_service.loki devel/loki 2>/dev/null || true
+              terraform import kubernetes_secret.grafana_admin devel/grafana-admin 2>/dev/null || true
               
               echo "Checking for specific resource failures..."
-              if ! kubectl get deployment weaviate -n developmentv1 >/dev/null 2>&1; then
+              if ! kubectl get deployment weaviate -n devel >/dev/null 2>&1; then
                 echo "⚠️ Weaviate deployment missing - will be created"
               fi
               
@@ -322,7 +287,7 @@ jobs:
                 echo "❌ Apply still failing, using targeted approach..."
                 
                 # Try applying specific resources that are known to work
-                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app -target=kubernetes_deployment.genai_celery_worker -target=kubernetes_deployment.genai_redis -target=kubernetes_deployment.weaviate -target=kubernetes_deployment.prometheus -target=kubernetes_deployment.grafana -target=kubernetes_deployment.loki -target=kubernetes_deployment.promtail -target=kubernetes_deployment.client
+                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app -target=kubernetes_deployment.genai_celery_worker -target=kubernetes_deployment.genai_redis -target=kubernetes_deployment.weaviate -target=kubernetes_deployment.prometheus -target=kubernetes_deployment.grafana -target=kubernetes_deployment.loki -target=kubernetes_deployment.promtail
                 echo "✅ Targeted apply completed - some resources may need manual reconciliation"
               fi
             else
@@ -332,3 +297,50 @@ jobs:
           fi
           
           echo "=== Terraform apply phase completed ==="
+
+      - name: Post-deployment validation
+        working-directory: ./infra
+        env:
+          KUBECONFIG: ~/.kube/config
+        run: |
+          echo "=== Post-deployment validation ==="
+          
+          # Wait for deployments to be ready
+          echo "Waiting for deployments to be ready..."
+          kubectl rollout status deployment/user-service -n devel --timeout=300s
+          kubectl rollout status deployment/group-service -n devel --timeout=300s
+          kubectl rollout status deployment/gateway-service -n devel --timeout=300s
+          kubectl rollout status deployment/files-service -n devel --timeout=300s
+          kubectl rollout status deployment/genai-app -n devel --timeout=300s
+          kubectl rollout status deployment/genai-celery-worker -n devel --timeout=300s
+          kubectl rollout status deployment/redis -n devel --timeout=300s || echo "Redis rollout check failed"
+          kubectl rollout status deployment/weaviate -n devel --timeout=300s || echo "Weaviate rollout check failed"
+          kubectl rollout status deployment/prometheus -n devel --timeout=300s || echo "Prometheus rollout check failed"
+          kubectl rollout status deployment/grafana -n devel --timeout=300s || echo "Grafana rollout check failed" 
+          kubectl rollout status deployment/loki -n devel --timeout=300s || echo "Loki rollout check failed"
+          kubectl rollout status deployment/promtail -n devel --timeout=300s || echo "Promtail rollout check failed"
+          
+          # Check pod health
+          echo "Checking pod health..."
+          kubectl get pods -n devel -o wide
+          
+          # Verify critical services are accessible
+          echo "Testing service connectivity..."
+          kubectl run test-pod --image=curlimages/curl:latest --rm -i --restart=Never -n devel -- sh -c "
+            curl -f http://user-service:8081/actuator/health --max-time 10 &&
+            curl -f http://group-service:8083/actuator/health --max-time 10 &&
+            curl -f http://gateway-service:8080/actuator/health --max-time 10 &&
+            curl -f http://files-service:8082/actuator/health --max-time 10 &&
+            curl -f http://genai-app-service:8000/api/v1/health --max-time 10
+          " || echo "Some health checks failed - this may be normal during startup"
+          
+          # Verify group service alias works
+          echo "Testing group service alias..."
+          kubectl run test-pod-2 --image=curlimages/curl:latest --rm -i --restart=Never -n devel -- sh -c "
+            curl -f http://group:8083/actuator/health --max-time 10
+          " || echo "Group alias health check failed"
+          
+          echo "Checking ingress resources..."
+          kubectl get ingress -n devel || echo "No ingress resources found"
+          
+          echo "✅ Post-deployment validation completed"

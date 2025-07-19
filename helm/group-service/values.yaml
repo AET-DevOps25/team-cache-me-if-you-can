@@ -10,6 +10,6 @@ service:
   port: 8083
 
 env:
-  DB_URL: jdbc:mysql://mysql.developmentv1.svc.cluster.local:3306/group_database
+  DB_URL: jdbc:mysql://mysql.devel.svc.cluster.local:3306/group_database
   DB_USERNAME: group
   DB_PASSWORD: Group123! 
