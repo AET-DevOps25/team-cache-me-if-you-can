@@ -172,6 +172,11 @@ jobs:
           import_if_exists "service" "gateway-service" "kubernetes_service.gateway"
           import_if_exists "service" "files-service" "kubernetes_service.files"
           import_if_exists "service" "genai-app-service" "kubernetes_service.genai_app"
+          import_if_exists "service" "redis" "kubernetes_service.redis"
+          import_if_exists "service" "weaviate-service" "kubernetes_service.weaviate"
+          import_if_exists "service" "prometheus" "kubernetes_service.prometheus"
+          import_if_exists "service" "grafana" "kubernetes_service.grafana"
+          import_if_exists "service" "loki" "kubernetes_service.loki"
           
           # Import deployments
           echo "=== Importing Deployments ==="
@@ -181,6 +186,15 @@ jobs:
           import_if_exists "deployment" "files-service" "kubernetes_deployment.files"
           import_if_exists "deployment" "genai-app" "kubernetes_deployment.genai_app"
           import_if_exists "deployment" "genai-celery-worker" "kubernetes_deployment.genai_celery_worker"
+          import_if_exists "deployment" "redis" "kubernetes_deployment.genai_redis"
+          import_if_exists "deployment" "weaviate" "kubernetes_deployment.weaviate"
+          import_if_exists "deployment" "prometheus" "kubernetes_deployment.prometheus"
+          import_if_exists "deployment" "grafana" "kubernetes_deployment.grafana"
+          import_if_exists "deployment" "loki" "kubernetes_deployment.loki"
+          
+          # Import daemonsets
+          echo "=== Importing DaemonSets ==="
+          import_if_exists "daemonset" "promtail" "kubernetes_daemon_set.promtail"
           
           # Import secrets
           echo "=== Importing Secrets ==="
@@ -250,6 +264,11 @@ jobs:
               terraform import kubernetes_service.gateway developmentv1/gateway-service 2>/dev/null || true
               terraform import kubernetes_service.files developmentv1/files-service 2>/dev/null || true
               terraform import kubernetes_service.genai_app developmentv1/genai-app-service 2>/dev/null || true
+              terraform import kubernetes_service.redis developmentv1/redis 2>/dev/null || true
+              terraform import kubernetes_service.weaviate developmentv1/weaviate-service 2>/dev/null || true
+              terraform import kubernetes_service.prometheus developmentv1/prometheus 2>/dev/null || true
+              terraform import kubernetes_service.grafana developmentv1/grafana 2>/dev/null || true
+              terraform import kubernetes_service.loki developmentv1/loki 2>/dev/null || true
               
               # Try apply again after re-import
               echo "Retrying apply after import recovery..."
@@ -259,7 +278,7 @@ jobs:
                 echo "❌ Apply still failing, using targeted approach..."
                 
                 # Try applying specific resources that are known to work
-                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app
+                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app -target=kubernetes_deployment.genai_celery_worker -target=kubernetes_deployment.genai_redis -target=kubernetes_deployment.weaviate -target=kubernetes_deployment.prometheus -target=kubernetes_deployment.grafana -target=kubernetes_deployment.loki
                 echo "✅ Targeted apply completed - some resources may need manual reconciliation"
               fi
             else
@@ -285,6 +304,14 @@ jobs:
           kubectl rollout status deployment/files-service -n developmentv1 --timeout=300s
           kubectl rollout status deployment/genai-app -n developmentv1 --timeout=300s
           kubectl rollout status deployment/genai-celery-worker -n developmentv1 --timeout=300s
+          kubectl rollout status deployment/redis -n developmentv1 --timeout=300s || echo "Redis rollout check failed"
+          kubectl rollout status deployment/weaviate -n developmentv1 --timeout=300s || echo "Weaviate rollout check failed"
+          kubectl rollout status deployment/prometheus -n developmentv1 --timeout=300s || echo "Prometheus rollout check failed"
+          kubectl rollout status deployment/grafana -n developmentv1 --timeout=300s || echo "Grafana rollout check failed" 
+          kubectl rollout status deployment/loki -n developmentv1 --timeout=300s || echo "Loki rollout check failed"
+          
+          echo "Checking DaemonSet status..."
+          kubectl rollout status daemonset/promtail -n developmentv1 --timeout=300s || echo "Promtail rollout check failed"
           
           # Check pod health
           echo "Checking pod health..."

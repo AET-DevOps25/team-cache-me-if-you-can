@@ -1,136 +1,175 @@
-# Commenting out Redis deployment - using existing Redis pod
-# resource "kubernetes_deployment" "genai_redis" {
-#   metadata {
-#     name      = "genai-redis"
-#     namespace = var.namespace
-#     labels    = { app = "genai-redis" }
-#   }
-#   spec {
-#     replicas = 1
-#     selector { match_labels = { app = "genai-redis" } }
-#     template {
-#       metadata { labels = { app = "genai-redis" } }
-#       spec {
-#         container {
-#           name  = "redis"
-#           image = "redis:7-alpine"
-#           port {
-#             container_port = 6379
-#           }
-#         }
-#       }
-#     }
-#   }
-# }
+# Redis deployment for GenAI Celery broker
+resource "kubernetes_deployment" "genai_redis" {
+  metadata {
+    name      = "redis"
+    namespace = var.namespace
+    labels    = { app = "redis" }
+  }
+  
+  lifecycle {
+    ignore_changes = [
+      metadata[0].generation,
+      metadata[0].resource_version,
+      metadata[0].uid,
+      spec[0].template[0].metadata[0].annotations
+    ]
+  }
+  
+  spec {
+    replicas = 1
+    selector { match_labels = { app = "redis" } }
+    template {
+      metadata { labels = { app = "redis" } }
+      spec {
+        container {
+          name  = "redis"
+          image = "redis:7-alpine"
+          port {
+            container_port = 6379
+          }
+          resources {
+            requests = {
+              memory = "256Mi"
+              cpu    = "100m"
+            }
+            limits = {
+              memory = "512Mi"
+              cpu    = "500m"
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
-# Using existing Redis service instead of creating new one
-# resource "kubernetes_service" "genai_redis" {
-#   metadata {
-#     name      = "genai-redis"
-#     namespace = var.namespace
-#     labels    = { app = "genai-redis" }
-#   }
-#   spec {
-#     selector = { app = "genai-redis" }
-#     port {
-#       port        = 6379
-#       target_port = 6379
-#     }
-#     type = "ClusterIP"
-#   }
-# }
+resource "kubernetes_service" "redis" {
+  metadata {
+    name      = "redis"
+    namespace = var.namespace
+    labels    = { app = "redis" }
+  }
+  spec {
+    selector = { app = "redis" }
+    port {
+      port        = 6379
+      target_port = 6379
+    }
+    type = "ClusterIP"
+  }
+}
 
-# Commenting out Weaviate deployment - using existing Weaviate pod
-# resource "kubernetes_deployment" "weaviate" {
-#   metadata {
-#     name      = "genai-weaviate"
-#     namespace = var.namespace
-#     labels    = { app = "genai-weaviate" }
-#   }
-#   spec {
-#     replicas = 1
-#     selector { match_labels = { app = "genai-weaviate" } }
-#     template {
-#       metadata { labels = { app = "genai-weaviate" } }
-#       spec {
-#         volume {
-#           name = "weaviate-data"
-#           empty_dir {}
-#         }
-#         
-#         container {
-#           name  = "weaviate"
-#           image = "semitechnologies/weaviate:1.23.7"
-#           port {
-#             container_port = 8080
-#           }
-#           port {
-#             container_port = 50051
-#           }
-#           
-#           volume_mount {
-#             name       = "weaviate-data"
-#             mount_path = "/var/lib/weaviate"
-#           }
-#           
-#           env_from {
-#             secret_ref {
-#               name = kubernetes_secret.openai_credentials.metadata[0].name
-#             }
-#           }
-#           
-#           env {
-#             name  = "QUERY_DEFAULTS_LIMIT"
-#             value = "25"
-#           }
-#           env {
-#             name  = "AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED"
-#             value = "true"
-#           }
-#           env {
-#             name  = "PERSISTENCE_DATA_PATH"
-#             value = "/var/lib/weaviate"
-#           }
-#           env {
-#             name  = "DEFAULT_VECTORIZER_MODULE"
-#             value = "text2vec-openai"
-#           }
-#           env {
-#             name  = "ENABLE_MODULES"
-#             value = "text2vec-openai,generative-openai"
-#           }
-#           env {
-#             name  = "CLUSTER_HOSTNAME"
-#             value = "node1"
-#           }
-#         }
-#       }
-#     }
-#   }
-# }
+# Weaviate deployment for GenAI vector database
+resource "kubernetes_deployment" "weaviate" {
+  metadata {
+    name      = "weaviate"
+    namespace = var.namespace
+    labels    = { app = "weaviate" }
+  }
+  
+  lifecycle {
+    ignore_changes = [
+      metadata[0].generation,
+      metadata[0].resource_version,
+      metadata[0].uid,
+      spec[0].template[0].metadata[0].annotations
+    ]
+  }
+  
+  spec {
+    replicas = 1
+    selector { match_labels = { app = "weaviate" } }
+    template {
+      metadata { labels = { app = "weaviate" } }
+      spec {
+        volume {
+          name = "weaviate-data"
+          empty_dir {}
+        }
+        
+        container {
+          name  = "weaviate"
+          image = "semitechnologies/weaviate:1.23.7"
+          port {
+            container_port = 8080
+          }
+          port {
+            container_port = 50051
+          }
+          
+          volume_mount {
+            name       = "weaviate-data"
+            mount_path = "/var/lib/weaviate"
+          }
+          
+          env_from {
+            secret_ref {
+              name = kubernetes_secret.openai_credentials.metadata[0].name
+            }
+          }
+          
+          env {
+            name  = "QUERY_DEFAULTS_LIMIT"
+            value = "25"
+          }
+          env {
+            name  = "AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED"
+            value = "true"
+          }
+          env {
+            name  = "PERSISTENCE_DATA_PATH"
+            value = "/var/lib/weaviate"
+          }
+          env {
+            name  = "DEFAULT_VECTORIZER_MODULE"
+            value = "text2vec-openai"
+          }
+          env {
+            name  = "ENABLE_MODULES"
+            value = "text2vec-openai,generative-openai"
+          }
+          env {
+            name  = "CLUSTER_HOSTNAME"
+            value = "node1"
+          }
+          
+          resources {
+            requests = {
+              memory = "1Gi"
+              cpu    = "500m"
+            }
+            limits = {
+              memory = "2Gi"
+              cpu    = "1000m"
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
-# Using existing Weaviate service instead of creating new one
-# resource "kubernetes_service" "weaviate" {
-#   metadata {
-#     name      = "genai-weaviate"
-#     namespace = var.namespace
-#     labels    = { app = "genai-weaviate" }
-#   }
-#   spec {
-#     selector = { app = "genai-weaviate" }
-#     port {
-#       name        = "http"
-#       port        = 8080
-#       target_port = 8080
-#     }
-#     port {
-#       name        = "grpc"
-#       port        = 50051
-#       target_port = 50051
-#     }
-#     type = "ClusterIP"
-#   }
-# }
+resource "kubernetes_service" "weaviate" {
+  metadata {
+    name      = "weaviate-service"
+    namespace = var.namespace
+    labels    = { app = "weaviate" }
+  }
+  spec {
+    selector = { app = "weaviate" }
+    port {
+      name        = "http"
+      port        = 8080
+      target_port = 8080
+    }
+    port {
+      name        = "grpc"
+      port        = 50051
+      target_port = 50051
+    }
+    type = "ClusterIP"
+  }
+}
 
 # GenAI App deployment
 resource "kubernetes_deployment" "genai_app" {
