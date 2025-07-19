@@ -1,0 +1,520 @@
+29.04.2025Multi-Modal Deep Learning
+Lecture Series | Summer 2025Institute for AI and Informatics in Medicine
+/ 70
+MDL - INTRODUCTIONABOUT US — CHAIR FOR AI IN HEALTHCARE AND MEDICINE (AIM LAB)2 https://www.linkedin.com/company/tum-aim-labhttps://bsky.app/proﬁle/aim-lab.bsky.social
+
+/ 70
+MDL - INTRODUCTIONABOUT US3
+Dr. Martin Menten Group LeaderPhilip Müller PhD StudentFlorian Hölzl PhD StudentDavid Mildenberger PhD Student
+Prof. Daniel Rückert Institute Director
+/ 70
+MDL - INTRODUCTIONSTRUCTURE OF THIS COURSE4
+Tuesdays 10:30-12:00 •Tutorial (~45 min)
+•Lecture (~45 min)
+Tuesdays 14:00-15:30 •Lecture (~60 min)
+•Q&A Session (~30 min)
+This week: only lectures Exercises / Q&A starting next week
+/ 70
+MDL - INTRODUCTIONSTRUCTURE OF THIS COURSE5
+Homework Assignments •Homework assignment provided ~weekly (published after the lecture)
+•Non-graded
+•Solutions discussed in tutorial (the week after)
+•“on-paper” problems, some short coding exercises, or paper readings
+Tutorial •Solutions for homework assignments will be presented
+•Discussion of the solutions (or the paper)
+•Preparation of assignment highly recommended but not mandatory
+/ 70
+MDL - INTRODUCTIONSTRUCTURE OF THIS COURSE6
+Q&A Sessions •Questions can be asked in Moodle or in the session
+•Questions can be about any topics of the current week or any prior week
+(no discussion of future topics)
+•We provide additional answers/explanations/help
+/ 70
+MDL - INTRODUCTIONSTRUCTURE OF THIS COURSE7
+Exam •course’s grade = 100% based on exam grade (no graded hand-ins or “Notenbonus”)
+•90 minutes written exam
+•similar to homework assignments
+•understanding not remembering, e.g.
+-NOT: draw the remembered architecture
+-INSTEAD: why do you need this component / what would happen without it
+or
+-NOT: list all possible algorithms for …
+-INSTEAD: you are given this problem, which of A or B would you use and why
+/ 70
+MDL - INTRODUCTIONLEARNING GOALS8
+Understanding the core principles and tools required for multimodal deep learning •Looking at deep learning from a multimodal perspective
+•Understanding properties of diﬀerent data/modalities
+•Understanding properties of diﬀerent uni-modal deep learning architectures
+•Understanding building blocks (e.g. model components, loss functions)
+•Combining diﬀerent modalities
+Multimodal Deep Learning is a fast-moving ﬁeld
+❌ We don’t want you to memorize methods that may be outdated soon
+✓ We want you to understand the core principles
+✓ We want you to draw connections between deep learning practices
+(some of which you may already know)
+✓ Based on that, we will show some examples from current literature
+/ 70
+MDL - INTRODUCTIONLEARNING GOALS9
+Goals of the Q&A Sessions •Provide an opportunity for further discussion of topics / connections btw topics
+•Questions / topics for further discussion (asked via Moodle)
+-We will then try to answer them or provide further explanations in the nex QA session
+-You do not have to actively participate in the discussion, even if you asked the question online (but we of course welcome any activate participation)
+/ 70
+MDL - INTRODUCTIONLEARNING GOALS10
+This is an advanced Deep Learning lecture!
+We assume that students know the basics of Deep Learning
+(and we highly recommend that students have already taken an introductory course)
+/ 70
+MDL - INTRODUCTIONSUMMARY OF BLOCKS11
+1.Data types, representations, and feature spaces -Structure, symmetries, and other properties of modalities and feature spaces
+2.Architectures for diﬀerent modalities -Encoder and decoder architecture and their properties
+3.Training signals -Loss functions for diﬀerent modalities and multimodal training
+-Supervised, self-supervised and unsupervised training
+4.Multimodal pipelines -Multimodal architectures
+/ 70
+MDL - INTRODUCTIONOVERVIEW OF THE WEEKS (PLANNED)12
+•Week 1 (29.04., today, morning): Introduction, Manifold Hypothesis, Pipelines
+•Week 1 (29.04., today, afternoon): Structure and types of data •Week 2 (06.05.): Features, Encodings, and Embeddings •Week 3 (13.05.): DL on Sets, Tuples, Sequences, and Signals
+•Week 4 (20.05.) — only afternoon: DL on Sets, Tuples, Sequences, and Signals (cont.) •Week 5 (27.05.): Group-equivariant DL •Week 6 (03.06.): DL on Graphs
+•Week 7 (10.06.) — no lecture •Week 8 (17.06.): Implicit Neural Representations (INRs) •Week 9 (24.06.): Loss Functions and Self-supervised Learning (SSL) •Week 10 (01.07.): SSL (cont.) and Parameter-Eﬃcient Fine-Tuning (PEFT) •Week 11 (08.07.): Multimodal Pipelines and Architectures •Week 12 (15.07.): Multimodal Pipelines and Architectures (cont.)
+•Week 13 (22.07.) — no lecture
+/ 70
+MDL - INTRODUCTIONCOMPARISON OF OUR OFFERED COURSES13
+AI in Medicine I and IIMultimodal Deep Learning
+(this course)Applied Deep Learning in Medicine (practical)Our Seminars
+(varying)SemesterAIIM I: WiSe
+AIIM II: SoSe SoSeWiSe and SoSeWiSe and SoSeECTS55105What you learnCovering several medical AI topicsDeep, more theoretical, focus on methodsPractical experience on real research projectsReading and understanding recent research papersMedical application focusyesnoyesyes
+MultimodalDeep Learning
+/ 70
+MDL - INTRODUCTIONWHAT IS MULTI-MODAL DEEP LEARNING15
+Deep Learning with
+Multiple Modalitiesmore on that laterwhat is a modality?
+/ 70
+MDL - INTRODUCTION
+16WHAT IS A MODALITY?Term from human-computer interaction:
+Single independent channel of input/output between computer and human Meaning in machine learning:
+Type of data used as input (conditioning) or output (prediction) of a model Not to be confused with
+•model / multi-model: a pipeline / system consisting of multiple models
+•mode: property of a probability distribution (most likely value)
+/ 70
+MDL - INTRODUCTION
+17WHAT IS A MODALITY? - EXAMPLESCommon modalities: •Images
+Depth ImagesThermal Images
+X-Ray Scanner
+(Medical)Histopathology
+(Microscopy, Medical)
+Maro-Pathology
+(Medical)
+“Natural Images”
+(Web Images)
+
+/ 70
+MDL - INTRODUCTION
+18WHAT IS A MODALITY? - EXAMPLESCommon modalities: •3D Images
+MRI Scanner
+(Medical)PET Scanner
+(Medical)
+CT Scanner
+(Medical)
+/ 70
+MDL - INTRODUCTION
+19WHAT IS A MODALITY? - EXAMPLESCommon modalities: •Audio and other signals / times series -Voice (diﬀerent languages) -Environmental Sounds -Music -ECG (Medical) -EEG (Medical) -Sensory data or other time series
+(electronics, mechanical, ﬁnance, geology, …)
+
+/ 70
+MDL - INTRODUCTION
+20WHAT IS A MODALITY? - EXAMPLESCommon modalities: •Videos
+“Natural Videos”
+(Web Videos)
+Egocentric VideosDepth Videos
+2D Ultrasound
+(Medical)
+/ 70
+MDL - INTRODUCTION
+21WHAT IS A MODALITY? - EXAMPLESCommon modalities: •3D Videos
+3D Ultrasound
+(Medical)
+
+/ 70
+MDL - INTRODUCTION
+22WHAT IS A MODALITY? - EXAMPLESCommon modalities: •Text -Books / documents -Chats -Medical Texts (e.g. discharge summaries)
+
+/ 70
+MDL - INTRODUCTION
+23WHAT IS A MODALITY? - EXAMPLESCommon modalities: •Graphs -Geometric Meshes (e.g. 3D Models -Molecule structures -Social graphs (e.g. social networks) -Population graphs
+Geometric Meshes
+(e.g. 3D Models)
+/ 70
+MDL - INTRODUCTION
+24WHAT IS A MODALITY? - EXAMPLESCommon modalities: •Sequences -DNA/RNA -Amino-Acid sequence -Paths (Robotics / Navigation)
+
+/ 70
+MDL - INTRODUCTION
+25WHAT IS A MODALITY? - EXAMPLESCommon modalities: •Tabular Data -Questionnaires -(Medical Health) Records -Derived information of any kind -…
+
+/ 70
+MDL - INTRODUCTION
+26WHAT IS A MODALITY? - EXAMPLESCommon modalities: •Point Clouds -LiDAR Scanner
+(d)
+(b)
+(c)
+(a)
+(e)
+(f)
+
+/ 70
+MDL - INTRODUCTION
+27WHAT IS A MODALITY? - EXAMPLESOther (output) modalities: •Classiﬁcation Labels (typically as output) •Regression Targets (typically as output) •Bounding Boxes (typically as output) •Segmentation Masks (typically as output)
+
+/ 70
+MDL - INTRODUCTION
+28WHAT IS A MODALITY? - EXAMPLESCommon input modalities: •Images
+•Video
+•Text
+•Audio / Signals / Time Series
+•Graphs / Sequences
+•Tabular Data
+•Point Clouds
+Common output modalities: •Classiﬁcation labels
+•Regression targets
+•Bounding boxes
+•Segmentation masks
+•TextNotes: •Any of the listed modalities could be used as input and output
+•Finer distinctions are possible: e.g. diﬀerent types of images = diﬀerent modalities
+/ 70
+MDL - INTRODUCTIONMOTIVATION: WHY DO WE NEED MORE THAN ONE MODALITY?29
+•Information Completeness -diﬀerent modalities carry diﬀerent information
+-a single modality may not contain everything relevant
+•Source of Supervision -diﬀerent modalities from the same sample correlate
+-paired modalities can be used as training signals
+•Flexibility -sometimes data is only available in one modality - sometimes in another
+-we want to be able to use whatever data we get
+•Interaction -some tasks require associating several modalities to be solved
+•Conversion -sometimes we want to convert one modality into another
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS30
+•Image Captioning
+(Image-to-Text Generation) -Describe an image
+-Input: Image
+-Output: Text
+
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS31
+•Text-to-Image Generation -Generate an image based on a textual description
+-Input: Text
+-Output: Image
+
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS32
+•Text-to-Speech Generation -Generate speech based on a textual input
+-Input: Text
+-Output: Speech (Audio)
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS33
+•Visual Question Answering (VQA) / Visual Reasoning -Answer a question about an image
+-Input: Image + Text
+-Output: Text or Classiﬁcation labels
+
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS34
+•Cross-modal Retrieval -Search images based on a textual query
+-Input: Image + Text
+-Output: Similarity score (regression)
+
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS35
+•Image Classiﬁcation -Classify an image
+-Input: Image
+-Output: Classiﬁcation labels
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS36
+•Object Detection -Detect objects in an image and generate bounding boxes for them
+-Input: Image
+-Output: Set of bounding boxes
+
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS37
+•Semantic Segmentation -Generate segmentation masks for an image
+-Input: Image
+-Output: Segmentation mask
+
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS38
+•Visual Grounding / Referring Expressions -Localize relevant parts in an image to which a given textual phrase refers
+-Input: Image + Phrase
+-Output: Set of bounding boxes
+
+/ 70
+MDL - INTRODUCTIONMOTIVATION: EXAMPLE APPLICATIONS39
+Why the distinction single vs. multimodal? •“classiﬁcal” pipelines
+-one modality (e.g. images) is much harder to process than the other (e.g. class labels)
+•“multimodal” pipelines
+-require to think more about how to process/combine/convert diﬀerent modalities
+BUT All machine learning models can be considered multimodal! •Inputs and outputs of machine learning models are diﬀerent
+➡Even classiﬁcation labels can be considered (output modalities)
+➡Even image-to-image pipelines predict one type of image given another
+Let’s look at deep learning from a multimodal point of view!
+Multi-Modal Deep Learning Pipelines
+/ 70
+MDL - INTRODUCTIONMULTIMODAL DEEP LEARNING PIPELINES41
+Machine Learning Pipeline •Learn a parameterized function with parameters
+•Given an input , predict the output
+by applying on
+Important Aspects •How do we get from to inside
+=> forward pass •How do we learn the parameters given a training dataset
+=> backward passfθθxyfθxxyfθθInput(Condition)Output(Prediction)Modellet’s focus on this ﬁrst
+/ 70
+MDL - INTRODUCTIONPROBLEM: CURSE OF DIMENSIONALITY42
+•Input data space = space of all possible inputs • is often very high-dimensional -e.g. (pixel intensities) for color images of size HxW
+➡ 2,795,520 dims for 728x1280 images
+•Number of possible inputs scales exponentially with dimension
+-e.g. with 1byte per color channel
+➡ => too large to compute
+➡ (even for small resolutions: )
+It is impossible to get a dataset covering a signiﬁcant fraction of the input data space! How is it possible to train a model on such an input space?ℝDℝDℝD=ℝ3×H×W2563×728×12802563×256×256>10473,479
+
+/ 70
+MDL - INTRODUCTIONTHE MANIFOLD HYPOTHESIS43
+Key assumption High dimensional data resides in a (much) lower dimensional space that is locally Euclidean
+Image source: https://arxiv.org/pdf/2309.08247
+/ 70
+MDL - INTRODUCTIONTHE MANIFOLD HYPOTHESIS44
+•Images are in a high dimensional image space of pixel intensities
+•Semantic meaning (“where does he look to”) is in a low dimensional 1-D space
+(e.g. negative = looks right, zero = looks forward, positive = looks left)
+ℝ3×728×1280ℝ
+Image source: https://arxiv.org/pdf/2309.08247
+/ 70
+MDL - INTRODUCTIONTHE MANIFOLD HYPOTHESIS45
+The (input) data space = space of all possible inputs •High dimensional (e.g. one dim per pixel)
+•Eucledian (all possible combinations of inputs)ℝD
+
+/ 70
+MDL - INTRODUCTIONTHE MANIFOLD HYPOTHESIS46
+The (input) data space = space of all possible inputs •high dimensional (e.g. one dim per pixel)
+•Eucledian (all possible combinations of inputs)
+➡ most of the possible are meaningless noise
+The (input) data manifold = space of “realistic” inputs •lies in data space (subset of all possible inputs)
+•“realistic” inputs are very close or on this manifold ()
+•(typically) low dimensional:
+➡ we only need to consider inputs from this manifold and ignore any other possible inputsℝDx∈ℝDℳ⊂ℝDx∈ℳdim(ℳ)=m≪D
+Data manifold ℳ⊂ℝD
+/ 70
+MDL - INTRODUCTIONTHE MANIFOLD HYPOTHESIS47
+The (input) data manifold = space of “realistic” inputs •lies in data space (subset of all possible inputs)
+•“realistic” inputs are very close or on this manifold ()
+•(typically) low dimensional:
+➡ we only need to consider inputs from this manifold and ignore any other possible inputs
+The coordinate space = position on the data manifold •each data point can be mapped onto a point in
+•position/distances in coordinate space are “semantically” more meaningful
+➡ working on coordinate space simpliﬁes processing
+Side note:
+There are many coordinate systems for a data manifold , some produce geometrically distorted coordinate spacesℳ⊂ℝDx∈ℳdim(ℳ)=m≪DU⊂ℝmℳx∈ℳz∈Uℳ
+Data manifold ℳ⊂ℝD
+Coordinate space U⊂ℝm
+/ 70
+MDL - INTRODUCTIONTHE MANIFOLD HYPOTHESIS48
+Coordinate space : Position on this line
+= “where does he look to”U⊂ℝ
+/ 70
+MDL - INTRODUCTIONMANIFOLDS: SOME EXAMPLES49
+Data space : Position in the the universe
+ℝD=ℝ3Data manifold : Surface of the earth
+ℳ⊂ℝ3Coordinate space : 2D-map of the earth
+U⊂ℝ2
+/ 70
+MDL - INTRODUCTIONMANIFOLDS: SOME MORE EXAMPLES50
+Data space ℝD=ℝ3Data manifold : Surface on the curved bandℳ⊂ℝ3Coordinate space : 2D-map of band or alternatively:
+1D space of color
+U⊂ℝ2
+=> distance in 3D space does not tell much about distance on the manifold
+/ 70
+MDL - INTRODUCTIONMANIFOLDS: SOME MORE EXAMPLES51
+Data space ℝD=ℝ3Data manifold : Surface on the curved band
+(whole is not part of manifold)ℳ⊂ℝ3Coordinate space : 2D-map of band
+=> whole it not part of U⊂ℝ2U
+/ 70
+MDL - INTRODUCTIONBACK TO DEEP LEARNING: HOW DO WE GET FROM X TO Y52
+Instead of thinking about the forward pass like this:
+think about it as two stepsInput(Condition)Output(Prediction)Model
+Input(Condition)Output(Prediction)EncoderDecoder
+/ 70
+MDL - INTRODUCTIONBACK TO DEEP LEARNING: HOW DO WE GET FROM X TO Y53
+Input(Condition)Output(Prediction)EncoderDecoderthis is the coordinate space of the input data manifold
+(also called hidden feature space / latent space)
+/ 70
+MDL - INTRODUCTIONUNFOLDING THE INPUT: HOW DO WE GET FROM X TO Y54
+How do we get from to ?
+The Encoder in practice is actually but its values are not expected to be meaningful for (or far from )
+and it is not expected to output a (or far from )xzfθ:ℳ→Ufθfθ:ℝD→ℝmx∉ℳℳz∉UUInput(Condition)Output(Prediction)EncoderDecoder
+Data manifold ℳ⊂ℝD
+Coordinate space U⊂ℝm
+/ 70
+MDL - INTRODUCTIONWHAT ABOUT THE OUTPUT SPACE55
+How do we get from to ?
+Realistic values of also lie on a manifold, the output data manifold
+BUT typically output manifold input manifold and zyyℳ′ ⊂ℝD′
+ℳ′ ≠ℳD′ ≠D
+Outpu data manifold ℳ′ ⊂ℝD′
+/ 70
+Input (B) and output (C) are both directly or indirectly derived from reality (A) •directly A → B and A → C
+•indirectly A → B → C
+(C derived from B, see ﬁgure)
+MDL - INTRODUCTIONWHAT ABOUT THE OUTPUT SPACE56
+A red sphere next to a blue cone.A<latexit sha1_base64="QjGLLuTDB6ecdMnOxp9VptbHtso=">AAAB6HicbVA9TwJBEJ3DL8Qv1NJmIzGxInc0WqI2lpDIRwIXsrfMwcre3mV3z4Rc+AU2Fhpj60+y89+4wBUKvmSSl/dmMjMvSATXxnW/ncLG5tb2TnG3tLd/cHhUPj5p6zhVDFssFrHqBlSj4BJbhhuB3UQhjQKBnWByN/c7T6g0j+WDmSboR3QkecgZNVZq3gzKFbfqLkDWiZeTCuRoDMpf/WHM0gilYYJq3fPcxPgZVYYzgbNSP9WYUDahI+xZKmmE2s8Wh87IhVWGJIyVLWnIQv09kdFI62kU2M6ImrFe9ebif14vNeG1n3GZpAYlWy4KU0FMTOZfkyFXyIyYWkKZ4vZWwsZUUWZsNiUbgrf68jpp16qeW/WatUr9No+jCGdwDpfgwRXU4R4a0AIGCM/wCm/Oo/PivDsfy9aCk8+cwh84nz+SPYzD</latexit><latexit sha1_base64="iXwhwyzLPsjUiTQqedXP8I21vcI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptIzaWBowD0iWMDu5mwyZnV1mZoWw5AssbPwVGxFbezv/xkmyhSYWHhg4nHMud+4JEsG1cd0vp7C2vrG5Vdwu7ezu7R+UD49aOk4VwyaLRaw6AdUouMSm4UZgJ1FIo0BgOxjfzPz2AyrNY3lvJgn6ER1KHnJGjZUaV/1yxa26c5BV4uWkAjn+F++XP3uDmKURSsME1brruYnxM6oMZwKnpV6qMaFsTIfYtVTSCLWfza+ZkjOrDEgYK/ukIXP150RGI60nUWCTETUjvezNxL+8bmrCSz/jMkkNSrZYFKaCmJjMqiEDrpAZMbGEMsXtXwkbUUWZsQWW7One8qGrpFWrem7Va9Qq9eu8syKcwCmcgwcXUIdbuIMmMEB4hGd4dZ6cF+fNeV9EC04+cwy/4Hx8A/EHlDw=</latexit><latexit sha1_base64="iXwhwyzLPsjUiTQqedXP8I21vcI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptIzaWBowD0iWMDu5mwyZnV1mZoWw5AssbPwVGxFbezv/xkmyhSYWHhg4nHMud+4JEsG1cd0vp7C2vrG5Vdwu7ezu7R+UD49aOk4VwyaLRaw6AdUouMSm4UZgJ1FIo0BgOxjfzPz2AyrNY3lvJgn6ER1KHnJGjZUaV/1yxa26c5BV4uWkAjn+F++XP3uDmKURSsME1brruYnxM6oMZwKnpV6qMaFsTIfYtVTSCLWfza+ZkjOrDEgYK/ukIXP150RGI60nUWCTETUjvezNxL+8bmrCSz/jMkkNSrZYFKaCmJjMqiEDrpAZMbGEMsXtXwkbUUWZsQWW7One8qGrpFWrem7Va9Qq9eu8syKcwCmcgwcXUIdbuIMmMEB4hGd4dZ6cF+fNeV9EC04+cwy/4Hx8A/EHlDw=</latexit><latexit sha1_base64="iXwhwyzLPsjUiTQqedXP8I21vcI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptIzaWBowD0iWMDu5mwyZnV1mZoWw5AssbPwVGxFbezv/xkmyhSYWHhg4nHMud+4JEsG1cd0vp7C2vrG5Vdwu7ezu7R+UD49aOk4VwyaLRaw6AdUouMSm4UZgJ1FIo0BgOxjfzPz2AyrNY3lvJgn6ER1KHnJGjZUaV/1yxa26c5BV4uWkAjn+F++XP3uDmKURSsME1brruYnxM6oMZwKnpV6qMaFsTIfYtVTSCLWfza+ZkjOrDEgYK/ukIXP150RGI60nUWCTETUjvezNxL+8bmrCSz/jMkkNSrZYFKaCmJjMqiEDrpAZMbGEMsXtXwkbUUWZsQWW7One8qGrpFWrem7Va9Qq9eu8syKcwCmcgwcXUIdbuIMmMEB4hGd4dZ6cF+fNeV9EC04+cwy/4Hx8A/EHlDw=</latexit>B<latexit sha1_base64="3l3R3dbP0WM2nVxPkg6M8/SnXaI=">AAAB6HicbVA9TwJBEJ3DL8Qv1NJmIzGxInc0WhJsLCGRjwQuZG+Zg5W9vcvungm58AtsLDTG1p9k579xgSsUfMkkL+/NZGZekAiujet+O4Wt7Z3dveJ+6eDw6PikfHrW0XGqGLZZLGLVC6hGwSW2DTcCe4lCGgUCu8H0buF3n1BpHssHM0vQj+hY8pAzaqzUagzLFbfqLkE2iZeTCuRoDstfg1HM0gilYYJq3ffcxPgZVYYzgfPSINWYUDalY+xbKmmE2s+Wh87JlVVGJIyVLWnIUv09kdFI61kU2M6Imole9xbif14/NeGtn3GZpAYlWy0KU0FMTBZfkxFXyIyYWUKZ4vZWwiZUUWZsNiUbgrf+8ibp1KqeW/VatUq9kcdRhAu4hGvw4AbqcA9NaAMDhGd4hTfn0Xlx3p2PVWvByWfO4Q+czx+TwYzE</latexit><latexit sha1_base64="MOpzwDB7r6MNcwPk/bPqyOA7XiI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAyxsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjC5mfudB1Sax/LeTBP0IzqSPOSMGis1G4Nyxa26C5B14uWkAjn+Fx+UP/vDmKURSsME1brnuYnxM6oMZwJnpX6qMaFsQkfYs1TSCLWfLa6ZkQurDEkYK/ukIQv150RGI62nUWCTETVjverNxb+8XmrCaz/jMkkNSrZcFKaCmJjMqyFDrpAZMbWEMsXtXwkbU0WZsQWW7One6qHrpF2rem7Va9Yq9UbeWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfKwlD0=</latexit><latexit sha1_base64="MOpzwDB7r6MNcwPk/bPqyOA7XiI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAyxsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjC5mfudB1Sax/LeTBP0IzqSPOSMGis1G4Nyxa26C5B14uWkAjn+Fx+UP/vDmKURSsME1brnuYnxM6oMZwJnpX6qMaFsQkfYs1TSCLWfLa6ZkQurDEkYK/ukIQv150RGI62nUWCTETVjverNxb+8XmrCaz/jMkkNSrZcFKaCmJjMqyFDrpAZMbWEMsXtXwkbU0WZsQWW7One6qHrpF2rem7Va9Yq9UbeWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfKwlD0=</latexit><latexit sha1_base64="MOpzwDB7r6MNcwPk/bPqyOA7XiI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAyxsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjC5mfudB1Sax/LeTBP0IzqSPOSMGis1G4Nyxa26C5B14uWkAjn+Fx+UP/vDmKURSsME1brnuYnxM6oMZwJnpX6qMaFsQkfYs1TSCLWfLa6ZkQurDEkYK/ukIQv150RGI62nUWCTETVjverNxb+8XmrCaz/jMkkNSrZcFKaCmJjMqyFDrpAZMbWEMsXtXwkbU0WZsQWW7One6qHrpF2rem7Va9Yq9UbeWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfKwlD0=</latexit>C<latexit sha1_base64="WpkuVcnIhCjj0cuDNAkCcppqQIM=">AAAB6HicbVA9TwJBEJ3DL8Qv1NJmIzGxInc0WhJpLCGRjwQuZG+Zg5W9vcvungm58AtsLDTG1p9k579xgSsUfMkkL+/NZGZekAiujet+O4Wt7Z3dveJ+6eDw6PikfHrW0XGqGLZZLGLVC6hGwSW2DTcCe4lCGgUCu8G0sfC7T6g0j+WDmSXoR3QsecgZNVZqNYblilt1lyCbxMtJBXI0h+WvwShmaYTSMEG17ntuYvyMKsOZwHlpkGpMKJvSMfYtlTRC7WfLQ+fkyiojEsbKljRkqf6eyGik9SwKbGdEzUSvewvxP6+fmvDWz7hMUoOSrRaFqSAmJouvyYgrZEbMLKFMcXsrYROqKDM2m5INwVt/eZN0alXPrXqtWqV+l8dRhAu4hGvw4AbqcA9NaAMDhGd4hTfn0Xlx3p2PVWvByWfO4Q+czx+VRYzF</latexit><latexit sha1_base64="tnBk+ywIstGspq4oFYJW2mQkwO8=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAymsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjBpzP3OAyrNY3lvpgn6ER1JHnJGjZWajUG54lbdBcg68XJSgRz/iw/Kn/1hzNIIpWGCat3z3MT4GVWGM4GzUj/VmFA2oSPsWSpphNrPFtfMyIVVhiSMlX3SkIX6cyKjkdbTKLDJiJqxXvXm4l9eLzXhtZ9xmaQGJVsuClNBTEzm1ZAhV8iMmFpCmeL2r4SNqaLM2AJL9nRv9dB10q5VPbfqNWuV+k3eWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfRZlD4=</latexit><latexit sha1_base64="tnBk+ywIstGspq4oFYJW2mQkwO8=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAymsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjBpzP3OAyrNY3lvpgn6ER1JHnJGjZWajUG54lbdBcg68XJSgRz/iw/Kn/1hzNIIpWGCat3z3MT4GVWGM4GzUj/VmFA2oSPsWSpphNrPFtfMyIVVhiSMlX3SkIX6cyKjkdbTKLDJiJqxXvXm4l9eLzXhtZ9xmaQGJVsuClNBTEzm1ZAhV8iMmFpCmeL2r4SNqaLM2AJL9nRv9dB10q5VPbfqNWuV+k3eWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfRZlD4=</latexit><latexit sha1_base64="tnBk+ywIstGspq4oFYJW2mQkwO8=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAymsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjBpzP3OAyrNY3lvpgn6ER1JHnJGjZWajUG54lbdBcg68XJSgRz/iw/Kn/1hzNIIpWGCat3z3MT4GVWGM4GzUj/VmFA2oSPsWSpphNrPFtfMyIVVhiSMlX3SkIX6cyKjkdbTKLDJiJqxXvXm4l9eLzXhtZ9xmaQGJVsuClNBTEzm1ZAhV8iMmFpCmeL2r4SNqaLM2AJL9nRv9dB10q5VPbfqNWuV+k3eWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfRZlD4=</latexit>zimg
+<latexit sha1_base64="bdFwFXNzxmgdmsWBl/19N1SYZKo=">AAACAnicbVBNS8NAEN3Ur1q/op7ES7AInkoigh6LXjxWsB/QhLDZbtqlu0nYnYg1BC/+FS8eFPHqr/Dmv3HT5qCtDwYe780wMy9IOFNg299GZWl5ZXWtul7b2Nza3jF39zoqTiWhbRLzWPYCrChnEW0DA057iaRYBJx2g/FV4XfvqFQsjm5hklBP4GHEQkYwaMk3D1yBYRSE2UPuZy7QewDImBjmuW/W7YY9hbVInJLUUYmWb365g5ikgkZAOFaq79gJeBmWwAinec1NFU0wGeMh7WsaYUGVl01fyK1jrQysMJa6IrCm6u+JDAulJiLQncXBat4rxP+8fgrhhZexKEmBRmS2KEy5BbFV5GENmKQE+EQTTCTTt1pkhCUmoFOr6RCc+ZcXSee04dgN5+as3rws46iiQ3SETpCDzlETXaMWaiOCHtEzekVvxpPxYrwbH7PWilHO7KM/MD5/AAvYmHo=</latexit><latexit sha1_base64="WLR4tg87FklVqofD/yY57YxtpSM=">AAACJ3icjVDLSsNAFJ3UV62vqCtxM1gEVyURQZdFNy4V7AOaECbTSTt08mDmRqwh+DUu3Pgrgojo0j9x0mahrQsPDBzOuZc75/iJ4Aos69OoLCwuLa9UV2tr6xubW+b2TlvFqaSsRWMRy65PFBM8Yi3gIFg3kYyEvmAdf3RR+J1bJhWPoxsYJ8wNySDiAacEtOSZe05IYOgH2X3uZQ6wOwDIeDjIc8+sWw1rAjxP7JLUUYn/jXvmq9OPaRqyCKggSvVsKwE3IxI4FSyvOaliCaEjMmA9TSMSMuVmk5w5PtRKHwex1C8CPFF/bmQkVGoc+nqySKVmvUL8y+ulEJy5GY+SFFhEp4eCVGCIcVEa7nPJKIixJoRKrv+K6ZBIQkFXW9PR7dmg86R93LCthn19Um+el51V0T46QEfIRqeoiS7RFWohih7QI3pGb8aT8WK8Gx/T0YpR7uyiXzC+vgH6CJ/z</latexit><latexit sha1_base64="WLR4tg87FklVqofD/yY57YxtpSM=">AAACJ3icjVDLSsNAFJ3UV62vqCtxM1gEVyURQZdFNy4V7AOaECbTSTt08mDmRqwh+DUu3Pgrgojo0j9x0mahrQsPDBzOuZc75/iJ4Aos69OoLCwuLa9UV2tr6xubW+b2TlvFqaSsRWMRy65PFBM8Yi3gIFg3kYyEvmAdf3RR+J1bJhWPoxsYJ8wNySDiAacEtOSZe05IYOgH2X3uZQ6wOwDIeDjIc8+sWw1rAjxP7JLUUYn/jXvmq9OPaRqyCKggSvVsKwE3IxI4FSyvOaliCaEjMmA9TSMSMuVmk5w5PtRKHwex1C8CPFF/bmQkVGoc+nqySKVmvUL8y+ulEJy5GY+SFFhEp4eCVGCIcVEa7nPJKIixJoRKrv+K6ZBIQkFXW9PR7dmg86R93LCthn19Um+el51V0T46QEfIRqeoiS7RFWohih7QI3pGb8aT8WK8Gx/T0YpR7uyiXzC+vgH6CJ/z</latexit><latexit sha1_base64="WLR4tg87FklVqofD/yY57YxtpSM=">AAACJ3icjVDLSsNAFJ3UV62vqCtxM1gEVyURQZdFNy4V7AOaECbTSTt08mDmRqwh+DUu3Pgrgojo0j9x0mahrQsPDBzOuZc75/iJ4Aos69OoLCwuLa9UV2tr6xubW+b2TlvFqaSsRWMRy65PFBM8Yi3gIFg3kYyEvmAdf3RR+J1bJhWPoxsYJ8wNySDiAacEtOSZe05IYOgH2X3uZQ6wOwDIeDjIc8+sWw1rAjxP7JLUUYn/jXvmq9OPaRqyCKggSvVsKwE3IxI4FSyvOaliCaEjMmA9TSMSMuVmk5w5PtRKHwex1C8CPFF/bmQkVGoc+nqySKVmvUL8y+ulEJy5GY+SFFhEp4eCVGCIcVEa7nPJKIixJoRKrv+K6ZBIQkFXW9PR7dmg86R93LCthn19Um+el51V0T46QEfIRqeoiS7RFWohih7QI3pGb8aT8WK8Gx/T0YpR7uyiXzC+vgH6CJ/z</latexit>ztext
+<latexit sha1_base64="AOZguCcs3mz+9zfx96W6+ru31FU=">AAACA3icbVDLSsNAFJ3UV62vqDvdBIvgqiQi6LLoxmUF+4AmhMl00g6dTMLMjVhDwI2/4saFIm79CXf+jZM2C209MMzhnHu5954g4UyBbX8blaXlldW16nptY3Nre8fc3euoOJWEtknMY9kLsKKcCdoGBpz2EklxFHDaDcZXhd+9o1KxWNzCJKFehIeChYxg0JJvHrgRhlEQZg+5n7lA7wEgK74898263bCnsBaJU5I6KtHyzS93EJM0ogIIx0r1HTsBL8MSGOE0r7mpogkmYzykfU0FjqjysukNuXWslYEVxlI/AdZU/d2R4UipSRToymJjNe8V4n9eP4XwwsuYSFKggswGhSm3ILaKQKwBk5QAn2iCiWR6V4uMsMQEdGw1HYIzf/Ii6Zw2HLvh3JzVm5dlHFV0iI7QCXLQOWqia9RCbUTQI3pGr+jNeDJejHfjY1ZaMcqeffQHxucPCkeZDA==</latexit><latexit sha1_base64="uBnwpejeVAUlp3AFQ9xkcJ7DwG4=">AAACKHicjVDLSsNAFJ3UV62vqDvdBIvgqiQi6LLoxqWCfUATwmQ6aYdOJmHmRqwh4Ne4cOOviCDSrV/ipM1CWxdeGOZwzrnMnBMknCmw7YlRWVpeWV2rrtc2Nre2d8zdvbaKU0loi8Q8lt0AK8qZoC1gwGk3kRRHAaedYHRV6J17KhWLxR2ME+pFeCBYyAgGTfnmgRthGAZh9pj7mQv0AQCy4spz36zbDXs61iJwSlBH5fzP7pvvbj8maUQFEI6V6jl2Al6GJTDCaV5zU0UTTEZ4QHsaChxR5WXToLl1rJm+FcZSHwHWlP25keFIqXEUaGcRS81rBfmX1kshvPAyJpIUqCCzh8KUWxBbRWtWn0lKgI81wEQy/VeLDLHEBHS3NR3dmQ+6CNqnDcduOLdn9eZl2VkVHaIjdIIcdI6a6BrdoBYi6Ak9o1f0YbwYb8anMZlZK0a5s49+jfH1DQxToIU=</latexit><latexit sha1_base64="uBnwpejeVAUlp3AFQ9xkcJ7DwG4=">AAACKHicjVDLSsNAFJ3UV62vqDvdBIvgqiQi6LLoxqWCfUATwmQ6aYdOJmHmRqwh4Ne4cOOviCDSrV/ipM1CWxdeGOZwzrnMnBMknCmw7YlRWVpeWV2rrtc2Nre2d8zdvbaKU0loi8Q8lt0AK8qZoC1gwGk3kRRHAaedYHRV6J17KhWLxR2ME+pFeCBYyAgGTfnmgRthGAZh9pj7mQv0AQCy4spz36zbDXs61iJwSlBH5fzP7pvvbj8maUQFEI6V6jl2Al6GJTDCaV5zU0UTTEZ4QHsaChxR5WXToLl1rJm+FcZSHwHWlP25keFIqXEUaGcRS81rBfmX1kshvPAyJpIUqCCzh8KUWxBbRWtWn0lKgI81wEQy/VeLDLHEBHS3NR3dmQ+6CNqnDcduOLdn9eZl2VkVHaIjdIIcdI6a6BrdoBYi6Ak9o1f0YbwYb8anMZlZK0a5s49+jfH1DQxToIU=</latexit><latexit sha1_base64="uBnwpejeVAUlp3AFQ9xkcJ7DwG4=">AAACKHicjVDLSsNAFJ3UV62vqDvdBIvgqiQi6LLoxqWCfUATwmQ6aYdOJmHmRqwh4Ne4cOOviCDSrV/ipM1CWxdeGOZwzrnMnBMknCmw7YlRWVpeWV2rrtc2Nre2d8zdvbaKU0loi8Q8lt0AK8qZoC1gwGk3kRRHAaedYHRV6J17KhWLxR2ME+pFeCBYyAgGTfnmgRthGAZh9pj7mQv0AQCy4spz36zbDXs61iJwSlBH5fzP7pvvbj8maUQFEI6V6jl2Al6GJTDCaV5zU0UTTEZ4QHsaChxR5WXToLl1rJm+FcZSHwHWlP25keFIqXEUaGcRS81rBfmX1kshvPAyJpIUqCCzh8KUWxBbRWtWn0lKgI81wEQy/VeLDLHEBHS3NR3dmQ+6CNqnDcduOLdn9eZl2VkVHaIjdIIcdI6a6BrdoBYi6Ak9o1f0YbwYb8anMZlZK0a5s49+jfH1DQxToIU=</latexit>“Reality” space
+Input spaceOutput space
+/ 70
+Input (B) and output (C) are both directly or indirectly derived from reality (A) •directly A → B and A → C
+•indirectly A → B → C
+(C derived from B, see ﬁgure)
+Input data manifold and output data manifold are related
+•Subsets of and can be projected onto each other
+•Their coordinate space and can be overlapping
+(if we choose the right coordinate spaces, i.e. architectures/training)
+➡ We can use a shared coordinate space
+(we are only interested in => from now on we assume and use to denote it)ℳℳ′ ℳℳ′ UU′ U∩U′ U∩U′ U=U′ UMDL - INTRODUCTIONWHAT ABOUT THE OUTPUT SPACE57
+A red sphere next to a blue cone.A<latexit sha1_base64="QjGLLuTDB6ecdMnOxp9VptbHtso=">AAAB6HicbVA9TwJBEJ3DL8Qv1NJmIzGxInc0WqI2lpDIRwIXsrfMwcre3mV3z4Rc+AU2Fhpj60+y89+4wBUKvmSSl/dmMjMvSATXxnW/ncLG5tb2TnG3tLd/cHhUPj5p6zhVDFssFrHqBlSj4BJbhhuB3UQhjQKBnWByN/c7T6g0j+WDmSboR3QkecgZNVZq3gzKFbfqLkDWiZeTCuRoDMpf/WHM0gilYYJq3fPcxPgZVYYzgbNSP9WYUDahI+xZKmmE2s8Wh87IhVWGJIyVLWnIQv09kdFI62kU2M6ImrFe9ebif14vNeG1n3GZpAYlWy4KU0FMTOZfkyFXyIyYWkKZ4vZWwsZUUWZsNiUbgrf68jpp16qeW/WatUr9No+jCGdwDpfgwRXU4R4a0AIGCM/wCm/Oo/PivDsfy9aCk8+cwh84nz+SPYzD</latexit><latexit sha1_base64="iXwhwyzLPsjUiTQqedXP8I21vcI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptIzaWBowD0iWMDu5mwyZnV1mZoWw5AssbPwVGxFbezv/xkmyhSYWHhg4nHMud+4JEsG1cd0vp7C2vrG5Vdwu7ezu7R+UD49aOk4VwyaLRaw6AdUouMSm4UZgJ1FIo0BgOxjfzPz2AyrNY3lvJgn6ER1KHnJGjZUaV/1yxa26c5BV4uWkAjn+F++XP3uDmKURSsME1brruYnxM6oMZwKnpV6qMaFsTIfYtVTSCLWfza+ZkjOrDEgYK/ukIXP150RGI60nUWCTETUjvezNxL+8bmrCSz/jMkkNSrZYFKaCmJjMqiEDrpAZMbGEMsXtXwkbUUWZsQWW7One8qGrpFWrem7Va9Qq9eu8syKcwCmcgwcXUIdbuIMmMEB4hGd4dZ6cF+fNeV9EC04+cwy/4Hx8A/EHlDw=</latexit><latexit sha1_base64="iXwhwyzLPsjUiTQqedXP8I21vcI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptIzaWBowD0iWMDu5mwyZnV1mZoWw5AssbPwVGxFbezv/xkmyhSYWHhg4nHMud+4JEsG1cd0vp7C2vrG5Vdwu7ezu7R+UD49aOk4VwyaLRaw6AdUouMSm4UZgJ1FIo0BgOxjfzPz2AyrNY3lvJgn6ER1KHnJGjZUaV/1yxa26c5BV4uWkAjn+F++XP3uDmKURSsME1brruYnxM6oMZwKnpV6qMaFsTIfYtVTSCLWfza+ZkjOrDEgYK/ukIXP150RGI60nUWCTETUjvezNxL+8bmrCSz/jMkkNSrZYFKaCmJjMqiEDrpAZMbGEMsXtXwkbUUWZsQWW7One8qGrpFWrem7Va9Qq9eu8syKcwCmcgwcXUIdbuIMmMEB4hGd4dZ6cF+fNeV9EC04+cwy/4Hx8A/EHlDw=</latexit><latexit sha1_base64="iXwhwyzLPsjUiTQqedXP8I21vcI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptIzaWBowD0iWMDu5mwyZnV1mZoWw5AssbPwVGxFbezv/xkmyhSYWHhg4nHMud+4JEsG1cd0vp7C2vrG5Vdwu7ezu7R+UD49aOk4VwyaLRaw6AdUouMSm4UZgJ1FIo0BgOxjfzPz2AyrNY3lvJgn6ER1KHnJGjZUaV/1yxa26c5BV4uWkAjn+F++XP3uDmKURSsME1brruYnxM6oMZwKnpV6qMaFsTIfYtVTSCLWfza+ZkjOrDEgYK/ukIXP150RGI60nUWCTETUjvezNxL+8bmrCSz/jMkkNSrZYFKaCmJjMqiEDrpAZMbGEMsXtXwkbUUWZsQWW7One8qGrpFWrem7Va9Qq9eu8syKcwCmcgwcXUIdbuIMmMEB4hGd4dZ6cF+fNeV9EC04+cwy/4Hx8A/EHlDw=</latexit>B<latexit sha1_base64="3l3R3dbP0WM2nVxPkg6M8/SnXaI=">AAAB6HicbVA9TwJBEJ3DL8Qv1NJmIzGxInc0WhJsLCGRjwQuZG+Zg5W9vcvungm58AtsLDTG1p9k579xgSsUfMkkL+/NZGZekAiujet+O4Wt7Z3dveJ+6eDw6PikfHrW0XGqGLZZLGLVC6hGwSW2DTcCe4lCGgUCu8H0buF3n1BpHssHM0vQj+hY8pAzaqzUagzLFbfqLkE2iZeTCuRoDstfg1HM0gilYYJq3ffcxPgZVYYzgfPSINWYUDalY+xbKmmE2s+Wh87JlVVGJIyVLWnIUv09kdFI61kU2M6Imole9xbif14/NeGtn3GZpAYlWy0KU0FMTBZfkxFXyIyYWUKZ4vZWwiZUUWZsNiUbgrf+8ibp1KqeW/VatUq9kcdRhAu4hGvw4AbqcA9NaAMDhGd4hTfn0Xlx3p2PVWvByWfO4Q+czx+TwYzE</latexit><latexit sha1_base64="MOpzwDB7r6MNcwPk/bPqyOA7XiI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAyxsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjC5mfudB1Sax/LeTBP0IzqSPOSMGis1G4Nyxa26C5B14uWkAjn+Fx+UP/vDmKURSsME1brnuYnxM6oMZwJnpX6qMaFsQkfYs1TSCLWfLa6ZkQurDEkYK/ukIQv150RGI62nUWCTETVjverNxb+8XmrCaz/jMkkNSrZcFKaCmJjMqyFDrpAZMbWEMsXtXwkbU0WZsQWW7One6qHrpF2rem7Va9Yq9UbeWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfKwlD0=</latexit><latexit sha1_base64="MOpzwDB7r6MNcwPk/bPqyOA7XiI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAyxsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjC5mfudB1Sax/LeTBP0IzqSPOSMGis1G4Nyxa26C5B14uWkAjn+Fx+UP/vDmKURSsME1brnuYnxM6oMZwJnpX6qMaFsQkfYs1TSCLWfLa6ZkQurDEkYK/ukIQv150RGI62nUWCTETVjverNxb+8XmrCaz/jMkkNSrZcFKaCmJjMqyFDrpAZMbWEMsXtXwkbU0WZsQWW7One6qHrpF2rem7Va9Yq9UbeWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfKwlD0=</latexit><latexit sha1_base64="MOpzwDB7r6MNcwPk/bPqyOA7XiI=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAyxsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjC5mfudB1Sax/LeTBP0IzqSPOSMGis1G4Nyxa26C5B14uWkAjn+Fx+UP/vDmKURSsME1brnuYnxM6oMZwJnpX6qMaFsQkfYs1TSCLWfLa6ZkQurDEkYK/ukIQv150RGI62nUWCTETVjverNxb+8XmrCaz/jMkkNSrZcFKaCmJjMqyFDrpAZMbWEMsXtXwkbU0WZsQWW7One6qHrpF2rem7Va9Yq9UbeWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfKwlD0=</latexit>C<latexit sha1_base64="WpkuVcnIhCjj0cuDNAkCcppqQIM=">AAAB6HicbVA9TwJBEJ3DL8Qv1NJmIzGxInc0WhJpLCGRjwQuZG+Zg5W9vcvungm58AtsLDTG1p9k579xgSsUfMkkL+/NZGZekAiujet+O4Wt7Z3dveJ+6eDw6PikfHrW0XGqGLZZLGLVC6hGwSW2DTcCe4lCGgUCu8G0sfC7T6g0j+WDmSXoR3QsecgZNVZqNYblilt1lyCbxMtJBXI0h+WvwShmaYTSMEG17ntuYvyMKsOZwHlpkGpMKJvSMfYtlTRC7WfLQ+fkyiojEsbKljRkqf6eyGik9SwKbGdEzUSvewvxP6+fmvDWz7hMUoOSrRaFqSAmJouvyYgrZEbMLKFMcXsrYROqKDM2m5INwVt/eZN0alXPrXqtWqV+l8dRhAu4hGvw4AbqcA9NaAMDhGd4hTfn0Xlx3p2PVWvByWfO4Q+czx+VRYzF</latexit><latexit sha1_base64="tnBk+ywIstGspq4oFYJW2mQkwO8=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAymsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjBpzP3OAyrNY3lvpgn6ER1JHnJGjZWajUG54lbdBcg68XJSgRz/iw/Kn/1hzNIIpWGCat3z3MT4GVWGM4GzUj/VmFA2oSPsWSpphNrPFtfMyIVVhiSMlX3SkIX6cyKjkdbTKLDJiJqxXvXm4l9eLzXhtZ9xmaQGJVsuClNBTEzm1ZAhV8iMmFpCmeL2r4SNqaLM2AJL9nRv9dB10q5VPbfqNWuV+k3eWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfRZlD4=</latexit><latexit sha1_base64="tnBk+ywIstGspq4oFYJW2mQkwO8=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAymsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjBpzP3OAyrNY3lvpgn6ER1JHnJGjZWajUG54lbdBcg68XJSgRz/iw/Kn/1hzNIIpWGCat3z3MT4GVWGM4GzUj/VmFA2oSPsWSpphNrPFtfMyIVVhiSMlX3SkIX6cyKjkdbTKLDJiJqxXvXm4l9eLzXhtZ9xmaQGJVsuClNBTEzm1ZAhV8iMmFpCmeL2r4SNqaLM2AJL9nRv9dB10q5VPbfqNWuV+k3eWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfRZlD4=</latexit><latexit sha1_base64="tnBk+ywIstGspq4oFYJW2mQkwO8=">AAACDXicjVC7SgNBFL0bXzG+opY2g0GwCrtptAymsTRgHpAsYXZyNxkyO7vMzAphyRdY2PgrNiK29nb+jZNkC00sPDBwOOdc7twTJIJr47pfTmFjc2t7p7hb2ts/ODwqH5+0dZwqhi0Wi1h1A6pRcIktw43AbqKQRoHATjBpzP3OAyrNY3lvpgn6ER1JHnJGjZWajUG54lbdBcg68XJSgRz/iw/Kn/1hzNIIpWGCat3z3MT4GVWGM4GzUj/VmFA2oSPsWSpphNrPFtfMyIVVhiSMlX3SkIX6cyKjkdbTKLDJiJqxXvXm4l9eLzXhtZ9xmaQGJVsuClNBTEzm1ZAhV8iMmFpCmeL2r4SNqaLM2AJL9nRv9dB10q5VPbfqNWuV+k3eWRHO4BwuwYMrqMMt3EELGCA8wjO8Ok/Oi/PmvC+jBSefOYVfcD6+AfRZlD4=</latexit>zimg
+<latexit sha1_base64="bdFwFXNzxmgdmsWBl/19N1SYZKo=">AAACAnicbVBNS8NAEN3Ur1q/op7ES7AInkoigh6LXjxWsB/QhLDZbtqlu0nYnYg1BC/+FS8eFPHqr/Dmv3HT5qCtDwYe780wMy9IOFNg299GZWl5ZXWtul7b2Nza3jF39zoqTiWhbRLzWPYCrChnEW0DA057iaRYBJx2g/FV4XfvqFQsjm5hklBP4GHEQkYwaMk3D1yBYRSE2UPuZy7QewDImBjmuW/W7YY9hbVInJLUUYmWb365g5ikgkZAOFaq79gJeBmWwAinec1NFU0wGeMh7WsaYUGVl01fyK1jrQysMJa6IrCm6u+JDAulJiLQncXBat4rxP+8fgrhhZexKEmBRmS2KEy5BbFV5GENmKQE+EQTTCTTt1pkhCUmoFOr6RCc+ZcXSee04dgN5+as3rws46iiQ3SETpCDzlETXaMWaiOCHtEzekVvxpPxYrwbH7PWilHO7KM/MD5/AAvYmHo=</latexit><latexit sha1_base64="WLR4tg87FklVqofD/yY57YxtpSM=">AAACJ3icjVDLSsNAFJ3UV62vqCtxM1gEVyURQZdFNy4V7AOaECbTSTt08mDmRqwh+DUu3Pgrgojo0j9x0mahrQsPDBzOuZc75/iJ4Aos69OoLCwuLa9UV2tr6xubW+b2TlvFqaSsRWMRy65PFBM8Yi3gIFg3kYyEvmAdf3RR+J1bJhWPoxsYJ8wNySDiAacEtOSZe05IYOgH2X3uZQ6wOwDIeDjIc8+sWw1rAjxP7JLUUYn/jXvmq9OPaRqyCKggSvVsKwE3IxI4FSyvOaliCaEjMmA9TSMSMuVmk5w5PtRKHwex1C8CPFF/bmQkVGoc+nqySKVmvUL8y+ulEJy5GY+SFFhEp4eCVGCIcVEa7nPJKIixJoRKrv+K6ZBIQkFXW9PR7dmg86R93LCthn19Um+el51V0T46QEfIRqeoiS7RFWohih7QI3pGb8aT8WK8Gx/T0YpR7uyiXzC+vgH6CJ/z</latexit><latexit sha1_base64="WLR4tg87FklVqofD/yY57YxtpSM=">AAACJ3icjVDLSsNAFJ3UV62vqCtxM1gEVyURQZdFNy4V7AOaECbTSTt08mDmRqwh+DUu3Pgrgojo0j9x0mahrQsPDBzOuZc75/iJ4Aos69OoLCwuLa9UV2tr6xubW+b2TlvFqaSsRWMRy65PFBM8Yi3gIFg3kYyEvmAdf3RR+J1bJhWPoxsYJ8wNySDiAacEtOSZe05IYOgH2X3uZQ6wOwDIeDjIc8+sWw1rAjxP7JLUUYn/jXvmq9OPaRqyCKggSvVsKwE3IxI4FSyvOaliCaEjMmA9TSMSMuVmk5w5PtRKHwex1C8CPFF/bmQkVGoc+nqySKVmvUL8y+ulEJy5GY+SFFhEp4eCVGCIcVEa7nPJKIixJoRKrv+K6ZBIQkFXW9PR7dmg86R93LCthn19Um+el51V0T46QEfIRqeoiS7RFWohih7QI3pGb8aT8WK8Gx/T0YpR7uyiXzC+vgH6CJ/z</latexit><latexit sha1_base64="WLR4tg87FklVqofD/yY57YxtpSM=">AAACJ3icjVDLSsNAFJ3UV62vqCtxM1gEVyURQZdFNy4V7AOaECbTSTt08mDmRqwh+DUu3Pgrgojo0j9x0mahrQsPDBzOuZc75/iJ4Aos69OoLCwuLa9UV2tr6xubW+b2TlvFqaSsRWMRy65PFBM8Yi3gIFg3kYyEvmAdf3RR+J1bJhWPoxsYJ8wNySDiAacEtOSZe05IYOgH2X3uZQ6wOwDIeDjIc8+sWw1rAjxP7JLUUYn/jXvmq9OPaRqyCKggSvVsKwE3IxI4FSyvOaliCaEjMmA9TSMSMuVmk5w5PtRKHwex1C8CPFF/bmQkVGoc+nqySKVmvUL8y+ulEJy5GY+SFFhEp4eCVGCIcVEa7nPJKIixJoRKrv+K6ZBIQkFXW9PR7dmg86R93LCthn19Um+el51V0T46QEfIRqeoiS7RFWohih7QI3pGb8aT8WK8Gx/T0YpR7uyiXzC+vgH6CJ/z</latexit>ztext
+<latexit sha1_base64="AOZguCcs3mz+9zfx96W6+ru31FU=">AAACA3icbVDLSsNAFJ3UV62vqDvdBIvgqiQi6LLoxmUF+4AmhMl00g6dTMLMjVhDwI2/4saFIm79CXf+jZM2C209MMzhnHu5954g4UyBbX8blaXlldW16nptY3Nre8fc3euoOJWEtknMY9kLsKKcCdoGBpz2EklxFHDaDcZXhd+9o1KxWNzCJKFehIeChYxg0JJvHrgRhlEQZg+5n7lA7wEgK74898263bCnsBaJU5I6KtHyzS93EJM0ogIIx0r1HTsBL8MSGOE0r7mpogkmYzykfU0FjqjysukNuXWslYEVxlI/AdZU/d2R4UipSRToymJjNe8V4n9eP4XwwsuYSFKggswGhSm3ILaKQKwBk5QAn2iCiWR6V4uMsMQEdGw1HYIzf/Ii6Zw2HLvh3JzVm5dlHFV0iI7QCXLQOWqia9RCbUTQI3pGr+jNeDJejHfjY1ZaMcqeffQHxucPCkeZDA==</latexit><latexit sha1_base64="uBnwpejeVAUlp3AFQ9xkcJ7DwG4=">AAACKHicjVDLSsNAFJ3UV62vqDvdBIvgqiQi6LLoxqWCfUATwmQ6aYdOJmHmRqwh4Ne4cOOviCDSrV/ipM1CWxdeGOZwzrnMnBMknCmw7YlRWVpeWV2rrtc2Nre2d8zdvbaKU0loi8Q8lt0AK8qZoC1gwGk3kRRHAaedYHRV6J17KhWLxR2ME+pFeCBYyAgGTfnmgRthGAZh9pj7mQv0AQCy4spz36zbDXs61iJwSlBH5fzP7pvvbj8maUQFEI6V6jl2Al6GJTDCaV5zU0UTTEZ4QHsaChxR5WXToLl1rJm+FcZSHwHWlP25keFIqXEUaGcRS81rBfmX1kshvPAyJpIUqCCzh8KUWxBbRWtWn0lKgI81wEQy/VeLDLHEBHS3NR3dmQ+6CNqnDcduOLdn9eZl2VkVHaIjdIIcdI6a6BrdoBYi6Ak9o1f0YbwYb8anMZlZK0a5s49+jfH1DQxToIU=</latexit><latexit sha1_base64="uBnwpejeVAUlp3AFQ9xkcJ7DwG4=">AAACKHicjVDLSsNAFJ3UV62vqDvdBIvgqiQi6LLoxqWCfUATwmQ6aYdOJmHmRqwh4Ne4cOOviCDSrV/ipM1CWxdeGOZwzrnMnBMknCmw7YlRWVpeWV2rrtc2Nre2d8zdvbaKU0loi8Q8lt0AK8qZoC1gwGk3kRRHAaedYHRV6J17KhWLxR2ME+pFeCBYyAgGTfnmgRthGAZh9pj7mQv0AQCy4spz36zbDXs61iJwSlBH5fzP7pvvbj8maUQFEI6V6jl2Al6GJTDCaV5zU0UTTEZ4QHsaChxR5WXToLl1rJm+FcZSHwHWlP25keFIqXEUaGcRS81rBfmX1kshvPAyJpIUqCCzh8KUWxBbRWtWn0lKgI81wEQy/VeLDLHEBHS3NR3dmQ+6CNqnDcduOLdn9eZl2VkVHaIjdIIcdI6a6BrdoBYi6Ak9o1f0YbwYb8anMZlZK0a5s49+jfH1DQxToIU=</latexit><latexit sha1_base64="uBnwpejeVAUlp3AFQ9xkcJ7DwG4=">AAACKHicjVDLSsNAFJ3UV62vqDvdBIvgqiQi6LLoxqWCfUATwmQ6aYdOJmHmRqwh4Ne4cOOviCDSrV/ipM1CWxdeGOZwzrnMnBMknCmw7YlRWVpeWV2rrtc2Nre2d8zdvbaKU0loi8Q8lt0AK8qZoC1gwGk3kRRHAaedYHRV6J17KhWLxR2ME+pFeCBYyAgGTfnmgRthGAZh9pj7mQv0AQCy4spz36zbDXs61iJwSlBH5fzP7pvvbj8maUQFEI6V6jl2Al6GJTDCaV5zU0UTTEZ4QHsaChxR5WXToLl1rJm+FcZSHwHWlP25keFIqXEUaGcRS81rBfmX1kshvPAyJpIUqCCzh8KUWxBbRWtWn0lKgI81wEQy/VeLDLHEBHS3NR3dmQ+6CNqnDcduOLdn9eZl2VkVHaIjdIIcdI6a6BrdoBYi6Ak9o1f0YbwYb8anMZlZK0a5s49+jfH1DQxToIU=</latexit>“Reality” spaceInput spaceOutput space
+Input coordinate space
+U⊂ℝmOutput coordinate space
+U′ ⊂ℝm′ U∩U′
+/ 70
+MDL - INTRODUCTIONWHAT ABOUT THE OUTPUT SPACE58
+How do we get from to ?
+The Decoder in practice is actually but its values are not expected to be meaningful for (or far from )
+and it is not expected to output a (or far from )zygϕ:U→ℳ′ gϕgϕ:ℝm→ℝD′ z∉UUy∉ℳ′ ℳ′ Input(Condition)Output(Prediction)EncoderDecoder
+Coordinate space U⊂ℝmOutput data manifold ℳ′ ⊂ℝD′ ℝD′
+/ 70
+MDL - INTRODUCTIONBACK TO DEEP LEARNING: HOW DO WE GET FROM X TO Y59
+Input(Condition)Output(Prediction)EncoderDecoder
+Coordinate space U⊂ℝm
+Output data manifold ℳ′ ⊂ℝD′
+Input data manifold ℳ⊂ℝDℝD′
+/ 70
+MDL - INTRODUCTIONLOW-DIMENSIONAL MODALITIES: CLASSIFICATION60
+•Some modalities have high semantic content and low dimensionality:
+-e.g. binary class labels (also a modality): only 2 possible values
+•Hidden features are still useful
+-Meaningful distances + linearity
+(hidden features can be easier to combine, e.g. using mean)
+-Reasoning capacity due to more dimensions
+(a single class may correlate with several aspects)
+-Combination/conversion to other modalities
+•Decoder is rather shallow (small MLP or Linear)
+-Extract the relevant content from the hidden features
+(hidden features contain much more information than needed)dim(y)<dim(z)
+Input(e.g. image)
+Output(e.g. classes)EncoderDecoder more on low-dimensional and discrete modalities in later lectures
+/ 70
+MDL - INTRODUCTIONTHE HIDDEN FEATURE SPACE: IN PRACTICE61
+•Speciﬁc forms of hidden features -can be ﬁxed size, e.g. single vector or feature map
+-can be dynamically sized, e.g. sequence of vectors
+=> architecture-dependent
+=> not necessarily “perfect” representation of data manifold
+•Symmetries of the data manifold and hidden features -Diﬀerent points on the data manifold may map to the same hidden feature
+=> more on that in the upcoming lectures
+•Accessibility of semantic information -extraction of “usefull information” from hidden features can be more or less complex
+-sometimes linear projections are enough to uncover classes / features
+/ 70
+MDL - INTRODUCTIONHOW TO TRANSFORM BETWEEN DATA SPACE AND HIDDEN FEATURE SPACE62
+Deep learning as a series of (non-linear) transformations to unfold the manifold
+Encoder
+Data Space = 2D, Manifold = 1D (+ color)
+/ 70
+MDL - INTRODUCTIONTHE HIDDEN FEATURE SPACE63
+Encoder
+DecoderThere isn’t just a single hidden feature space INSTEAD There is a spectrum of “semantic level” when going from input to output
+/ 70
+MDL - INTRODUCTIONMULTIMODAL DEEP LEARNING PIPELINES64
+Machine Learning Pipeline •Learn a parameterized function with parameters
+•Given an input , predict the output
+by applying on
+Important Aspects •How do we get from to inside
+=> forward pass •How do we learn the parameters given a training dataset
+=> backward passfθθxyfθxxyfθθInput(Condition)Output(Prediction)Model this is still missingwe just looked at this
+/ 70
+MDL - INTRODUCTIONTRAINING SIGNALS: THE BACKWARD PASS65
+•Training signals ﬂow from output to input -loss functions provide the initial signal for the output prediction
+-backpropagation moves the signal backward through the transformations
+•Some training signals are more complex -for generative data, there isn’t a unique solution (e.g. GANs, VAE, diﬀusion models)
+-sometimes another input modality provides a training signal (e.g. CLIP)
+-sometimes the input modality provides it’s own training signal (self-supervision)
+-sometimes we have no explicit training signal (weakly/unsupervised training)this will be covered in later lectures
+/ 70
+MDL - INTRODUCTIONDIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES66
+
+/ 70
+MDL - INTRODUCTIONDIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES67
+Translation Pipeline •Converting one modality (e.g. images) into another modality (e.g. text)
+•Forward Pass
+1.Encoder : Encode input into hidden features
+( may contain features from diﬀerent encoder layers) 2.Decoder : Decode hidden features into output
+( may be used in diﬀerent decoder layers)
+•Training: Conditional likelihood
+•Examples:
+-Image Captioning
+-Text-to-Image
+-Image Classiﬁcation
+-…fθxzzgϕzyzp(y|x)Input(e.g. image)Output(e.g. text)EncoderDecoder
+/ 70
+MDL - INTRODUCTIONDIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES68
+Alignment Pipeline (“CLIP”) •Projecting two (or more) modalities into a shared embedding space
+•Forward Pass
+1.Encode (image) input into hidden space using 2.Encode (text) input into hidden space using :
+(encoders may use diﬀerent architectures but and have same dim)
+•Training: Maximize similarity between and
+for paired samples
+(e.g. using contrastive learning)
+•Examples:
+-Cross-modal retrieval
+-Pre-training
+-…xIzIfIθxTzTfTϕzIzTzIzTInput 1(e.g. image)Encoder 1
+Input 2(e.g. text)Encoder 2Alignment
+/ 70
+MDL - INTRODUCTIONDIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES69
+Fusion Pipeline •Combine multiple input modalities to predict and output modality
+•Forward Pass
+1.Encoder : Encode input into semantic (hidden) features
+( may contain features from diﬀerent encoder layers) 2.Decoder : Decode semantic features into output
+( may be used in diﬀerent decoder layers)
+•Training: Conditional likelihood
+•Examples:
+-Visual Question Answering
+-Chat with interleaved images
+-…fθxzzgϕzyzp(y|x)Input 1(e.g. image)Output(e.g. text)MultimodalEncoderDecoderInput 2(e.g. text)
+/ 70
+MDL - INTRODUCTIONDIFFERENT MULTI-MODAL DEEP LEARNING PIPELINES70
+•Encoder(s) / Decoder(s) may or may not share weights and/or architectures
+•Hidden features may be a single vector or a more complex state from the encoders
+•Interaction/fusion of diﬀerent modalities may diﬀer between architectures
+•Diﬀerent pipelines may be combined (e.g. use alignment pre-training to initialize encoder)Input 1(e.g. image)Encoder 1
+Input 2(e.g. text)Encoder 2AlignmentInput 1(e.g. image)Output(e.g. text)MultimodalEncoderDecoderInput 2(e.g. text)Input(e.g. image)Output(e.g. text)EncoderDecoderAlignmentTranslationFusion
+/ 70
+MDL - INTRODUCTIONRECAP71
+•Why multi-modal deep learning? -What is a modality?
+-Why do we need multiple modalities?
+•From input to output -Hidden features and transformations
+-The Manifold hypothesis
+•Overview of multi-modal deep learning pipelines -Translation, Alignment, Fusion
+/ 70
+MDL - INTRODUCTIONSUMMARY OF BLOCKS72
+1.Data types, representations, and feature spaces — what are , , and -Structure, symmetries, and other properties of modalities and feature spaces
+2.Architectures for diﬀerent modalities — what are and -Encoder and decoder architecture and their properties
+3.Training signals — how to learn and -Loss functions for diﬀerent modalities and multimodal training
+-Supervised, self-supervised and unsupervised training
+4.Multimodal pipelines — bringing everything together -Multimodal architecturesxyzfθ(x)gϕ(z)θϕ
+/ 70
+MDL - INTRODUCTIONFURTHER READINGS AND RESOURCES73
+•Paul Pu Liang, Amir Zadeh, Louis-Philippe Morency.
+Foundations & Trends in Multimodal Machine Learning:
+Principles, Challenges, and Open Questions (2022)
+https://arxiv.org/pdf/2209.03430
+•Yonghyeon Lee. A Geometric Perspective on Autoencoders (2023)
+https://arxiv.org/pdf/2309.08247
+•Christopher Olah. Neural Networks, Manifolds, and Topology (2014)
+http://colah.github.io/posts/2014-03-NN-Manifolds-Topology/
+•Brian Keng. Manifolds: A Gentle Introduction (2018)
+https://bjlkeng.io/posts/manifolds/

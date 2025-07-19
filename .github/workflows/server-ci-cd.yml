@@ -41,7 +41,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [user, group, gateway, files, genai]
+        service: [user, group, gateway, files, genai, client]
       fail-fast: false
 
     steps:
@@ -49,24 +49,37 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17 (for Java services)
-        if: matrix.service != 'genai'
+        if: matrix.service != 'genai' && matrix.service != 'client'
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: temurin
 
       - name: Build Java service (skip tests)
-        if: matrix.service != 'genai'
+        if: matrix.service != 'genai' && matrix.service != 'client'
         working-directory: ./server/${{ matrix.service }}
         run: |
           export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
           ./gradlew clean build -x test
 
       - name: Run Java tests (allow failures)
-        if: matrix.service != 'genai'
+        if: matrix.service != 'genai' && matrix.service != 'client'
         working-directory: ./server/${{ matrix.service }}
         continue-on-error: true
         run: ./gradlew test --info
+
+      - name: Set up Node.js (for client)
+        if: matrix.service == 'client'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build client
+        if: matrix.service == 'client'
+        working-directory: ./client
+        run: |
+          npm ci
+          npm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -79,7 +92,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push Java service image
-        if: matrix.service != 'genai'
+        if: matrix.service != 'genai' && matrix.service != 'client'
         uses: docker/build-push-action@v5
         with:
           context: ./server/${{ matrix.service }}
@@ -101,6 +114,18 @@ jobs:
           tags: |
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:latest
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:${{ github.sha }}
+
+      - name: Build & push Client service image
+        if: matrix.service == 'client'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          file: ./client/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:latest
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:${{ github.sha }}
 
   terraform-deploy:
     name: Terraform Deploy to Kubernetes
@@ -141,6 +166,7 @@ jobs:
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
+          TF_VAR_image_tag_client: ${{ github.sha }}
         run: |
           echo "=== Smart Import Strategy ==="
           
@@ -177,6 +203,7 @@ jobs:
           import_if_exists "service" "prometheus" "kubernetes_service.prometheus"
           import_if_exists "service" "grafana" "kubernetes_service.grafana"
           import_if_exists "service" "loki" "kubernetes_service.loki"
+          import_if_exists "service" "client-service" "kubernetes_service.client"
           
           # Import deployments
           echo "=== Importing Deployments ==="
@@ -192,6 +219,7 @@ jobs:
           import_if_exists "deployment" "grafana" "kubernetes_deployment.grafana"
           import_if_exists "deployment" "loki" "kubernetes_deployment.loki"
           import_if_exists "deployment" "promtail" "kubernetes_deployment.promtail"
+          import_if_exists "deployment" "client" "kubernetes_deployment.client"
           
           # Import secrets
           echo "=== Importing Secrets ==="
@@ -201,12 +229,14 @@ jobs:
           import_if_exists "secret" "files-env-secret" "kubernetes_secret.files_env"
           import_if_exists "secret" "openai-credentials" "kubernetes_secret.openai_credentials"
           import_if_exists "secret" "grafana-admin" "kubernetes_secret.grafana_admin"
+          import_if_exists "secret" "client-env-secret" "kubernetes_secret.client_env"
           
           # Import ingress resources
           echo "=== Importing Ingress ==="
           import_if_exists "ingress" "grafana-ingress" "kubernetes_ingress_v1.grafana_ingress"
           import_if_exists "ingress" "genai-dev-ingress" "kubernetes_ingress_v1.genai_ingress"
           import_if_exists "ingress" "prometheus-ingress" "kubernetes_ingress_v1.prometheus_ingress"
+          import_if_exists "ingress" "client-ingress" "kubernetes_ingress_v1.client_ingress"
           
           echo "=== Import phase completed ==="
 
@@ -220,6 +250,7 @@ jobs:
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
+          TF_VAR_image_tag_client: ${{ github.sha }}
         run: |
           echo "=== Refreshing Terraform state ==="
           terraform refresh -input=false
@@ -247,6 +278,7 @@ jobs:
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
+          TF_VAR_image_tag_client: ${{ github.sha }}
         run: |
           echo "=== Applying Terraform configuration ==="
           
@@ -273,7 +305,9 @@ jobs:
               terraform import kubernetes_service.prometheus developmentv1/prometheus 2>/dev/null || true
               terraform import kubernetes_service.grafana developmentv1/grafana 2>/dev/null || true
               terraform import kubernetes_service.loki developmentv1/loki 2>/dev/null || true
+              terraform import kubernetes_service.client developmentv1/client-service 2>/dev/null || true
               terraform import kubernetes_secret.grafana_admin developmentv1/grafana-admin 2>/dev/null || true
+              terraform import kubernetes_secret.client_env developmentv1/client-env-secret 2>/dev/null || true
               
               echo "Checking for specific resource failures..."
               if ! kubectl get deployment weaviate -n developmentv1 >/dev/null 2>&1; then
@@ -288,7 +322,7 @@ jobs:
                 echo "❌ Apply still failing, using targeted approach..."
                 
                 # Try applying specific resources that are known to work
-                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app -target=kubernetes_deployment.genai_celery_worker -target=kubernetes_deployment.genai_redis -target=kubernetes_deployment.weaviate -target=kubernetes_deployment.prometheus -target=kubernetes_deployment.grafana -target=kubernetes_deployment.loki -target=kubernetes_deployment.promtail
+                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app -target=kubernetes_deployment.genai_celery_worker -target=kubernetes_deployment.genai_redis -target=kubernetes_deployment.weaviate -target=kubernetes_deployment.prometheus -target=kubernetes_deployment.grafana -target=kubernetes_deployment.loki -target=kubernetes_deployment.promtail -target=kubernetes_deployment.client
                 echo "✅ Targeted apply completed - some resources may need manual reconciliation"
               fi
             else

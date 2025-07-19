@@ -29,7 +29,13 @@ variable "image_tag_files" {
 
 # GenAI image tags
 variable "image_tag_genai" {
-  description = "Image tag for genai-app"
+  description = "Docker image tag for GenAI service"
+  type        = string
+  default     = "latest"
+}
+
+variable "image_tag_client" {
+  description = "Docker image tag for Client service"
   type        = string
   default     = "latest"
 }

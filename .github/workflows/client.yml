@@ -1,16 +1,15 @@
-name: check format for React App
+# DISABLED: Client deployment is now integrated into server-ci-cd.yml
+# This workflow is preserved for reference but not actively used
+#
+# Client building, testing, and deployment now happens as part of the 
+# unified CI/CD pipeline in server-ci-cd.yml for better coordination
+# and to avoid permission conflicts between separate Terraform states.
+
+name: check format for React App (DISABLED)
 
 on:
-  push:
-    paths:
-      - "client/**"
-      - "infra/**"
-      - ".github/workflows/server-ci-cd.yml"
-  pull_request:
-    paths:
-      - "client/**"
-      - "infra/**"
-      - ".github/workflows/server-ci-cd.yml"
+  # Disabled - no longer triggers
+  workflow_dispatch: # Manual trigger only for testing
 
 jobs:
   client-check-format:
