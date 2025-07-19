@@ -194,7 +194,7 @@ jobs:
           
           # Import daemonsets
           echo "=== Importing DaemonSets ==="
-          import_if_exists "daemonset" "promtail" "kubernetes_daemon_set.promtail"
+          import_if_exists "daemonset" "promtail" "kubernetes_daemonset.promtail"
           
           # Import secrets
           echo "=== Importing Secrets ==="

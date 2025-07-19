@@ -25,9 +25,6 @@ resource "kubernetes_deployment" "prometheus" {
   
   lifecycle {
     ignore_changes = [
-      metadata[0].generation,
-      metadata[0].resource_version,
-      metadata[0].uid,
       spec[0].template[0].metadata[0].annotations
     ]
   }
@@ -132,9 +129,6 @@ resource "kubernetes_deployment" "loki" {
   
   lifecycle {
     ignore_changes = [
-      metadata[0].generation,
-      metadata[0].resource_version,
-      metadata[0].uid,
       spec[0].template[0].metadata[0].annotations
     ]
   }
@@ -269,7 +263,7 @@ resource "kubernetes_cluster_role_binding" "promtail" {
 }
 
 # Promtail DaemonSet
-resource "kubernetes_daemon_set" "promtail" {
+resource "kubernetes_daemonset" "promtail" {
   metadata {
     name      = "promtail"
     namespace = var.namespace
@@ -278,9 +272,6 @@ resource "kubernetes_daemon_set" "promtail" {
   
   lifecycle {
     ignore_changes = [
-      metadata[0].generation,
-      metadata[0].resource_version,
-      metadata[0].uid,
       spec[0].template[0].metadata[0].annotations
     ]
   }
@@ -408,9 +399,6 @@ resource "kubernetes_deployment" "grafana" {
   
   lifecycle {
     ignore_changes = [
-      metadata[0].generation,
-      metadata[0].resource_version,
-      metadata[0].uid,
       spec[0].template[0].metadata[0].annotations
     ]
   }

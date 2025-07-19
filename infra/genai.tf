@@ -8,9 +8,6 @@ resource "kubernetes_deployment" "genai_redis" {
   
   lifecycle {
     ignore_changes = [
-      metadata[0].generation,
-      metadata[0].resource_version,
-      metadata[0].uid,
       spec[0].template[0].metadata[0].annotations
     ]
   }
@@ -69,9 +66,6 @@ resource "kubernetes_deployment" "weaviate" {
   
   lifecycle {
     ignore_changes = [
-      metadata[0].generation,
-      metadata[0].resource_version,
-      metadata[0].uid,
       spec[0].template[0].metadata[0].annotations
     ]
   }
