@@ -12,6 +12,10 @@ resource "kubernetes_service" "user" {
     }
     type = "ClusterIP"
   }
+  
+  lifecycle {
+    ignore_changes = [metadata[0].labels]
+  }
 }
 
 resource "kubernetes_service" "group" {
@@ -27,6 +31,10 @@ resource "kubernetes_service" "group" {
       target_port = 8083
     }
     type = "ClusterIP"
+  }
+  
+  lifecycle {
+    ignore_changes = [metadata[0].labels]
   }
 }
 

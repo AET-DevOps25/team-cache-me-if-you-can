@@ -71,4 +71,8 @@
       OPENAI_API_KEY = var.openai_api_key
     }
     type = "Opaque"
+    
+    lifecycle {
+      ignore_changes = [data]
+    }
   }

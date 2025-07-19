@@ -95,6 +95,21 @@ jobs:
           KUBECONFIG: ~/.kube/config
         run: terraform init -input=false
 
+      - name: Import existing resources if they exist
+        working-directory: ./infra
+        env:
+          KUBECONFIG: ~/.kube/config
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_image_tag_user: ${{ github.sha }}
+          TF_VAR_image_tag_group: ${{ github.sha }}
+          TF_VAR_image_tag_gateway: ${{ github.sha }}
+          TF_VAR_image_tag_files: ${{ github.sha }}
+        run: |
+          # Import existing resources if they exist (ignore errors if they don't exist)
+          terraform import kubernetes_secret.openai_credentials developmentv1/openai-credentials || true
+          terraform import kubernetes_service.user developmentv1/user-service || true
+          terraform import kubernetes_service.group developmentv1/group-service || true
+
       - name: Terraform Plan
         working-directory: ./infra
         env:
@@ -116,3 +131,10 @@ jobs:
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
         run: terraform apply -auto-approve
+        
+        # Alternative: Use force replace if you want to recreate conflicting resources
+        # run: |
+        #   terraform apply -auto-approve \
+        #     -replace="kubernetes_secret.openai_credentials" \
+        #     -replace="kubernetes_service.user" \
+        #     -replace="kubernetes_service.group"
