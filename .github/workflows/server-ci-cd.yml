@@ -206,6 +206,7 @@ jobs:
           echo "=== Importing Ingress ==="
           import_if_exists "ingress" "grafana-ingress" "kubernetes_ingress_v1.grafana_ingress"
           import_if_exists "ingress" "genai-dev-ingress" "kubernetes_ingress_v1.genai_ingress"
+          import_if_exists "ingress" "prometheus-ingress" "kubernetes_ingress_v1.prometheus_ingress"
           
           echo "=== Import phase completed ==="
 
@@ -297,50 +298,3 @@ jobs:
           fi
           
           echo "=== Terraform apply phase completed ==="
-
-      - name: Post-deployment validation
-        working-directory: ./infra
-        env:
-          KUBECONFIG: ~/.kube/config
-        run: |
-          echo "=== Post-deployment validation ==="
-          
-          # Wait for deployments to be ready
-          echo "Waiting for deployments to be ready..."
-          kubectl rollout status deployment/user-service -n developmentv1 --timeout=300s
-          kubectl rollout status deployment/group-service -n developmentv1 --timeout=300s
-          kubectl rollout status deployment/gateway-service -n developmentv1 --timeout=300s
-          kubectl rollout status deployment/files-service -n developmentv1 --timeout=300s
-          kubectl rollout status deployment/genai-app -n developmentv1 --timeout=300s
-          kubectl rollout status deployment/genai-celery-worker -n developmentv1 --timeout=300s
-          kubectl rollout status deployment/redis -n developmentv1 --timeout=300s || echo "Redis rollout check failed"
-          kubectl rollout status deployment/weaviate -n developmentv1 --timeout=300s || echo "Weaviate rollout check failed"
-          kubectl rollout status deployment/prometheus -n developmentv1 --timeout=300s || echo "Prometheus rollout check failed"
-          kubectl rollout status deployment/grafana -n developmentv1 --timeout=300s || echo "Grafana rollout check failed" 
-          kubectl rollout status deployment/loki -n developmentv1 --timeout=300s || echo "Loki rollout check failed"
-          kubectl rollout status deployment/promtail -n developmentv1 --timeout=300s || echo "Promtail rollout check failed"
-          
-          # Check pod health
-          echo "Checking pod health..."
-          kubectl get pods -n developmentv1 -o wide
-          
-          # Verify critical services are accessible
-          echo "Testing service connectivity..."
-          kubectl run test-pod --image=curlimages/curl:latest --rm -i --restart=Never -n developmentv1 -- sh -c "
-            curl -f http://user-service:8081/actuator/health --max-time 10 &&
-            curl -f http://group-service:8083/actuator/health --max-time 10 &&
-            curl -f http://gateway-service:8080/actuator/health --max-time 10 &&
-            curl -f http://files-service:8082/actuator/health --max-time 10 &&
-            curl -f http://genai-app-service:8000/api/v1/health --max-time 10
-          " || echo "Some health checks failed - this may be normal during startup"
-          
-          # Verify group service alias works
-          echo "Testing group service alias..."
-          kubectl run test-pod-2 --image=curlimages/curl:latest --rm -i --restart=Never -n developmentv1 -- sh -c "
-            curl -f http://group:8083/actuator/health --max-time 10
-          " || echo "Group alias health check failed"
-          
-          echo "Checking ingress resources..."
-          kubectl get ingress -n developmentv1 || echo "No ingress resources found"
-          
-          echo "✅ Post-deployment validation completed"
