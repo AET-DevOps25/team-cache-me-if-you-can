@@ -203,6 +203,12 @@ jobs:
           import_if_exists "secret" "gateway-env-secret" "kubernetes_secret.gateway_env"
           import_if_exists "secret" "files-env-secret" "kubernetes_secret.files_env"
           import_if_exists "secret" "openai-credentials" "kubernetes_secret.openai_credentials"
+          import_if_exists "secret" "grafana-admin" "kubernetes_secret.grafana_admin"
+          
+          # Import ingress resources
+          echo "=== Importing Ingress ==="
+          import_if_exists "ingress" "grafana-ingress" "kubernetes_ingress_v1.grafana_ingress"
+          import_if_exists "ingress" "genai-dev-ingress" "kubernetes_ingress_v1.genai_ingress"
           
           echo "=== Import phase completed ==="
 
@@ -269,6 +275,12 @@ jobs:
               terraform import kubernetes_service.prometheus developmentv1/prometheus 2>/dev/null || true
               terraform import kubernetes_service.grafana developmentv1/grafana 2>/dev/null || true
               terraform import kubernetes_service.loki developmentv1/loki 2>/dev/null || true
+              terraform import kubernetes_secret.grafana_admin developmentv1/grafana-admin 2>/dev/null || true
+              
+              echo "Checking for specific resource failures..."
+              if ! kubectl get deployment weaviate -n developmentv1 >/dev/null 2>&1; then
+                echo "⚠️ Weaviate deployment missing - will be created"
+              fi
               
               # Try apply again after re-import
               echo "Retrying apply after import recovery..."
@@ -332,5 +344,8 @@ jobs:
           kubectl run test-pod-2 --image=curlimages/curl:latest --rm -i --restart=Never -n developmentv1 -- sh -c "
             curl -f http://group:8083/actuator/health --max-time 10
           " || echo "Group alias health check failed"
+          
+          echo "Checking ingress resources..."
+          kubectl get ingress -n developmentv1 || echo "No ingress resources found"
           
           echo "✅ Post-deployment validation completed"
