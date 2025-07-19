@@ -73,6 +73,7 @@
     type = "Opaque"
     
     lifecycle {
-      ignore_changes = [data]
+      ignore_changes = [data, metadata[0].labels, metadata[0].annotations]
+      create_before_destroy = true
     }
   }

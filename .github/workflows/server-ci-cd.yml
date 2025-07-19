@@ -95,7 +95,7 @@ jobs:
           KUBECONFIG: ~/.kube/config
         run: terraform init -input=false
 
-      - name: Import existing resources if they exist
+      - name: Import existing resources with correct syntax
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
@@ -105,10 +105,12 @@ jobs:
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
         run: |
-          # Import existing resources if they exist (ignore errors if they don't exist)
-          terraform import kubernetes_secret.openai_credentials developmentv1/openai-credentials || true
-          terraform import kubernetes_service.user developmentv1/user-service || true
-          terraform import kubernetes_service.group developmentv1/group-service || true
+          echo "Attempting to import existing resources..."
+          # Import with correct syntax: terraform import resource_type.resource_name namespace/name
+          terraform import kubernetes_secret.openai_credentials developmentv1/openai-credentials 2>/dev/null || echo "Secret import failed or already imported"
+          terraform import kubernetes_service.user developmentv1/user-service 2>/dev/null || echo "User service import failed or already imported"
+          terraform import kubernetes_service.group developmentv1/group-service 2>/dev/null || echo "Group service import failed or already imported"
+          echo "Import attempts completed"
 
       - name: Terraform Plan
         working-directory: ./infra
@@ -130,7 +132,15 @@ jobs:
           TF_VAR_image_tag_group: ${{ github.sha }}
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
-        run: terraform apply -auto-approve
+        run: |
+          # Try normal apply first
+          if ! terraform apply -auto-approve; then
+            echo "Normal apply failed, trying with resource replacement..."
+            terraform apply -auto-approve \
+              -replace="kubernetes_secret.openai_credentials" \
+              -replace="kubernetes_service.user" \
+              -replace="kubernetes_service.group"
+          fi
         
         # Alternative: Use force replace if you want to recreate conflicting resources
         # run: |

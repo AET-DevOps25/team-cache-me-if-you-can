@@ -14,7 +14,8 @@ resource "kubernetes_service" "user" {
   }
   
   lifecycle {
-    ignore_changes = [metadata[0].labels]
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
+    create_before_destroy = true
   }
 }
 
@@ -34,7 +35,8 @@ resource "kubernetes_service" "group" {
   }
   
   lifecycle {
-    ignore_changes = [metadata[0].labels]
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
+    create_before_destroy = true
   }
 }
 
