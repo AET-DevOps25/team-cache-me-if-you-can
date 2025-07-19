@@ -26,7 +26,7 @@
       SPRING_DATASOURCE_PASSWORD = var.mysql_password_group
       JWT_SECRET_KEY             = var.jwt_secret_key
       SPRING_PROFILES_ACTIVE     = var.spring_profile
-      GENAI_SERVICE_URL          = "http://genai-dev-genai-app-service.${var.namespace}.svc.cluster.local:8000/api/v1"
+      GENAI_SERVICE_URL          = "http://genai-app-service:8000/api/v1"
     }
     type = "Opaque"
   }
@@ -39,10 +39,10 @@
     data = {
       JWT_SECRET_KEY         = var.jwt_secret_key
       SPRING_PROFILES_ACTIVE = var.spring_profile
-      USER_SERVICE_URL       = "http://user-service.${var.namespace}.svc.cluster.local:8081"
-      FILES_SERVICE_URL      = "http://files-service.${var.namespace}.svc.cluster.local:8082"
-      GENAI_SERVICE_URL      = "http://genai-dev-genai-app-service.${var.namespace}.svc.cluster.local:8000"
-      GROUP_SERVICE_URL      = "http://group-service.${var.namespace}.svc.cluster.local:8083"
+      USER_SERVICE_URL       = "http://user-service:8081"
+      FILES_SERVICE_URL      = "http://files-service:8082"
+      GENAI_SERVICE_URL      = "http://genai-app-service:8000"
+      GROUP_SERVICE_URL      = "http://group-service:8083"
     }
     type = "Opaque"
   }

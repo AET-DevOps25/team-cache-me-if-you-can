@@ -1,18 +1,17 @@
-name: Genai CI/CD Pipeline
+name: Genai CI/CD Pipeline - DISABLED (moved to unified pipeline)
+
+# This workflow has been moved to server-ci-cd.yml (now unified-ci-cd.yml)
+# Keeping this file as backup for reference
 
 on:
-  push:
-    branches:
-      - '**' # Runs on push to any branch
-  pull_request:
-    branches:
-      - main # Runs on pull requests targeting main (for tests before merge)
+  # Disabled - remove automatic triggers
+  workflow_dispatch: # Can only be triggered manually
 
 jobs:
   test:
     name: Run Pytest
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request' # Ensure it runs for both pushes and PRs
+    if: false # Disabled
 
     steps:
       - name: Check out code
@@ -33,7 +32,7 @@ jobs:
     name: Deploy to Development
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: false # Disabled
 
     steps:
       - name: Check out code

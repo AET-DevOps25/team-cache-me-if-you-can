@@ -21,6 +21,18 @@ variable "image_tag_gateway" {
   type        = string
   default     = "latest"
 }
+variable "image_tag_files" {
+  description = "Image tag for files-service"
+  type        = string
+  default     = "latest"
+}
+
+# GenAI image tags
+variable "image_tag_genai" {
+  description = "Image tag for genai-app"
+  type        = string
+  default     = "latest"
+}
 
 # MySQL credentials & database names
 variable "mysql_root_password" {
@@ -91,12 +103,6 @@ variable "spring_profile" {
   description = "Active Spring profile"
   type        = string
   default     = "developmentv1"
-}
-
-variable "image_tag_files" {
-  description = "Image tag for files-service"
-  type        = string
-  default     = "latest"
 }
 
 # OpenAI API Key for GenAI service

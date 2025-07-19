@@ -1,4 +1,4 @@
-name: Server CI/CD
+name: Unified CI/CD Pipeline
 
 on:
   push:
@@ -13,6 +13,26 @@ env:
   IMAGE_NAMESPACE: aet-devops25/team-cache-me-if-you-can
 
 jobs:
+  test-genai:
+    name: Test GenAI
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r genai/requirements.txt
+
+      - name: Run tests
+        run: pytest genai/tests
+
   build-and-push:
     name: Build & Push Service Images
     runs-on: ubuntu-latest
@@ -21,26 +41,29 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [user, group, gateway, files]
+        service: [user, group, gateway, files, genai]
       fail-fast: false
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 17 (for Java services)
+        if: matrix.service != 'genai'
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: temurin
 
-      - name: Build service (skip tests)
+      - name: Build Java service (skip tests)
+        if: matrix.service != 'genai'
         working-directory: ./server/${{ matrix.service }}
         run: |
           export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
           ./gradlew clean build -x test
 
-      - name: Run tests (allow failures)
+      - name: Run Java tests (allow failures)
+        if: matrix.service != 'genai'
         working-directory: ./server/${{ matrix.service }}
         continue-on-error: true
         run: ./gradlew test --info
@@ -55,7 +78,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push image
+      - name: Build & push Java service image
+        if: matrix.service != 'genai'
         uses: docker/build-push-action@v5
         with:
           context: ./server/${{ matrix.service }}
@@ -66,11 +90,23 @@ jobs:
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:latest
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:${{ github.sha }}
 
+      - name: Build & push GenAI service image
+        if: matrix.service == 'genai'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./genai
+          file: ./genai/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:latest
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:${{ github.sha }}
+
   terraform-deploy:
     name: Terraform Deploy to Kubernetes
-    needs: build-and-push
+    needs: [build-and-push, test-genai]
     runs-on: ubuntu-latest
-    if: needs.build-and-push.result == 'success'
+    if: needs.build-and-push.result == 'success' && needs.test-genai.result == 'success'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,10 +140,15 @@ jobs:
           TF_VAR_image_tag_group: ${{ github.sha }}
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
+          TF_VAR_image_tag_genai: ${{ github.sha }}
         run: |
-          terraform import kubernetes_secret.openai_credentials developmentv1/openai-credentials || echo "Secret already imported"
-          terraform import kubernetes_service.user developmentv1/user-service || echo "User service already imported"
-          terraform import kubernetes_service.group developmentv1/group-service || echo "Group service already imported"
+          echo "Attempting to import existing resources..."
+          # Import with correct syntax: terraform import resource_type.resource_name namespace/name
+          terraform import kubernetes_secret.openai_credentials developmentv1/openai-credentials 2>/dev/null || echo "Secret import failed or already imported"
+          terraform import kubernetes_service.user developmentv1/user-service 2>/dev/null || echo "User service import failed or already imported"
+          terraform import kubernetes_service.group developmentv1/group-service 2>/dev/null || echo "Group service import failed or already imported"
+          terraform import kubernetes_service.group_alias developmentv1/group 2>/dev/null || echo "Group alias service import failed or already imported"
+          echo "Import attempts completed"
 
       - name: Terraform Plan
         working-directory: ./infra
@@ -118,6 +159,7 @@ jobs:
           TF_VAR_image_tag_group: ${{ github.sha }}
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
+          TF_VAR_image_tag_genai: ${{ github.sha }}
         run: terraform plan -input=false
 
       - name: Terraform Apply
@@ -129,14 +171,20 @@ jobs:
           TF_VAR_image_tag_group: ${{ github.sha }}
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
-        run: terraform apply -auto-approve -replace="kubernetes_secret.openai_credentials" -replace="kubernetes_service.user" -replace="kubernetes_service.group"
-
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-
-      - name: Deploy GenAI to Kubernetes with Helm
+          TF_VAR_image_tag_genai: ${{ github.sha }}
         run: |
-          helm upgrade --install genai-dev ./helm/genai-chart \
-            --namespace developmentv1 \
-            -f ./helm/genai-chart/values-development.yaml \
-            --set image.tag=latest
+          # Try normal apply first
+          if ! terraform apply -auto-approve; then
+            echo "Normal apply failed, trying with resource replacement..."
+            terraform apply -auto-approve \
+              -replace="kubernetes_secret.openai_credentials" \
+              -replace="kubernetes_service.user" \
+              -replace="kubernetes_service.group"
+          fi
+        
+        # Alternative: Use force replace if you want to recreate conflicting resources
+        # run: |
+        #   terraform apply -auto-approve \
+        #     -replace="kubernetes_secret.openai_credentials" \
+        #     -replace="kubernetes_service.user" \
+        #     -replace="kubernetes_service.group"
