@@ -99,3 +99,11 @@ variable "image_tag_files" {
   default     = "latest"
 }
 
+# OpenAI API Key for GenAI service
+variable "openai_api_key" {
+  description = "OpenAI API key for GenAI service"
+  type        = string
+  sensitive   = true
+  default     = ""  # Should be provided via environment variable or terraform.tfvars
+}
+

@@ -26,6 +26,7 @@
       SPRING_DATASOURCE_PASSWORD = var.mysql_password_group
       JWT_SECRET_KEY             = var.jwt_secret_key
       SPRING_PROFILES_ACTIVE     = var.spring_profile
+      GENAI_SERVICE_URL          = "http://genai-dev-genai-app-service.${var.namespace}.svc.cluster.local:8000/api/v1"
     }
     type = "Opaque"
   }
@@ -38,6 +39,10 @@
     data = {
       JWT_SECRET_KEY         = var.jwt_secret_key
       SPRING_PROFILES_ACTIVE = var.spring_profile
+      USER_SERVICE_URL       = "http://user-service.${var.namespace}.svc.cluster.local:8081"
+      FILES_SERVICE_URL      = "http://files-service.${var.namespace}.svc.cluster.local:8082"
+      GENAI_SERVICE_URL      = "http://genai-dev-genai-app-service.${var.namespace}.svc.cluster.local:8000"
+      GROUP_SERVICE_URL      = "http://group-service.${var.namespace}.svc.cluster.local:8083"
     }
     type = "Opaque"
   }
@@ -52,6 +57,18 @@
       SPRING_DATASOURCE_PASSWORD = var.mysql_password_files
       JWT_SECRET_KEY             = var.jwt_secret_key
       SPRING_PROFILES_ACTIVE     = var.spring_profile
+    }
+    type = "Opaque"
+  }
+
+  # OpenAI credentials secret for GenAI service
+  resource "kubernetes_secret" "openai_credentials" {
+    metadata {
+      name      = "openai-credentials"
+      namespace = var.namespace
+    }
+    data = {
+      OPENAI_API_KEY = var.openai_api_key
     }
     type = "Opaque"
   }

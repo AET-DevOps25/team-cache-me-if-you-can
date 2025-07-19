@@ -89,7 +89,6 @@ jobs:
           echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
           chmod 600 ~/.kube/config
 
-
       - name: Terraform Init
         working-directory: ./infra
         env:
@@ -100,10 +99,20 @@ jobs:
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_image_tag_user: ${{ github.sha }}
+          TF_VAR_image_tag_group: ${{ github.sha }}
+          TF_VAR_image_tag_gateway: ${{ github.sha }}
+          TF_VAR_image_tag_files: ${{ github.sha }}
         run: terraform plan -input=false
 
       - name: Terraform Apply
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_image_tag_user: ${{ github.sha }}
+          TF_VAR_image_tag_group: ${{ github.sha }}
+          TF_VAR_image_tag_gateway: ${{ github.sha }}
+          TF_VAR_image_tag_files: ${{ github.sha }}
         run: terraform apply -auto-approve

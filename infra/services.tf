@@ -1,6 +1,6 @@
 resource "kubernetes_service" "user" {
   metadata {
-    name      = "user"
+    name      = "user-service"
     namespace = var.namespace
     labels    = { app = "user-service" }
   }
@@ -16,7 +16,7 @@ resource "kubernetes_service" "user" {
 
 resource "kubernetes_service" "group" {
   metadata {
-    name      = "group"
+    name      = "group-service"
     namespace = var.namespace
     labels    = { app = "group-service" }
   }

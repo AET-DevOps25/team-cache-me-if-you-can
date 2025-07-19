@@ -49,6 +49,7 @@ spec:
           value: {{ tpl .Values.genai_app.env.CELERY_BROKER_URL . | quote }}
         - name: CELERY_RESULT_BACKEND
           value: {{ tpl .Values.genai_app.env.CELERY_RESULT_BACKEND . | quote }}
+        command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
