@@ -39,6 +39,7 @@ open http://localhost:3000          # React UI
 ### 🏗️ Architecture Overview
 
 Visualize how components interact at runtime:
+![arh](https://github.com/user-attachments/assets/460073ac-90de-4e11-aedd-b6327dbf38d3)
 
 
 **Key Components Explained:**
