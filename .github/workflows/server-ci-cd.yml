@@ -191,10 +191,7 @@ jobs:
           import_if_exists "deployment" "prometheus" "kubernetes_deployment.prometheus"
           import_if_exists "deployment" "grafana" "kubernetes_deployment.grafana"
           import_if_exists "deployment" "loki" "kubernetes_deployment.loki"
-          
-          # Import daemonsets
-          echo "=== Importing DaemonSets ==="
-          import_if_exists "daemonset" "promtail" "kubernetes_daemonset.promtail"
+          import_if_exists "deployment" "promtail" "kubernetes_deployment.promtail"
           
           # Import secrets
           echo "=== Importing Secrets ==="
@@ -290,7 +287,7 @@ jobs:
                 echo "❌ Apply still failing, using targeted approach..."
                 
                 # Try applying specific resources that are known to work
-                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app -target=kubernetes_deployment.genai_celery_worker -target=kubernetes_deployment.genai_redis -target=kubernetes_deployment.weaviate -target=kubernetes_deployment.prometheus -target=kubernetes_deployment.grafana -target=kubernetes_deployment.loki
+                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app -target=kubernetes_deployment.genai_celery_worker -target=kubernetes_deployment.genai_redis -target=kubernetes_deployment.weaviate -target=kubernetes_deployment.prometheus -target=kubernetes_deployment.grafana -target=kubernetes_deployment.loki -target=kubernetes_deployment.promtail
                 echo "✅ Targeted apply completed - some resources may need manual reconciliation"
               fi
             else
@@ -321,9 +318,7 @@ jobs:
           kubectl rollout status deployment/prometheus -n developmentv1 --timeout=300s || echo "Prometheus rollout check failed"
           kubectl rollout status deployment/grafana -n developmentv1 --timeout=300s || echo "Grafana rollout check failed" 
           kubectl rollout status deployment/loki -n developmentv1 --timeout=300s || echo "Loki rollout check failed"
-          
-          echo "Checking DaemonSet status..."
-          kubectl rollout status daemonset/promtail -n developmentv1 --timeout=300s || echo "Promtail rollout check failed"
+          kubectl rollout status deployment/promtail -n developmentv1 --timeout=300s || echo "Promtail rollout check failed"
           
           # Check pod health
           echo "Checking pod health..."

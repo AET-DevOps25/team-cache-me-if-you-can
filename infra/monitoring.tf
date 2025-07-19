@@ -230,30 +230,32 @@ resource "kubernetes_service_account" "promtail" {
   }
 }
 
-# Promtail ClusterRole
-resource "kubernetes_cluster_role" "promtail" {
+# Promtail Role (namespace-scoped instead of cluster-wide)
+resource "kubernetes_role" "promtail" {
   metadata {
-    name = "promtail"
-    labels = { app = "promtail" }
+    name      = "promtail"
+    namespace = var.namespace
+    labels    = { app = "promtail" }
   }
 
   rule {
     api_groups = [""]
-    resources  = ["nodes", "nodes/proxy", "services", "endpoints", "pods"]
+    resources  = ["pods", "pods/log"]
     verbs      = ["get", "watch", "list"]
   }
 }
 
-# Promtail ClusterRoleBinding
-resource "kubernetes_cluster_role_binding" "promtail" {
+# Promtail RoleBinding (namespace-scoped)
+resource "kubernetes_role_binding" "promtail" {
   metadata {
-    name = "promtail"
-    labels = { app = "promtail" }
+    name      = "promtail"
+    namespace = var.namespace
+    labels    = { app = "promtail" }
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = kubernetes_cluster_role.promtail.metadata[0].name
+    kind      = "Role"
+    name      = kubernetes_role.promtail.metadata[0].name
   }
   subject {
     kind      = "ServiceAccount"
@@ -262,8 +264,8 @@ resource "kubernetes_cluster_role_binding" "promtail" {
   }
 }
 
-# Promtail DaemonSet
-resource "kubernetes_daemonset" "promtail" {
+# Promtail Deployment (simplified for namespace-only permissions)
+resource "kubernetes_deployment" "promtail" {
   metadata {
     name      = "promtail"
     namespace = var.namespace
@@ -277,9 +279,8 @@ resource "kubernetes_daemonset" "promtail" {
   }
 
   spec {
-    selector {
-      match_labels = { app = "promtail" }
-    }
+    replicas = 1
+    selector { match_labels = { app = "promtail" } }
     template {
       metadata { 
         labels = { app = "promtail" }
@@ -291,20 +292,6 @@ resource "kubernetes_daemonset" "promtail" {
           name = "promtail-config"
           config_map {
             name = kubernetes_config_map.promtail_config.metadata[0].name
-          }
-        }
-        
-        volume {
-          name = "varlog"
-          host_path {
-            path = "/var/log"
-          }
-        }
-        
-        volume {
-          name = "varlibdockercontainers"
-          host_path {
-            path = "/var/lib/docker/containers"
           }
         }
         
@@ -321,16 +308,9 @@ resource "kubernetes_daemonset" "promtail" {
             mount_path = "/etc/promtail"
           }
           
-          volume_mount {
-            name       = "varlog"
-            mount_path = "/var/log"
-            read_only  = true
-          }
-          
-          volume_mount {
-            name       = "varlibdockercontainers"
-            mount_path = "/var/lib/docker/containers"
-            read_only  = true
+          env {
+            name  = "LOKI_URL"
+            value = "http://loki:3100"
           }
           
           resources {
