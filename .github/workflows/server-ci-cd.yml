@@ -152,24 +152,15 @@ jobs:
             local namespace="developmentv1"
             
             echo "Checking $resource_type/$resource_name..."
-            
-            # Check if already in Terraform state (avoid redundant imports)
-            if terraform state show $terraform_resource >/dev/null 2>&1; then
-              echo "✅ $terraform_resource already in Terraform state"
-              return 0
-            fi
-            
-            # Check if resource exists in Kubernetes
             if kubectl get $resource_type $resource_name -n $namespace >/dev/null 2>&1; then
-              echo "🔄 Found $resource_type/$resource_name - attempting import"
+              echo "✅ Found $resource_type/$resource_name - attempting import"
               if terraform import $terraform_resource $namespace/$resource_name; then
                 echo "✅ Successfully imported $terraform_resource"
               else
-                echo "⚠️  Import failed for $terraform_resource"
-                return 1
+                echo "⚠️  Import failed for $terraform_resource (may already be in state)"
               fi
             else
-              echo "📝 $resource_type/$resource_name not found - will be created"
+              echo "❌ $resource_type/$resource_name not found - will be created"
             fi
           }
           
@@ -200,13 +191,6 @@ jobs:
           import_if_exists "secret" "openai-credentials" "kubernetes_secret.openai_credentials"
           
           echo "=== Import phase completed ==="
-          
-          # Show what's now in Terraform state for debugging
-          echo "=== Terraform State Summary ==="
-          echo "Resources in state: $(terraform state list | wc -l)"
-          echo "Services: $(terraform state list | grep kubernetes_service | wc -l)"
-          echo "Deployments: $(terraform state list | grep kubernetes_deployment | wc -l)"
-          echo "Secrets: $(terraform state list | grep kubernetes_secret | wc -l)"
 
       - name: Terraform Plan
         working-directory: ./infra
@@ -267,13 +251,6 @@ jobs:
               terraform import kubernetes_service.files developmentv1/files-service 2>/dev/null || true
               terraform import kubernetes_service.genai_app developmentv1/genai-app-service 2>/dev/null || true
               
-              # Also import secrets that might be missing
-              terraform import kubernetes_secret.user_env developmentv1/user-env-secret 2>/dev/null || true
-              terraform import kubernetes_secret.group_env developmentv1/group-env-secret 2>/dev/null || true
-              terraform import kubernetes_secret.gateway_env developmentv1/gateway-env-secret 2>/dev/null || true
-              terraform import kubernetes_secret.files_env developmentv1/files-env-secret 2>/dev/null || true
-              terraform import kubernetes_secret.openai_credentials developmentv1/openai-credentials 2>/dev/null || true
-              
               # Try apply again after re-import
               echo "Retrying apply after import recovery..."
               if terraform apply -auto-approve -input=false; then
@@ -291,9 +268,7 @@ jobs:
             fi
           fi
           
-          echo "=== Verifying deployment status ==="
-          kubectl get pods -n developmentv1
-          kubectl get services -n developmentv1
+          echo "=== Terraform apply phase completed ==="
 
       - name: Post-deployment validation
         working-directory: ./infra
