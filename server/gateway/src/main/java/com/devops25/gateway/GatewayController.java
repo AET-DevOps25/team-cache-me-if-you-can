@@ -250,6 +250,134 @@ public class GatewayController {
         }
     }
 
+    // Route to GenAI Service - Handwritten Documents endpoints
+    @RequestMapping(value = {"/api/v1/handwritten", "/api/v1/handwritten/", "/api/v1/handwritten/**"}, 
+                   method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
+    public Mono<ResponseEntity<String>> routeHandwrittenToGenaiService(
+            ServerHttpRequest request,
+            @RequestBody(required = false) String body) {
+
+        String path = request.getPath().pathWithinApplication().value();
+        HttpMethod method = request.getMethod();
+
+        System.out.println("=== ROUTING HANDWRITTEN TO GENAI SERVICE ===");
+        System.out.println("Method: " + method);
+        System.out.println("Path: " + path);
+        System.out.println("Target: " + genaiServiceUrl + path);
+
+        WebClient.RequestBodyUriSpec requestSpec = webClient.method(method);
+        requestSpec.headers(h -> {
+            var incoming = request.getHeaders();
+            if (incoming.getContentType() != null) {
+                h.setContentType(incoming.getContentType());
+            }
+            incoming.getOrEmpty("Authorization")
+                    .stream().findFirst()
+                    .ifPresent(token -> h.set("Authorization", token));
+            incoming.getOrEmpty("X-Group-ID")
+                    .stream().findFirst()
+                    .ifPresent(groupId -> h.set("X-Group-ID", groupId));
+        });
+
+        if (body != null && (method == HttpMethod.POST || method == HttpMethod.PUT)) {
+            return requestSpec
+                    .uri(genaiServiceUrl + path)
+                    .body(BodyInserters.fromValue(body))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"GenAI service unavailable\"}"));
+        } else {
+            return requestSpec
+                    .uri(genaiServiceUrl + path)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(response -> ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(response))
+                    .onErrorReturn(ResponseEntity.status(500)
+                            .body("{\"error\": \"GenAI service unavailable\"}"));
+        }
+    }
+
+    // Special handling for handwritten document download (binary data)
+    @GetMapping("/api/v1/handwritten/{taskId}/download")
+    public Mono<ResponseEntity<byte[]>> downloadHandwrittenDocument(
+            ServerHttpRequest request,
+            @PathVariable String taskId) {
+        
+        String targetUrl = genaiServiceUrl + "/api/v1/handwritten/" + taskId + "/download";
+
+        // Build the target URL with query parameters if present
+        URI uri = request.getURI();
+        String query = uri.getRawQuery();
+        String fullTargetUrl = targetUrl + (query != null ? "?" + query : "");
+
+        System.out.println("=== HANDWRITTEN DOCUMENT DOWNLOAD ===");
+        System.out.println("Target URL: " + fullTargetUrl);
+        System.out.println("Task ID: " + taskId);
+
+        // Forward the request as binary data
+        return webClient
+                .method(HttpMethod.GET)
+                .uri(fullTargetUrl)
+                .headers(headers -> {
+                    // Copy all incoming headers except host
+                    request.getHeaders().forEach((name, values) -> {
+                        if (!name.equalsIgnoreCase("host")) {
+                            headers.put(name, values);
+                        }
+                    });
+                })
+                .exchangeToMono(clientResp ->
+                        clientResp.toEntity(byte[].class)
+                )
+                .map(response -> ResponseEntity.status(response.getStatusCode())
+                        .headers(response.getHeaders())
+                        .body(response.getBody()))
+                .onErrorReturn(ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body("Handwritten document download service unavailable".getBytes()));
+    }
+
+    // Special handling for handwritten document upload (multipart)
+    @PostMapping(value = "/api/v1/handwritten/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<String>> uploadHandwrittenDocument(ServerHttpRequest request) {
+        String targetUrl = genaiServiceUrl + "/api/v1/handwritten/upload";
+
+        // Build the target URL with query parameters if present
+        URI uri = request.getURI();
+        String query = uri.getRawQuery();
+        String fullTargetUrl = targetUrl + (query != null ? "?" + query : "");
+
+        System.out.println("=== HANDWRITTEN DOCUMENT UPLOAD ===");
+        System.out.println("Target URL: " + fullTargetUrl);
+        System.out.println("Content-Type: " + request.getHeaders().getContentType());
+
+        // Forward the raw request body without reading it
+        return webClient.post()
+                .uri(fullTargetUrl)
+                .headers(h -> {
+                    // Copy all incoming headers except host and content-length
+                    request.getHeaders().forEach((name, values) -> {
+                        if (!name.equalsIgnoreCase("host") && !name.equalsIgnoreCase("content-length")) {
+                            h.put(name, values);
+                        }
+                    });
+                })
+                // Stream the request body without reading it into memory
+                .body(request.getBody(), org.springframework.core.io.buffer.DataBuffer.class)
+                .exchangeToMono(clientResponse -> clientResponse.toEntity(String.class))
+                .map(response -> ResponseEntity.status(response.getStatusCode()).body(response.getBody()))
+                .doOnError(error -> {
+                    System.err.println("Error forwarding handwritten document upload: " + error.getMessage());
+                    error.printStackTrace();
+                })
+                .onErrorReturn(ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body("{\"error\":\"Handwritten document upload service unavailable\"}"));
+    }
 
     @RequestMapping(value = "/api/users/**", method = {
             RequestMethod.GET, RequestMethod.POST,

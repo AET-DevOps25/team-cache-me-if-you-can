@@ -7,6 +7,8 @@ import { GroupInfo } from "./components/GroupInfo";
 import { Material } from "./Material";
 import "./group_page.css";
 import AIChat from "./components/AIChat";
+import { Chat } from "./components/GroupChat";
+import { HandwrittenDocuments } from "./components/HandwrittenDocuments";
 
 export default function GroupPage() {
     const { groupId } = useParams<{ groupId: string }>();
@@ -95,7 +97,7 @@ export default function GroupPage() {
     useEffect(() => {
         const base = ["Group Info"];
         if (hasAccess()) {
-            base.push("Materials", "Chats", "AI Bot");
+            base.push("Materials", "Handwritten Docs", "Chats", "AI Bot");
         }
         setTabs(base);
 
@@ -176,9 +178,19 @@ export default function GroupPage() {
                             )
                         )}
 
+                        {activeTab === "Handwritten Docs" && (
+                            hasAccess() ? (
+                                <HandwrittenDocuments />
+                            ) : (
+                                <p className="access-message">
+                                    You must be a member (or owner) to access Handwritten Documents.
+                                </p>
+                            )
+                        )}
+
                         {activeTab === "Chats" && (
                             hasAccess() ? (
-                                <p>(Your Chats UI…)</p>
+                                <Chat />
                             ) : (
                                 <p className="access-message">
                                     You must be a member (or owner) to access Chats.
