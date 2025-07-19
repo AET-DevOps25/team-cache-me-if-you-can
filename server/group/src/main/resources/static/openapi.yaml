@@ -1,0 +1,695 @@
+  openapi: 3.0.3
+  info:
+    title: Group Management API
+    description: API for managing study groups, including group creation, membership, chat functionality, and GenAI document uploads and queries.
+    version: 0.0.1
+  servers:
+    - url: http://localhost:8083
+      description: Local group service server
+  components:
+    securitySchemes:
+      BearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+    schemas:
+      ErrorResponse:
+        type: object
+        properties:
+          message:
+            type: string
+            description: Error message
+        required:
+          - message
+      CreateGroupRequest:
+        type: object
+        properties:
+          name:
+            type: string
+            maxLength: 50
+            description: Name of the group
+          university:
+            type: string
+            maxLength: 50
+            description: University associated with the group
+          description:
+            type: string
+            maxLength: 300
+            description: Group description
+          imageUrl:
+            type: string
+            description: URL or path to the group image
+        required:
+          - name
+          - university
+      UpdateGroupRequest:
+        type: object
+        properties:
+          name:
+            type: string
+            maxLength: 50
+            description: Updated name of the group
+          university:
+            type: string
+            maxLength: 50
+            description: Updated university
+          description:
+            type: string
+            maxLength: 300
+            description: Updated description
+          imageUrl:
+            type: string
+            description: Updated URL or path to the group image
+      GroupResponse:
+        type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            description: Unique identifier of the group
+          name:
+            type: string
+            description: Name of the group
+          description:
+            type: string
+            description: Group description
+          university:
+            type: string
+            description: University associated with the group
+          imageUrl:
+            type: string
+            description: URL or path to the group image
+          filesServiceUrl:
+            type: string
+            description: URL for group-specific files
+          ownerUsername:
+            type: string
+            description: Username of the group owner
+          memberUsernames:
+            type: array
+            items:
+              type: string
+            description: List of member usernames
+          isMember:
+            type: boolean
+            description: Whether the authenticated user is a member
+        required:
+          - id
+          - name
+          - university
+          - ownerUsername
+          - memberUsernames
+          - isMember
+      ChatMessageRequest:
+        type: object
+        properties:
+          content:
+            type: string
+            maxLength: 1000
+            description: Message content
+        required:
+          - content
+      ChatMessageResponse:
+        type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            description: Unique identifier of the message
+          username:
+            type: string
+            description: Username of the sender
+          content:
+            type: string
+            description: Message content
+          timestamp:
+            type: string
+            format: date-time
+            description: Timestamp of the message
+        required:
+          - id
+          - username
+          - content
+          - timestamp
+      GenaiQueryRequest:
+        type: object
+        properties:
+          question:
+            type: string
+            description: Question to query the GenAI service
+        required:
+          - question
+      GenaiQueryResponse:
+        type: object
+        properties:
+          answer:
+            type: string
+            description: Answer from the GenAI service
+          sourceDocuments:
+            type: array
+            items:
+              type: object
+              properties:
+                pageContent:
+                  type: string
+                  description: Content of the source document page
+                metadata:
+                  type: object
+                  properties:
+                    source:
+                      type: string
+                      description: Source of the document
+                    pageNumber:
+                      type: integer
+                      description: Page number in the document
+                  required:
+                    - source
+                    - pageNumber
+        required:
+          - answer
+      GenaiUploadResponse:
+        type: object
+        properties:
+          filename:
+            type: string
+            description: Name of the uploaded file
+          message:
+            type: string
+            description: Success message
+          taskId:
+            type: string
+            description: Task ID for the uploaded document
+        required:
+          - filename
+          - message
+          - taskId
+  paths:
+    /api/v1/groups:
+      post:
+        summary: Create a new group
+        description: Creates a new study group with the authenticated user as the owner.
+        operationId: createGroup
+        security:
+          - BearerAuth: []
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateGroupRequest'
+        responses:
+          '201':
+            description: Group created successfully
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GroupResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '409':
+            description: Group name already exists
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+      get:
+        summary: List all groups
+        description: Retrieves a list of all groups, with optional authentication to indicate membership.
+        operationId: getAllGroups
+        responses:
+          '200':
+            description: List of groups
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/GroupResponse'
+    /api/v1/groups/my-groups:
+      get:
+        summary: List groups owned by the user
+        description: Retrieves groups owned by the authenticated user.
+        operationId: getMyGroups
+        security:
+          - BearerAuth: []
+        responses:
+          '200':
+            description: List of owned groups
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/GroupResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/groups/{id}:
+      get:
+        summary: Get group by ID
+        description: Retrieves details of a specific group, with optional authentication for membership status.
+        operationId: getGroupById
+        parameters:
+          - name: id
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '200':
+            description: Group details
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GroupResponse'
+          '404':
+            description: Group not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+      put:
+        summary: Update a group
+        description: Updates a group's details, restricted to the group owner.
+        operationId: updateGroup
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: id
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateGroupRequest'
+        responses:
+          '200':
+            description: Group updated successfully
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GroupResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '403':
+            description: Forbidden - Not group owner
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: Group not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+      delete:
+        summary: Delete a group
+        description: Deletes a group, restricted to the group owner.
+        operationId: deleteGroup
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: id
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '204':
+            description: Group deleted successfully
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '403':
+            description: Forbidden - Not group owner
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: Group not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/groups/search:
+      get:
+        summary: Search groups
+        description: Searches groups by name or university, with optional authentication for membership status.
+        operationId: searchGroups
+        parameters:
+          - name: query
+            in: query
+            description: Search query for group name or university
+            required: true
+            schema:
+              type: string
+        responses:
+          '200':
+            description: List of matching groups
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/GroupResponse'
+    /api/v1/groups/{id}/join:
+      post:
+        summary: Join a group
+        description: Adds the authenticated user to a group.
+        operationId: joinGroup
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: id
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '200':
+            description: Successfully joined group
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GroupResponse'
+          '400':
+            description: Bad request - Already a member or owner
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: Group not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '409':
+            description: Conflict - User already a member
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/groups/{id}/leave:
+      post:
+        summary: Leave a group
+        description: Removes the authenticated user from a group.
+        operationId: leaveGroup
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: id
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '200':
+            description: Successfully left group
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GroupResponse'
+          '400':
+            description: Bad request - Owner cannot leave or not a member
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: Group not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '409':
+            description: Conflict - User not a member
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/groups/{groupId}/documents:
+      post:
+        summary: Upload a document
+        description: Uploads a document to the GenAI service for a group.
+        operationId: uploadDocument
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: groupId
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  file:
+                    type: string
+                    format: binary
+                    description: Document to upload
+                required:
+                  - file
+        responses:
+          '200':
+            description: Document uploaded successfully
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GenaiUploadResponse'
+          '400':
+            description: Bad request - Empty file
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '500':
+            description: Internal server error or GenAI service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/groups/{groupId}/chat:
+      post:
+        summary: Query GenAI service
+        description: Submits a question to the GenAI service for a group.
+        operationId: genaiChat
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: groupId
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenaiQueryRequest'
+        responses:
+          '200':
+            description: Query response from GenAI service
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GenaiQueryResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: Group not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '500':
+            description: Internal server error or GenAI service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/groups/{groupId}/messages:
+      get:
+        summary: Get group chat messages
+        description: Retrieves chat messages for a group, restricted to members.
+        operationId: getGroupChatMessages
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: groupId
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '200':
+            description: List of chat messages
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ChatMessageResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '403':
+            description: Forbidden - Not a group member
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: Group not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+      post:
+        summary: Send a chat message
+        description: Sends a chat message to a group, restricted to members.
+        operationId: sendChatMessage
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: groupId
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageRequest'
+        responses:
+          '200':
+            description: Message sent successfully
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ChatMessageResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '403':
+            description: Forbidden - Not a group member
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: Group not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+      delete:
+        summary: Delete group chat history
+        description: Deletes all chat messages for a group, restricted to the group owner.
+        operationId: deleteGroupChat
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: groupId
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '204':
+            description: Chat history deleted successfully
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '403':
+            description: Forbidden - Not group owner
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: Group not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+  security:
+    - BearerAuth: []

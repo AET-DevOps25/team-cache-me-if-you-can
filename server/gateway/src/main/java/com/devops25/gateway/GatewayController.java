@@ -56,9 +56,9 @@ public class GatewayController {
         this.jwtService = jwtService;
         HttpClient httpClient = HttpClient.create()
                 .responseTimeout(Duration.ofSeconds(60)); // Increased timeout for file uploads
-
         this.webClient = webClientBuilder
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(100 * 1024 * 1024)) // 100MB
                 .build();
     }
 
