@@ -197,3 +197,71 @@ resource "kubernetes_deployment" "files" {
     ]
   }
 }
+
+resource "kubernetes_deployment" "client" {
+  metadata {
+    name      = "client"
+    namespace = var.namespace
+    labels    = { app = "client" }
+  }
+  spec {
+    replicas = 1
+    selector { match_labels = { app = "client" } }
+    template {
+      metadata { labels = { app = "client" } }
+      spec {
+        container {
+          name  = "client"
+          image = "ghcr.io/aet-devops25/team-cache-me-if-you-can/client:${var.image_tag_client}"
+          port {
+            container_port = 3000
+            name          = "http"
+          }
+
+          # Liveness probe to check if container is alive
+          liveness_probe {
+            http_get {
+              path = "/"
+              port = 3000
+            }
+            initial_delay_seconds = 30
+            period_seconds        = 10
+            timeout_seconds       = 5
+            failure_threshold     = 3
+          }
+
+          # Readiness probe to check if container is ready
+          readiness_probe {
+            http_get {
+              path = "/"
+              port = 3000
+            }
+            initial_delay_seconds = 10
+            period_seconds        = 5
+            timeout_seconds       = 3
+            failure_threshold     = 3
+          }
+
+          resources {
+            requests = {
+              memory = "256Mi"
+              cpu    = "100m"
+            }
+            limits = {
+              memory = "512Mi"
+              cpu    = "500m"
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  lifecycle {
+    ignore_changes = [
+      spec[0].template[0].metadata[0].annotations,
+      spec[0].template[0].spec[0].container[0].termination_message_path,
+      spec[0].template[0].spec[0].container[0].termination_message_policy
+    ]
+  }
+}

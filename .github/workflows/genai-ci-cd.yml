@@ -52,7 +52,7 @@ jobs:
           echo "Waiting for server infrastructure to be ready..."
           timeout=300
           while [ $timeout -gt 0 ]; do
-            if kubectl get secret openai-credentials -n devel >/dev/null 2>&1; then
+            if kubectl get secret openai-credentials -n pre-prod >/dev/null 2>&1; then
               echo "✅ Infrastructure ready - OpenAI secret found"
               break
             fi

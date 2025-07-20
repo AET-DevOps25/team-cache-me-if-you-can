@@ -89,3 +89,25 @@ resource "kubernetes_service" "files" {
     type = "ClusterIP"
   }
 }
+
+resource "kubernetes_service" "client" {
+  metadata {
+    name      = "client-service"
+    namespace = var.namespace
+    labels    = { app = "client" }
+  }
+  spec {
+    selector = { app = "client" }
+    port {
+      name        = "http"
+      port        = 3000
+      target_port = 3000
+    }
+    type = "ClusterIP"
+  }
+  
+  lifecycle {
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
+    create_before_destroy = true
+  }
+}

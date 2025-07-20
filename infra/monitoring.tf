@@ -356,6 +356,20 @@ resource "kubernetes_config_map" "grafana_dashboards_config" {
   }
 }
 
+# Grafana Dashboard JSON Files ConfigMap
+resource "kubernetes_config_map" "grafana_dashboards_json" {
+  metadata {
+    name      = "grafana-dashboards-json"
+    namespace = var.namespace
+    labels    = { app = "grafana" }
+  }
+
+  data = {
+    for file in fileset("${path.module}/../environment/grafana/provisioning/dashboards", "*.json") :
+    file => file("${path.module}/../environment/grafana/provisioning/dashboards/${file}")
+  }
+}
+
 # Grafana Secret
 resource "kubernetes_secret" "grafana_admin" {
   metadata {
@@ -365,7 +379,7 @@ resource "kubernetes_secret" "grafana_admin" {
   }
 
   data = {
-    admin-password = base64encode("password")
+    admin-password = "password"
   }
 }
 
@@ -403,6 +417,13 @@ resource "kubernetes_deployment" "grafana" {
           }
         }
         
+        volume {
+          name = "grafana-dashboards-json"
+          config_map {
+            name = kubernetes_config_map.grafana_dashboards_json.metadata[0].name
+          }
+        }
+        
         container {
           name  = "grafana"
           image = "grafana/grafana:9.1.0"
@@ -430,6 +451,11 @@ resource "kubernetes_deployment" "grafana" {
           volume_mount {
             name       = "grafana-dashboards-config"
             mount_path = "/etc/grafana/provisioning/dashboards"
+          }
+          
+          volume_mount {
+            name       = "grafana-dashboards-json"
+            mount_path = "/var/lib/grafana/dashboards"
           }
           
           resources {

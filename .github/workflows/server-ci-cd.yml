@@ -3,20 +3,59 @@ name: Unified CI/CD Pipeline
 on:
   push:
     branches:
-      - '**'
+      - main
+    paths:
+      - 'server/**'
+      - 'genai/**'
+      - 'infra/**'
+      - 'environment/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'server/**'
+      - 'genai/**'
+      - 'infra/**'
+      - 'environment/**'
 
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAMESPACE: aet-devops25/team-cache-me-if-you-can
 
 jobs:
+  determine-environment:
+    name: Determine Target Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      namespace: ${{ steps.env.outputs.namespace }}
+      deploy: ${{ steps.env.outputs.deploy }}
+    steps:
+      - name: Determine environment and namespace
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "environment=pre-prod" >> $GITHUB_OUTPUT
+            echo "namespace=pre-prod" >> $GITHUB_OUTPUT
+            echo "deploy=true" >> $GITHUB_OUTPUT
+            echo "🔄 Pull Request → Deploying to pre-prod namespace"
+          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "namespace=prod" >> $GITHUB_OUTPUT
+            echo "deploy=true" >> $GITHUB_OUTPUT
+            echo "🚀 Main branch push → Deploying to prod namespace"
+          else
+            echo "environment=none" >> $GITHUB_OUTPUT
+            echo "namespace=none" >> $GITHUB_OUTPUT
+            echo "deploy=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No deployment needed for this trigger"
+          fi
+
   test-genai:
     name: Test GenAI
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    needs: determine-environment
+    if: needs.determine-environment.outputs.deploy == 'true'
 
     steps:
       - name: Checkout code
@@ -36,6 +75,8 @@ jobs:
   build-and-push:
     name: Build & Push Service Images
     runs-on: ubuntu-latest
+    needs: determine-environment
+    if: needs.determine-environment.outputs.deploy == 'true'
     permissions:
       contents: read
       packages: write
@@ -89,6 +130,7 @@ jobs:
           tags: |
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:latest
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:${{ github.sha }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:${{ needs.determine-environment.outputs.environment }}
 
       - name: Build & push GenAI service image
         if: matrix.service == 'genai'
@@ -101,12 +143,70 @@ jobs:
           tags: |
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:latest
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:${{ github.sha }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:${{ needs.determine-environment.outputs.environment }}
+
+  build-and-push-client:
+    name: Build & Push Client Image
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    if: needs.determine-environment.outputs.deploy == 'true'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ./client
+        run: npm test
+
+      - name: Build client
+        working-directory: ./client
+        run: npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push Client image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          file: ./client/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:latest
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:${{ github.sha }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:${{ needs.determine-environment.outputs.environment }}
 
   terraform-deploy:
-    name: Terraform Deploy to Kubernetes
-    needs: [build-and-push, test-genai]
+    name: Deploy to ${{ needs.determine-environment.outputs.environment }} Environment
+    needs: [determine-environment, build-and-push, build-and-push-client, test-genai]
     runs-on: ubuntu-latest
-    if: needs.build-and-push.result == 'success' && needs.test-genai.result == 'success'
+    if: needs.determine-environment.outputs.deploy == 'true' && needs.build-and-push.result == 'success' && needs.build-and-push-client.result == 'success' && needs.test-genai.result == 'success'
+    
+    environment:
+      name: ${{ needs.determine-environment.outputs.environment }}
+      url: https://cache-me-if-you-can-client-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -125,114 +225,147 @@ jobs:
           echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      - name: Prepare environment-specific Terraform backend
+        working-directory: ./infra
+        run: |
+          # Create environment-specific backend configuration
+          cat > backend-${{ needs.determine-environment.outputs.environment }}.tf << EOF
+          terraform {
+            backend "local" {
+              path = "./terraform-${{ needs.determine-environment.outputs.environment }}.tfstate"
+            }
+          }
+          EOF
+          
+          # Remove any existing backend configuration
+          rm -f backend.tf || true
+
       - name: Terraform Init
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
-        run: terraform init -input=false
+        run: |
+          # Initialize with environment-specific state
+          terraform init -reconfigure -input=false
 
-      - name: Import existing resources with correct syntax
+      - name: Smart Resource Import Strategy
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
+          TF_VAR_namespace: ${{ needs.determine-environment.outputs.namespace }}
+          TF_VAR_spring_profile: ${{ needs.determine-environment.outputs.environment }}
           TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           TF_VAR_image_tag_user: ${{ github.sha }}
           TF_VAR_image_tag_group: ${{ github.sha }}
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
+          TF_VAR_image_tag_client: ${{ github.sha }}
         run: |
-          echo "=== Smart Import Strategy ==="
+          echo "🔄 Importing existing resources for ${{ needs.determine-environment.outputs.namespace }} namespace..."
           
-          # Function to check if a Kubernetes resource exists and import it
-          import_if_exists() {
-            local resource_type=$1
-            local resource_name=$2
-            local terraform_resource=$3
-            local namespace="devel"
+          NAMESPACE="${{ needs.determine-environment.outputs.namespace }}"
+          
+          # Function to safely import resources
+          safe_import() {
+            local tf_resource=$1
+            local k8s_resource=$2
             
-            echo "Checking $resource_type/$resource_name..."
-            if kubectl get $resource_type $resource_name -n $namespace >/dev/null 2>&1; then
-              echo "✅ Found $resource_type/$resource_name - attempting import"
-              if terraform import $terraform_resource $namespace/$resource_name; then
-                echo "✅ Successfully imported $terraform_resource"
-              else
-                echo "⚠️  Import failed for $terraform_resource (may already be in state)"
-              fi
+            echo "Checking $tf_resource..."
+            if kubectl get $k8s_resource -n $NAMESPACE >/dev/null 2>&1; then
+              echo "Found existing $k8s_resource, importing..."
+              terraform import $tf_resource $NAMESPACE/$k8s_resource 2>/dev/null || echo "Import attempted for $tf_resource"
             else
-              echo "❌ $resource_type/$resource_name not found - will be created"
+              echo "No existing $k8s_resource found"
             fi
           }
           
           # Import services
-          echo "=== Importing Services ==="
-          import_if_exists "service" "user-service" "kubernetes_service.user"
-          import_if_exists "service" "group-service" "kubernetes_service.group"
-          import_if_exists "service" "group" "kubernetes_service.group_alias"
-          import_if_exists "service" "gateway-service" "kubernetes_service.gateway"
-          import_if_exists "service" "files-service" "kubernetes_service.files"
-          import_if_exists "service" "genai-app-service" "kubernetes_service.genai_app"
-          import_if_exists "service" "redis" "kubernetes_service.redis"
-          import_if_exists "service" "weaviate-service" "kubernetes_service.weaviate"
-          import_if_exists "service" "prometheus" "kubernetes_service.prometheus"
-          import_if_exists "service" "grafana" "kubernetes_service.grafana"
-          import_if_exists "service" "loki" "kubernetes_service.loki"
+          safe_import "kubernetes_service.user" "service/user-service"
+          safe_import "kubernetes_service.group" "service/group-service"
+          safe_import "kubernetes_service.group_alias" "service/group"
+          safe_import "kubernetes_service.gateway" "service/gateway-service"
+          safe_import "kubernetes_service.files" "service/files-service"
+          safe_import "kubernetes_service.genai_app" "service/genai-app-service"
+          safe_import "kubernetes_service.client" "service/client-service"
+          safe_import "kubernetes_service.redis" "service/redis"
+          safe_import "kubernetes_service.weaviate" "service/weaviate-service"
+          safe_import "kubernetes_service.mysql" "service/mysql"
+          safe_import "kubernetes_service.prometheus" "service/prometheus"
+          safe_import "kubernetes_service.grafana" "service/grafana"
+          safe_import "kubernetes_service.loki" "service/loki"
           
           # Import deployments
-          echo "=== Importing Deployments ==="
-          import_if_exists "deployment" "user-service" "kubernetes_deployment.user"
-          import_if_exists "deployment" "group-service" "kubernetes_deployment.group"
-          import_if_exists "deployment" "gateway-service" "kubernetes_deployment.gateway"
-          import_if_exists "deployment" "files-service" "kubernetes_deployment.files"
-          import_if_exists "deployment" "genai-app" "kubernetes_deployment.genai_app"
-          import_if_exists "deployment" "genai-celery-worker" "kubernetes_deployment.genai_celery_worker"
-          import_if_exists "deployment" "redis" "kubernetes_deployment.genai_redis"
-          import_if_exists "deployment" "weaviate" "kubernetes_deployment.weaviate"
-          import_if_exists "deployment" "prometheus" "kubernetes_deployment.prometheus"
-          import_if_exists "deployment" "grafana" "kubernetes_deployment.grafana"
-          import_if_exists "deployment" "loki" "kubernetes_deployment.loki"
-          import_if_exists "deployment" "promtail" "kubernetes_deployment.promtail"
+          safe_import "kubernetes_deployment.user" "deployment/user-service"
+          safe_import "kubernetes_deployment.group" "deployment/group-service"
+          safe_import "kubernetes_deployment.gateway" "deployment/gateway-service"
+          safe_import "kubernetes_deployment.files" "deployment/files-service"
+          safe_import "kubernetes_deployment.genai_app" "deployment/genai-app"
+          safe_import "kubernetes_deployment.genai_celery_worker" "deployment/genai-celery-worker"
+          safe_import "kubernetes_deployment.client" "deployment/client"
+          safe_import "kubernetes_deployment.genai_redis" "deployment/redis"
+          safe_import "kubernetes_deployment.weaviate" "deployment/weaviate"
+          safe_import "kubernetes_deployment.mysql" "deployment/mysql"
+          safe_import "kubernetes_deployment.prometheus" "deployment/prometheus"
+          safe_import "kubernetes_deployment.grafana" "deployment/grafana"
+          safe_import "kubernetes_deployment.loki" "deployment/loki"
+          safe_import "kubernetes_deployment.promtail" "deployment/promtail"
           
           # Import secrets
-          echo "=== Importing Secrets ==="
-          import_if_exists "secret" "user-env-secret" "kubernetes_secret.user_env"
-          import_if_exists "secret" "group-env-secret" "kubernetes_secret.group_env"
-          import_if_exists "secret" "gateway-env-secret" "kubernetes_secret.gateway_env"
-          import_if_exists "secret" "files-env-secret" "kubernetes_secret.files_env"
-          import_if_exists "secret" "openai-credentials" "kubernetes_secret.openai_credentials"
-          import_if_exists "secret" "grafana-admin" "kubernetes_secret.grafana_admin"
+          safe_import "kubernetes_secret.user_env" "secret/user-env-secret"
+          safe_import "kubernetes_secret.group_env" "secret/group-env-secret"
+          safe_import "kubernetes_secret.gateway_env" "secret/gateway-env-secret"
+          safe_import "kubernetes_secret.files_env" "secret/files-env-secret"
+          safe_import "kubernetes_secret.openai_credentials" "secret/openai-credentials"
+          safe_import "kubernetes_secret.mysql_root" "secret/mysql-root-password"
+          safe_import "kubernetes_secret.grafana_admin" "secret/grafana-admin"
+          
+          # Import ConfigMaps
+          safe_import "kubernetes_config_map.mysql_init" "configmap/mysql-initdb-config"
+          safe_import "kubernetes_config_map.prometheus_config" "configmap/prometheus-config"
+          safe_import "kubernetes_config_map.grafana_datasources" "configmap/grafana-datasources"
+          safe_import "kubernetes_config_map.grafana_dashboards_config" "configmap/grafana-dashboards-config"
+          safe_import "kubernetes_config_map.grafana_dashboards_json" "configmap/grafana-dashboards-json"
+          safe_import "kubernetes_config_map.loki_config" "configmap/loki-config"
+          safe_import "kubernetes_config_map.promtail_config" "configmap/promtail-config"
           
           # Import ingress resources
-          echo "=== Importing Ingress ==="
-          import_if_exists "ingress" "grafana-ingress" "kubernetes_ingress_v1.grafana_ingress"
-          import_if_exists "ingress" "genai-dev-ingress" "kubernetes_ingress_v1.genai_ingress"
+          safe_import "kubernetes_ingress_v1.grafana_ingress" "ingress/grafana-ingress"
+          safe_import "kubernetes_ingress_v1.genai_ingress" "ingress/genai-dev-ingress"
+          safe_import "kubernetes_ingress_v1.client_ingress" "ingress/client-ingress"
+          safe_import "kubernetes_ingress_v1.client_api_ingress" "ingress/client-api-ingress"
+          safe_import "kubernetes_ingress_v1.prometheus_ingress" "ingress/prometheus-ingress"
+          safe_import "kubernetes_ingress_v1.loki_ingress" "ingress/loki-ingress"
           
-          echo "=== Import phase completed ==="
+          # Import PVCs
+          safe_import "kubernetes_persistent_volume_claim.mysql_data" "pvc/mysql-pvc"
+          
+          echo "✅ Import phase completed"
 
       - name: Terraform Plan
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
+          TF_VAR_namespace: ${{ needs.determine-environment.outputs.namespace }}
+          TF_VAR_spring_profile: ${{ needs.determine-environment.outputs.environment }}
           TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           TF_VAR_image_tag_user: ${{ github.sha }}
           TF_VAR_image_tag_group: ${{ github.sha }}
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
+          TF_VAR_image_tag_client: ${{ github.sha }}
         run: |
-          echo "=== Refreshing Terraform state ==="
-          terraform refresh -input=false
-          
-          echo "=== Creating Terraform plan ==="
+          echo "📋 Planning deployment to ${{ needs.determine-environment.outputs.namespace }}..."
           terraform plan -input=false -detailed-exitcode
           PLAN_EXIT_CODE=$?
           
           if [ $PLAN_EXIT_CODE -eq 0 ]; then
-            echo "No changes needed - infrastructure is up to date"
+            echo "✅ No changes needed - infrastructure is up to date"
           elif [ $PLAN_EXIT_CODE -eq 2 ]; then
-            echo "Changes detected - will proceed with apply"
+            echo "🔄 Changes detected - will proceed with apply"
           else
-            echo "Plan failed with exit code $PLAN_EXIT_CODE"
+            echo "❌ Plan failed with exit code $PLAN_EXIT_CODE"
             exit 1
           fi
 
@@ -240,107 +373,71 @@ jobs:
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
+          TF_VAR_namespace: ${{ needs.determine-environment.outputs.namespace }}
+          TF_VAR_spring_profile: ${{ needs.determine-environment.outputs.environment }}
           TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           TF_VAR_image_tag_user: ${{ github.sha }}
           TF_VAR_image_tag_group: ${{ github.sha }}
           TF_VAR_image_tag_gateway: ${{ github.sha }}
           TF_VAR_image_tag_files: ${{ github.sha }}
           TF_VAR_image_tag_genai: ${{ github.sha }}
+          TF_VAR_image_tag_client: ${{ github.sha }}
         run: |
-          echo "=== Applying Terraform configuration ==="
+          echo "🚀 Applying infrastructure to ${{ needs.determine-environment.outputs.namespace }}..."
           
-          # First attempt: normal apply
           if terraform apply -auto-approve -input=false; then
             echo "✅ Terraform apply completed successfully"
           else
-            echo "❌ Normal apply failed, checking for resource conflicts..."
-            
-            # Check for specific "already exists" errors and handle them
-            if terraform plan -input=false 2>&1 | grep -q "already exists"; then
-              echo "🔄 Detected existing resources, attempting state import recovery..."
-              
-              # Re-run import for any missed resources
-              echo "Re-attempting imports for any missed resources..."
-              terraform import kubernetes_service.user devel/user-service 2>/dev/null || true
-              terraform import kubernetes_service.group devel/group-service 2>/dev/null || true
-              terraform import kubernetes_service.group_alias devel/group 2>/dev/null || true
-              terraform import kubernetes_service.gateway devel/gateway-service 2>/dev/null || true
-              terraform import kubernetes_service.files devel/files-service 2>/dev/null || true
-              terraform import kubernetes_service.genai_app devel/genai-app-service 2>/dev/null || true
-              terraform import kubernetes_service.redis devel/redis 2>/dev/null || true
-              terraform import kubernetes_service.weaviate devel/weaviate-service 2>/dev/null || true
-              terraform import kubernetes_service.prometheus devel/prometheus 2>/dev/null || true
-              terraform import kubernetes_service.grafana devel/grafana 2>/dev/null || true
-              terraform import kubernetes_service.loki devel/loki 2>/dev/null || true
-              terraform import kubernetes_secret.grafana_admin devel/grafana-admin 2>/dev/null || true
-              
-              echo "Checking for specific resource failures..."
-              if ! kubectl get deployment weaviate -n devel >/dev/null 2>&1; then
-                echo "⚠️ Weaviate deployment missing - will be created"
-              fi
-              
-              # Try apply again after re-import
-              echo "Retrying apply after import recovery..."
-              if terraform apply -auto-approve -input=false; then
-                echo "✅ Terraform apply completed successfully after import recovery"
-              else
-                echo "❌ Apply still failing, using targeted approach..."
-                
-                # Try applying specific resources that are known to work
-                terraform apply -auto-approve -target=kubernetes_deployment.user -target=kubernetes_deployment.group -target=kubernetes_deployment.gateway -target=kubernetes_deployment.files -target=kubernetes_deployment.genai_app -target=kubernetes_deployment.genai_celery_worker -target=kubernetes_deployment.genai_redis -target=kubernetes_deployment.weaviate -target=kubernetes_deployment.prometheus -target=kubernetes_deployment.grafana -target=kubernetes_deployment.loki -target=kubernetes_deployment.promtail
-                echo "✅ Targeted apply completed - some resources may need manual reconciliation"
-              fi
-            else
-              echo "❌ Apply failed for reasons other than resource conflicts"
-              exit 1
-            fi
+            echo "❌ Terraform apply failed, checking for specific issues..."
+            exit 1
           fi
-          
-          echo "=== Terraform apply phase completed ==="
 
-      - name: Post-deployment validation
-        working-directory: ./infra
+      - name: Verify Deployment Health
         env:
           KUBECONFIG: ~/.kube/config
         run: |
-          echo "=== Post-deployment validation ==="
+          echo "🔍 Verifying deployment health in ${{ needs.determine-environment.outputs.namespace }}..."
+          
+          NAMESPACE="${{ needs.determine-environment.outputs.namespace }}"
           
           # Wait for deployments to be ready
-          echo "Waiting for deployments to be ready..."
-          kubectl rollout status deployment/user-service -n devel --timeout=300s
-          kubectl rollout status deployment/group-service -n devel --timeout=300s
-          kubectl rollout status deployment/gateway-service -n devel --timeout=300s
-          kubectl rollout status deployment/files-service -n devel --timeout=300s
-          kubectl rollout status deployment/genai-app -n devel --timeout=300s
-          kubectl rollout status deployment/genai-celery-worker -n devel --timeout=300s
-          kubectl rollout status deployment/redis -n devel --timeout=300s || echo "Redis rollout check failed"
-          kubectl rollout status deployment/weaviate -n devel --timeout=300s || echo "Weaviate rollout check failed"
-          kubectl rollout status deployment/prometheus -n devel --timeout=300s || echo "Prometheus rollout check failed"
-          kubectl rollout status deployment/grafana -n devel --timeout=300s || echo "Grafana rollout check failed" 
-          kubectl rollout status deployment/loki -n devel --timeout=300s || echo "Loki rollout check failed"
-          kubectl rollout status deployment/promtail -n devel --timeout=300s || echo "Promtail rollout check failed"
+          echo "Waiting for all deployments to be ready..."
+          kubectl wait --for=condition=available deployment --all -n $NAMESPACE --timeout=300s
           
-          # Check pod health
-          echo "Checking pod health..."
-          kubectl get pods -n devel -o wide
+          # Check service connectivity
+          echo "Checking service connectivity..."
           
-          # Verify critical services are accessible
-          echo "Testing service connectivity..."
-          kubectl run test-pod --image=curlimages/curl:latest --rm -i --restart=Never -n devel -- sh -c "
-            curl -f http://user-service:8081/actuator/health --max-time 10 &&
-            curl -f http://group-service:8083/actuator/health --max-time 10 &&
-            curl -f http://gateway-service:8080/actuator/health --max-time 10 &&
-            curl -f http://files-service:8082/actuator/health --max-time 10 &&
-            curl -f http://genai-app-service:8000/api/v1/health --max-time 10
-          " || echo "Some health checks failed - this may be normal during startup"
+          # Test user service health
+          kubectl run test-connectivity --image=curlimages/curl:latest --rm -i --restart=Never -n $NAMESPACE -- \
+            curl -f http://user-service:8081/actuator/health || echo "⚠️ User service health check failed"
           
-          # Verify group service alias works
-          echo "Testing group service alias..."
-          kubectl run test-pod-2 --image=curlimages/curl:latest --rm -i --restart=Never -n devel -- sh -c "
-            curl -f http://group:8083/actuator/health --max-time 10
-          " || echo "Group alias health check failed"
+          # Test gateway service health  
+          kubectl run test-connectivity --image=curlimages/curl:latest --rm -i --restart=Never -n $NAMESPACE -- \
+            curl -f http://gateway-service:8080/actuator/health || echo "⚠️ Gateway service health check failed"
           
-          echo "Checking ingress resources..."
-          kubectl get ingress -n devel || echo "No ingress resources found"
+          # Test client service
+          kubectl run test-connectivity --image=curlimages/curl:latest --rm -i --restart=Never -n $NAMESPACE -- \
+            curl -f http://client-service:3000/ || echo "⚠️ Client service health check failed"
           
-          echo "✅ Post-deployment validation completed"
+          # Test GenAI service
+          kubectl run test-connectivity --image=curlimages/curl:latest --rm -i --restart=Never -n $NAMESPACE -- \
+            curl -f http://genai-app-service:8000/health || echo "⚠️ GenAI service health check failed"
+          
+          echo "✅ Deployment verification completed"
+
+      - name: Display Access Information
+        run: |
+          echo "🌐 **Deployment Complete!**"
+          echo ""
+          echo "**Environment**: ${{ needs.determine-environment.outputs.environment }}"
+          echo "**Namespace**: ${{ needs.determine-environment.outputs.namespace }}"
+          echo ""
+          echo "**🎯 Application URLs:**"
+          echo "- **Frontend**: https://cache-me-if-you-can-client-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          echo "- **GenAI API**: https://genai-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          echo "- **Grafana**: https://grafana-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          echo "- **Prometheus**: https://prometheus-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          echo ""
+          echo "**📊 Monitoring Credentials:**"
+          echo "- **Username**: admin"
+          echo "- **Password**: password"
