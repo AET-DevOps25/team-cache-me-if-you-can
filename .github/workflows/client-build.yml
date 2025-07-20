@@ -39,39 +39,3 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
-
-  client-deploy:
-    name: Deploy to Kubernetes
-    runs-on: ubuntu-latest
-    needs: [client-check-format, client-run-tests, client-docker-build-push]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Set up Kubernetes tools
-        uses: azure/setup-kubectl@v3
-
-      - name: Configure kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
-          chmod 600 ~/.kube/config
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ./client/terraform
-
-      - name: Terraform Plan
-        run: terraform plan -var="redeploy_id=${{ github.sha }}"
-        working-directory: ./client/terraform
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -var="redeploy_id=${{ github.sha }}"
-        working-directory: ./client/terraform
-        env:
-          KUBECONFIG: $HOME/.kube/config
