@@ -1,6 +1,6 @@
 resource "kubernetes_service" "user" {
   metadata {
-    name      = "user"
+    name      = "user-service"
     namespace = var.namespace
     labels    = { app = "user-service" }
   }
@@ -12,9 +12,37 @@ resource "kubernetes_service" "user" {
     }
     type = "ClusterIP"
   }
+  
+  lifecycle {
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
+    create_before_destroy = true
+  }
 }
 
 resource "kubernetes_service" "group" {
+  metadata {
+    name      = "group-service"
+    namespace = var.namespace
+    labels    = { app = "group-service" }
+  }
+  spec {
+    selector = { app = "group-service" }
+    port {
+      port        = 8083
+      target_port = 8083
+    }
+    type = "ClusterIP"
+  }
+  
+  lifecycle {
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
+    create_before_destroy = true
+  }
+}
+
+# Alias service for group - needed for gateway compatibility
+# The gateway code uses hardcoded "http://group:8083" URLs
+resource "kubernetes_service" "group_alias" {
   metadata {
     name      = "group"
     namespace = var.namespace
@@ -59,5 +87,27 @@ resource "kubernetes_service" "files" {
       target_port = 8082
     }
     type = "ClusterIP"
+  }
+}
+
+resource "kubernetes_service" "client" {
+  metadata {
+    name      = "client-service"
+    namespace = var.namespace
+    labels    = { app = "client" }
+  }
+  spec {
+    selector = { app = "client" }
+    port {
+      name        = "http"
+      port        = 3000
+      target_port = 3000
+    }
+    type = "ClusterIP"
+  }
+  
+  lifecycle {
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
+    create_before_destroy = true
   }
 }

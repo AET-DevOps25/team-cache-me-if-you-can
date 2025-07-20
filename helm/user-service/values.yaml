@@ -10,6 +10,6 @@
     port: 8081
 
   env:
-    DB_URL: jdbc:mysql://mysql.cache-me-if-you-can-genai.svc.cluster.local:3306/user_database
+    DB_URL: jdbc:mysql://mysql.devel.svc.cluster.local:3306/user_database
     DB_USERNAME: user
     DB_PASSWORD: User123!

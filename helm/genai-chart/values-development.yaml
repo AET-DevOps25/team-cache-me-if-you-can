@@ -2,14 +2,14 @@
 ingress:
   enabled: true
   hosts:
-    - host: genai-developmentv1.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+    - host: genai-devel.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
       paths:
         - path: /
           pathType: Prefix
   tls:
    - secretName: genai-dev-tls
      hosts:
-       - genai-developmentv1.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+       - genai-devel.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
 
 weaviate:
   persistence:

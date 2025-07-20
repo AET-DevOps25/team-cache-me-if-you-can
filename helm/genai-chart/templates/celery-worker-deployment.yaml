@@ -22,7 +22,7 @@ spec:
       - name: {{ .Values.celery_worker.name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["celery", "-A", "app.celery_worker.celery_app", "worker", "--loglevel=info"]
+        command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info"]
         env:
         - name: CELERY_BROKER_URL
           value: {{ tpl .Values.celery_worker.env.CELERY_BROKER_URL . | quote }}

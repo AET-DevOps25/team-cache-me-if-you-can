@@ -23,6 +23,12 @@
       "version": ""
     },
     {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
       "type": "datasource",
       "id": "prometheus",
       "name": "Prometheus",
@@ -39,121 +45,161 @@
   "links": [],
   "panels": [
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "id": 2,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "title": "HTTP Request Rate by Service",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
       "targets": [
         {
-          "expr": "rate(http_server_requests_seconds_count[5m])",
-          "legendFormat": "{{`{{job}}`}}",
+          "expr": "rate(http_server_requests_seconds_count{job=~\".*-service\"}[5m])",
+          "legendFormat": "{{job}} - {{uri}}",
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "HTTP Requests",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
+      "yAxes": [
+        {"label": "Requests/sec"},
+        {"show": false}
+      ],
+      "xAxis": {"mode": "time"}
+    },
+    {
+      "title": "Registration Requests",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+      "targets": [
         {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "expr": "sum(increase(http_server_requests_seconds_count{uri=\"/api/auth/register\"}[1h]))",
+          "legendFormat": "Hourly Registrations",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "red", "value": 100}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Login Requests",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(increase(http_server_requests_seconds_count{uri=\"/api/auth/login\"}[1h]))",
+          "legendFormat": "Hourly Logins",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "red", "value": 100}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Response Time by Service",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_sum{job=~\".*-service\"}[5m]) / rate(http_server_requests_seconds_count{job=~\".*-service\"}[5m])",
+          "legendFormat": "{{job}} - Avg Response Time",
+          "refId": "A"
+        }
+      ],
+      "yAxes": [
+        {"label": "Seconds", "min": 0},
+        {"show": false}
+      ]
+    },
+    {
+      "title": "JVM Memory Usage",
+      "type": "graph", 
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{job=~\".*-service\", area=\"heap\"}",
+          "legendFormat": "{{job}} - {{id}} Used",
+          "refId": "A"
         },
         {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "expr": "jvm_memory_max_bytes{job=~\".*-service\", area=\"heap\"}",
+          "legendFormat": "{{job}} - {{id}} Max",
+          "refId": "B"
         }
+      ],
+      "yAxes": [
+        {"label": "Bytes", "min": 0},
+        {"show": false}
+      ]
+    },
+    {
+      "title": "Database Connection Pool",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{job=~\".*-service\"}",
+          "legendFormat": "{{job}} - Active Connections",
+          "refId": "A"
+        },
+        {
+          "expr": "hikaricp_connections_idle{job=~\".*-service\"}",
+          "legendFormat": "{{job}} - Idle Connections",
+          "refId": "B"
+        }
+      ],
+      "yAxes": [
+        {"label": "Connections", "min": 0},
+        {"show": false}
+      ]
+    },
+    {
+      "title": "Error Rate",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{job=~\".*-service\", status=~\"4.*|5.*\"}[5m])",
+          "legendFormat": "{{job}} - {{status}} Errors",
+          "refId": "A"
+        }
+      ],
+      "yAxes": [
+        {"label": "Errors/sec", "min": 0},
+        {"show": false}
       ]
     }
   ],
-  "refresh": "5s",
+  "refresh": "30s",
   "schemaVersion": 16,
   "style": "dark",
-  "tags": [],
+  "tags": ["java", "spring-boot"],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ],
-    "time_options": [
-      "5m",
-      "15m",
-      "1h",
-      "6h",
-      "12h",
-      "24h",
-      "2d",
-      "7d",
-      "30d"
-    ]
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
   },
   "timezone": "",
-  "title": "Java Services Dashboard",
-  "uid": "java-dashboard",
-  "version": 1
+  "title": "Java Services Dashboard - Enhanced",
+  "uid": "java-dashboard-enhanced",
+  "version": 2
 } 
