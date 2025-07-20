@@ -29,6 +29,9 @@ open http://localhost:3000          # React UI
 Gateway: http://localhost:8080/swagger-ui.html  # All routes pass through here
 Files:   http://localhost:8082/swagger-ui.html  # File upload/download
 Group:   http://localhost:8083/swagger-ui.html  # Group mgmt & GenAI chat
+
+# AWS
+http://34.200.80.0:3000
 ```
 
 *Pro Tip*: If `open` isn’t available on your shell, just copy-paste the URLs into your browser.
@@ -129,7 +132,7 @@ All monitoring configuration files live under `environment/`:
 | Name    | Role                | Responsibilities                                                      |
 | ------- | ------------------- |-----------------------------------------------------------------------|
 | Jasmina | **Server Engineer** | Develop server services, secure JWT flows, and deployments 🤖         |
-| Xiyue   | **Client Engineer** | Build React UI, configure ESLint/tests, and deplyoment 🎨             |
+| Xiyue   | **Client Engineer** | Build React UI, configure ESLint/tests, and deployments 🎨            |
 | Igor    | **GenAI Engineer**  | Integrate LLM, manage vector DB, monitor services, and deployments 🧠 |
 
 ---
