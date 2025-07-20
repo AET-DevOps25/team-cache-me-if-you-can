@@ -67,10 +67,10 @@ Follow these steps to unlock collaboration power:
    Create an account via the signup page, then log in to receive your JWT token.
 2. **Create /  Join** a Study Group
 
-   * **Create**: Set a group name, optional description, and invite code.
+   * **Create**: Set a group name, university name, and optional description.
    * **Join**: Enter an existing invite code to collaborate instantly.
 3. **Upload Documents**
-   Drag-and-drop PDFs, slides, or notes into the Files tab. Uploaded files are indexed by GenAI.
+   Upload PDFs, slides, or notes into the Files tab. Uploaded files are indexed by GenAI.
 4. **Chat with GenAI**
    Ask questions like “What are the key concepts in chapter 3?” and receive concise answers with references to your documents.
 5. **Real-time Chat**
