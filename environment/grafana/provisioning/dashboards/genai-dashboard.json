@@ -23,6 +23,12 @@
       "version": ""
     },
     {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
       "type": "datasource",
       "id": "prometheus",
       "name": "Prometheus",
@@ -39,121 +45,168 @@
   "links": [],
   "panels": [
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "id": 2,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "title": "GenAI HTTP Request Rate",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
       "targets": [
         {
           "expr": "rate(http_requests_total{job=\"genai-app\"}[5m])",
-          "legendFormat": "{{`{{method}}`}} - {{`{{path}}`}}",
+          "legendFormat": "{{method}} {{handler}}",
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "GenAI App HTTP Requests",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
+      "yAxes": [
+        {"label": "Requests/sec"},
+        {"show": false}
+      ],
+      "xAxis": {"mode": "time"}
+    },
+    {
+      "title": "Document Uploads (Hourly)",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+      "targets": [
         {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "expr": "sum(increase(http_requests_total{handler=\"/api/v1/documents/upload\"}[1h]))",
+          "legendFormat": "Uploads",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 10},
+              {"color": "red", "value": 50}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Chat Queries (Hourly)",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(increase(http_requests_total{handler=\"/api/v1/chat/query/sync\"}[1h]))",
+          "legendFormat": "Queries",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 20},
+              {"color": "red", "value": 100}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Response Time by Endpoint",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"genai-app\"}[5m]))",
+          "legendFormat": "95th percentile - {{handler}}",
+          "refId": "A"
         },
         {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"genai-app\"}[5m]))",
+          "legendFormat": "50th percentile - {{handler}}",
+          "refId": "B"
         }
+      ],
+      "yAxes": [
+        {"label": "Seconds", "min": 0},
+        {"show": false}
+      ]
+    },
+    {
+      "title": "Python Memory Usage",
+      "type": "graph", 
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes{job=\"genai-app\"}",
+          "legendFormat": "Resident Memory",
+          "refId": "A"
+        },
+        {
+          "expr": "process_virtual_memory_bytes{job=\"genai-app\"}",
+          "legendFormat": "Virtual Memory", 
+          "refId": "B"
+        }
+      ],
+      "yAxes": [
+        {"label": "Bytes", "min": 0},
+        {"show": false}
+      ]
+    },
+    {
+      "title": "Document Processing Latency",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "targets": [
+        {
+          "expr": "rate(http_request_duration_seconds_sum{handler=\"/api/v1/documents/upload\"}[5m]) / rate(http_request_duration_seconds_count{handler=\"/api/v1/documents/upload\"}[5m])",
+          "legendFormat": "Upload Processing Time",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(http_request_duration_seconds_sum{handler=\"/api/v1/chat/query/sync\"}[5m]) / rate(http_request_duration_seconds_count{handler=\"/api/v1/chat/query/sync\"}[5m])",
+          "legendFormat": "Query Processing Time",
+          "refId": "B"
+        }
+      ],
+      "yAxes": [
+        {"label": "Seconds", "min": 0},
+        {"show": false}
+      ]
+    },
+    {
+      "title": "Python Garbage Collection",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "targets": [
+        {
+          "expr": "rate(python_gc_collections_total{job=\"genai-app\"}[5m])",
+          "legendFormat": "GC Collections Gen {{generation}}",
+          "refId": "A"
+        }
+      ],
+      "yAxes": [
+        {"label": "Collections/sec", "min": 0},
+        {"show": false}
       ]
     }
   ],
-  "refresh": "5s",
+  "refresh": "30s",
   "schemaVersion": 16,
   "style": "dark",
-  "tags": [],
+  "tags": ["genai", "python", "fastapi"],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ],
-    "time_options": [
-      "5m",
-      "15m",
-      "1h",
-      "6h",
-      "12h",
-      "24h",
-      "2d",
-      "7d",
-      "30d"
-    ]
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
   },
   "timezone": "",
-  "title": "GenAI Service Dashboard",
-  "uid": "genai-dashboard",
-  "version": 1
+  "title": "GenAI Service Dashboard - Enhanced",
+  "uid": "genai-dashboard-enhanced",
+  "version": 2
 } 

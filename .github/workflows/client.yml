@@ -1,15 +1,18 @@
-name: check format for React App
+name: Client Code Quality & Testing
 
 on:
   push:
+    branches: ['**']
     paths:
       - "client/**"
   pull_request:
+    branches: ['**']
     paths:
       - "client/**"
 
 jobs:
   client-check-format:
+    name: Code Quality Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +42,12 @@ jobs:
             echo "No JavaScript/TypeScript files changed"
           fi
 
+      - name: Check TypeScript compilation
+        working-directory: ./client
+        run: npx tsc --noEmit
+
   client-run-tests:
+    name: Run Tests
     runs-on: ubuntu-latest
     needs: client-check-format
     steps:
@@ -58,71 +66,28 @@ jobs:
         working-directory: ./client
         run: npm test
 
-  client-docker-build-push:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - name: Run build test
+        working-directory: ./client
+        run: npm run build
+
+  deployment-notice:
+    name: Deployment Information
     runs-on: ubuntu-latest
     needs: [client-check-format, client-run-tests]
-    permissions:
-      packages: write
-      contents: read
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./client
-          file: ./client/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/aet-devops25/team-cache-me-if-you-can/client:latest
-            ghcr.io/aet-devops25/team-cache-me-if-you-can/client:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-
-  client-deploy:
-    name: Deploy to Kubernetes
-    runs-on: ubuntu-latest
-    needs: [client-check-format, client-run-tests, client-docker-build-push]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Set up Kubernetes tools
-        uses: azure/setup-kubectl@v3
-
-      - name: Configure kubeconfig
+      - name: Show deployment info
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
-          chmod 600 ~/.kube/config
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ./client/terraform
-
-      - name: Terraform Plan
-        run: terraform plan -var="redeploy_id=${{ github.sha }}"
-        working-directory: ./client/terraform
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -var="redeploy_id=${{ github.sha }}"
-        working-directory: ./client/terraform
-        env:
-          KUBECONFIG: $HOME/.kube/config
+          echo "ℹ️ **Client Deployment Information**"
+          echo ""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "🔄 **Pull Request detected**"
+            echo "- Client will be deployed to **pre-prod** environment"
+            echo "- Deployment handled by unified server-ci-cd.yml pipeline"
+            echo "- URL: https://cache-me-if-you-can-client-pre-prod.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "🚀 **Main branch push detected**"
+            echo "- Client will be deployed to **prod** environment"
+            echo "- Deployment handled by unified server-ci-cd.yml pipeline"
+            echo "- URL: https://cache-me-if-you-can-client-prod.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          fi

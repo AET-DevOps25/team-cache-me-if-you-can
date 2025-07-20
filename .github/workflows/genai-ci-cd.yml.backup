@@ -1,0 +1,75 @@
+name: Genai CI/CD Pipeline - DISABLED (moved to unified pipeline)
+
+# This workflow has been moved to server-ci-cd.yml (now unified-ci-cd.yml)
+# Keeping this file as backup for reference
+
+on:
+  # Disabled - remove the 'on:' triggers
+  workflow_dispatch: # Can only be triggered manually
+
+jobs:
+  test:
+    name: Run Pytest
+    runs-on: ubuntu-latest
+    if: false # Disabled
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # You can adjust this version
+
+      - name: Install dependencies
+        run: pip install -r genai/requirements.txt
+
+      - name: Run tests
+        run: pytest genai/tests
+
+  deploy_dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: test
+    if: false # Disabled
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Kubeconfig
+        uses: azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Wait for server infrastructure
+        run: |
+          echo "Waiting for server infrastructure to be ready..."
+          timeout=300
+          while [ $timeout -gt 0 ]; do
+            if kubectl get secret openai-credentials -n developmentv1 >/dev/null 2>&1; then
+              echo "✅ Infrastructure ready - OpenAI secret found"
+              break
+            fi
+            echo "⏳ Waiting for infrastructure... ($timeout seconds remaining)"
+            sleep 10
+            timeout=$((timeout-10))
+          done
+          
+          if [ $timeout -le 0 ]; then
+            echo "❌ Timeout waiting for infrastructure"
+            exit 1
+          fi
+
+      - name: Deploy to Kubernetes with Helm
+        run: |
+          # Deploy with Helm (infrastructure should have created openai-credentials secret)
+          helm upgrade --install genai-dev ./helm/genai-chart \
+            --namespace developmentv1 --create-namespace \
+            -f ./helm/genai-chart/values-development.yaml \
+            --set image.tag=latest 

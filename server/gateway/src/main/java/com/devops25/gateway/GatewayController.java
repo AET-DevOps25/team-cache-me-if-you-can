@@ -47,6 +47,9 @@ public class GatewayController {
     @Value("${genai.service.url}")
     private String genaiServiceUrl;
 
+    @Value("${group.service.url}")
+    private String groupServiceUrl;
+
 
     private final WebClient.Builder webClientBuilder;
     private final JwtService jwtService;
@@ -475,7 +478,7 @@ public class GatewayController {
             ServerHttpRequest request,
             @PathVariable String groupId) {
         
-        String targetUrl = "http://group:8083/api/v1/groups/" + groupId + "/documents";
+        String targetUrl = groupServiceUrl + "/api/v1/groups/" + groupId + "/documents";
 
         // Build the target URL with query parameters if present
         URI uri = request.getURI();
@@ -517,7 +520,7 @@ public class GatewayController {
         URI requestUri  = request.getURI();
         String incomingPath     = requestUri.getPath();
         String query    = requestUri.getRawQuery();
-        String targetUrl   = "http://group:8083" + incomingPath + (query != null ? "?" + query : "");
+        String targetUrl   = groupServiceUrl + incomingPath + (query != null ? "?" + query : "");
         String incomingMethod = request.getMethod().name();
         
         // Skip multipart requests - they should be handled by the dedicated endpoint above

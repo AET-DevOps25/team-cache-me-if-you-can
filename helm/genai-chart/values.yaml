@@ -91,6 +91,7 @@ genai_app:
   env:
     # WEAVIATE_URL will be constructed from the weaviate chart values
     OPENAI_API_KEY_SECRET_NAME: openai-credentials
+    OPENAI_API_KEY: ""  # Will be passed from CI/CD
     CELERY_BROKER_URL: "redis://{{ .Release.Name }}-redis:6379/0" # Assuming redis is deployed within the same namespace
     CELERY_RESULT_BACKEND: "redis://{{ .Release.Name }}-redis:6379/0"
 
@@ -100,6 +101,7 @@ celery_worker:
   env:
     # WEAVIATE_URL will be constructed from the weaviate chart values
     OPENAI_API_KEY_SECRET_NAME: openai-credentials
+    OPENAI_API_KEY: ""  # Will be passed from CI/CD
     CELERY_BROKER_URL: "redis://{{ .Release.Name }}-redis:6379/0"
     CELERY_RESULT_BACKEND: "redis://{{ .Release.Name }}-redis:6379/0"
 

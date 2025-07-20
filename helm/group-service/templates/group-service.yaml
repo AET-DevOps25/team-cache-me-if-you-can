@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "user-service.fullname" . }}
-  namespace: cache-me-if-you-can-genai
+  name: {{ include "group-service.fullname" . }}
+  namespace: devel
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.port }}
   selector:
-    app.kubernetes.io/name: {{ include "user-service.name" . }}
+    app.kubernetes.io/name: {{ include "group-service.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
