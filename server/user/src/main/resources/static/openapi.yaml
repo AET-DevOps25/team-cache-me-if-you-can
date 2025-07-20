@@ -1,0 +1,171 @@
+  openapi: 3.0.3
+  info:
+    title: User Authentication API
+    description: API for user registration, authentication, token validation, and logout.
+    version: 0.0.1
+  servers:
+    - url: http://localhost:8081
+      description: Local user service server
+  components:
+    securitySchemes:
+      BearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+    schemas:
+      ErrorResponse:
+        type: object
+        properties:
+          message:
+            type: string
+            description: Error message
+        required:
+          - message
+      AuthRequest:
+        type: object
+        properties:
+          username:
+            type: string
+            description: Username for registration or login
+          password:
+            type: string
+            description: Password for registration or login
+          university:
+            type: string
+            description: University associated with the user (optional for registration)
+        required:
+          - username
+          - password
+      AuthResponse:
+        type: object
+        properties:
+          message:
+            type: string
+            description: Success message
+          username:
+            type: string
+            description: Username of the user
+          token:
+            type: string
+            description: JWT token (included for login)
+          university:
+            type: string
+            description: University associated with the user (included for login)
+        required:
+          - message
+          - username
+      TokenValidationResponse:
+        type: object
+        properties:
+          message:
+            type: string
+            description: Validation result message
+          username:
+            type: string
+            description: Username associated with the token
+        required:
+          - message
+          - username
+  paths:
+    /api/auth/register:
+      post:
+        summary: Register a new user
+        description: Registers a new user with a username, password, and optional university.
+        operationId: register
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRequest'
+        responses:
+          '200':
+            description: Registration successful
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/AuthResponse'
+          '400':
+            description: Invalid request - Missing username or password
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '409':
+            description: Username already exists
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/auth/login:
+      post:
+        summary: User login
+        description: Authenticates a user and returns a JWT token.
+        operationId: login
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRequest'
+        responses:
+          '200':
+            description: Login successful
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/AuthResponse'
+          '401':
+            description: Invalid username or password
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/auth/validate:
+      get:
+        summary: Validate JWT token
+        description: Validates a JWT token and returns its status and associated username.
+        operationId: validateToken
+        security:
+          - BearerAuth: []
+        responses:
+          '200':
+            description: Token is valid
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/TokenValidationResponse'
+          '401':
+            description: Invalid or missing token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/auth/logout:
+      post:
+        summary: Logout user
+        description: Blacklists the provided JWT token to invalidate it.
+        operationId: logout
+        security:
+          - BearerAuth: []
+        responses:
+          '200':
+            description: Logout successful
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: Success message
+                  required:
+                    - message
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+  security:
+    - BearerAuth: []

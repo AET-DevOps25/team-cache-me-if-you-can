@@ -11,16 +11,19 @@ cd ../../
 echo "Building gateway service..."
 cd ./server/gateway
 ./gradlew clean build -x test
+./gradlew test -Dspring.profiles.active=test
 cd ../../
 
 echo "Building files service..."
 cd ./server/files
 ./gradlew clean build -x test
+./gradlew test -Dspring.profiles.active=test
 cd ../../
 
 echo "Building group service..."
 cd ./server/group
 ./gradlew clean build -x test
+./gradlew test -Dspring.profiles.active=test
 cd ../../
 
 echo "All JARs built successfully."

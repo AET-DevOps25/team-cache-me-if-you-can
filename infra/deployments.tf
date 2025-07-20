@@ -125,6 +125,16 @@ resource "kubernetes_deployment" "gateway" {
             initial_delay_seconds = 10
             period_seconds        = 5
           }
+          resources {
+            requests = {
+              memory = "256Mi"
+              cpu    = "100m"
+            }
+            limits = {
+              memory = "1Gi"
+              cpu    = "500m"
+            }
+          }
         }
       }
     }
@@ -183,6 +193,16 @@ resource "kubernetes_deployment" "files" {
             }
             initial_delay_seconds = 10
             period_seconds        = 5
+          }
+          resources {
+            requests = {
+              memory = "256Mi"
+              cpu    = "100m"
+            }
+            limits = {
+              memory = "1Gi"
+              cpu    = "500m"
+            }
           }
         }
       }

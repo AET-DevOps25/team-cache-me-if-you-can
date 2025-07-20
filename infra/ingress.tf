@@ -53,6 +53,7 @@ resource "kubernetes_ingress_v1" "genai_ingress" {
       "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
       "nginx.ingress.kubernetes.io/rewrite-target"     = "/"
+      "nginx.ingress.kubernetes.io/proxy-body-size"    = "100m"
     }
   }
 
@@ -94,6 +95,7 @@ resource "kubernetes_ingress_v1" "client_api_ingress" {
     annotations = {
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
       "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/proxy-body-size"    = "100m"
       # No rewrite target for API calls - pass them through as-is
     }
   }
@@ -137,6 +139,7 @@ resource "kubernetes_ingress_v1" "client_ingress" {
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
       "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/rewrite-target"     = "/"
+      "nginx.ingress.kubernetes.io/proxy-body-size"    = "100m"
     }
   }
   

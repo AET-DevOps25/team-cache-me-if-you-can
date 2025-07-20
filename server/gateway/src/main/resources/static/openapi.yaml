@@ -1,0 +1,654 @@
+  openapi: 3.0.3
+  info:
+    title: API Gateway
+    description: API Gateway for routing requests to user, files, group, and GenAI services, handling authentication, file uploads, and document processing.
+    version: 0.0.1
+  servers:
+    - url: http://localhost:8080
+      description: Local gateway server
+    - url: https://cache-me-if-you-can-genai-client.student.k8s.aet.cit.tum.de
+      description: Production server
+  components:
+    securitySchemes:
+      BearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+    schemas:
+      ErrorResponse:
+        type: object
+        properties:
+          error:
+            type: string
+            description: Error message
+        required:
+          - error
+      LoginRequest:
+        type: object
+        properties:
+          username:
+            type: string
+            description: Username for login
+          password:
+            type: string
+            description: Password for login
+        required:
+          - username
+          - password
+      RegisterRequest:
+        type: object
+        properties:
+          username:
+            type: string
+            description: Username for registration
+          password:
+            type: string
+            description: Password for registration
+          email:
+            type: string
+            format: email
+            description: Email address for registration
+        required:
+          - username
+          - password
+          - email
+      TokenValidationResponse:
+        type: object
+        properties:
+          valid:
+            type: boolean
+            description: Whether the token is valid
+          username:
+            type: string
+            description: Username associated with the token
+        required:
+          - valid
+      FileResponse:
+        type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            description: Unique identifier of the file
+          fileName:
+            type: string
+            description: Name of the file
+          uploaderUsername:
+            type: string
+            description: Username of the user who uploaded the file
+          uploadedAt:
+            type: string
+            format: date-time
+            description: Timestamp when the file was uploaded
+        required:
+          - id
+          - fileName
+          - uploaderUsername
+          - uploadedAt
+      GroupRequest:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Name of the group
+          ownerUsername:
+            type: string
+            description: Username of the group owner (injected by gateway for POST)
+        required:
+          - name
+      GroupResponse:
+        type: object
+        properties:
+          id:
+            type: string
+            description: Unique identifier of the group
+          name:
+            type: string
+            description: Name of the group
+          ownerUsername:
+            type: string
+            description: Username of the group owner
+        required:
+          - id
+          - name
+          - ownerUsername
+  paths:
+    /api/auth/login:
+      post:
+        summary: User login
+        description: Authenticates a user and returns a JWT token.
+        operationId: login
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginRequest'
+        responses:
+          '200':
+            description: Login successful, returns JWT token
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    token:
+                      type: string
+                      description: JWT token
+                  required:
+                    - token
+          '400':
+            description: Invalid credentials
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '500':
+            description: Authentication service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/auth/register:
+      post:
+        summary: User registration
+        description: Registers a new user.
+        operationId: register
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterRequest'
+        responses:
+          '200':
+            description: Registration successful
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: Success message
+                  required:
+                    - message
+          '400':
+            description: Invalid registration data
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '500':
+            description: Registration service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/auth/validate:
+      get:
+        summary: Validate JWT token
+        description: Validates a JWT token and returns its status.
+        operationId: validateToken
+        security:
+          - BearerAuth: []
+        responses:
+          '200':
+            description: Token validation result
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/TokenValidationResponse'
+          '400':
+            description: Invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: Authentication service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/files/{groupId}:
+      get:
+        summary: List files in a group
+        description: Retrieves a list of files for a group.
+        operationId: listFiles
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: groupId
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '200':
+            description: List of files
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FileResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: Files service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/files/{groupId}/upload:
+      post:
+        summary: Upload a file
+        description: Uploads a file to a group.
+        operationId: uploadFile
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: groupId
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: integer
+              format: int64
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  file:
+                    type: string
+                    format: binary
+                    description: File to upload
+                required:
+                  - file
+        responses:
+          '200':
+            description: File uploaded successfully
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/FileResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: Files service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/files/download/{fileId}:
+      get:
+        summary: Download a file
+        description: Downloads a file by ID.
+        operationId: downloadFile
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: fileId
+            in: path
+            description: ID of the file
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '200':
+            description: File downloaded successfully
+            content:
+              application/octet-stream:
+                schema:
+                  type: string
+                  format: binary
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: File not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: Files service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/files/{fileId}:
+      delete:
+        summary: Delete a file
+        description: Deletes a file by ID.
+        operationId: deleteFile
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: fileId
+            in: path
+            description: ID of the file
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '204':
+            description: File deleted successfully
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '403':
+            description: Forbidden - Not file owner
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: File not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: Files service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/documents/upload:
+      post:
+        summary: Upload a document
+        description: Uploads a document to the GenAI service.
+        operationId: uploadDocument
+        security:
+          - BearerAuth: []
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  file:
+                    type: string
+                    format: binary
+                    description: Document to upload
+                required:
+                  - file
+        responses:
+          '200':
+            description: Document uploaded successfully
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Document ID
+                  required:
+                    - id
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: GenAI service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/handwritten/upload:
+      post:
+        summary: Upload a handwritten document
+        description: Uploads a handwritten document to the GenAI service.
+        operationId: uploadHandwrittenDocument
+        security:
+          - BearerAuth: []
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  file:
+                    type: string
+                    format: binary
+                    description: Handwritten document to upload
+                required:
+                  - file
+        responses:
+          '200':
+            description: Handwritten document uploaded successfully
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Document ID
+                  required:
+                    - id
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: GenAI service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/handwritten/{taskId}/download:
+      get:
+        summary: Download a handwritten document
+        description: Downloads a handwritten document by task ID.
+        operationId: downloadHandwrittenDocument
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: taskId
+            in: path
+            description: ID of the task/document
+            required: true
+            schema:
+              type: string
+        responses:
+          '200':
+            description: Document downloaded successfully
+            content:
+              application/octet-stream:
+                schema:
+                  type: string
+                  format: binary
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: Document not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: GenAI service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/groups/{groupId}/documents:
+      post:
+        summary: Upload a group document
+        description: Uploads a document to a specific group.
+        operationId: uploadGroupDocument
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: groupId
+            in: path
+            description: ID of the group
+            required: true
+            schema:
+              type: string
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  file:
+                    type: string
+                    format: binary
+                    description: Document to upload
+                required:
+                  - file
+        responses:
+          '200':
+            description: Group document uploaded successfully
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Document ID
+                  required:
+                    - id
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: Group service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/v1/groups:
+      post:
+        summary: Create a group
+        description: Creates a new group, injecting ownerUsername from JWT.
+        operationId: createGroup
+        security:
+          - BearerAuth: []
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupRequest'
+        responses:
+          '200':
+            description: Group created successfully
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GroupResponse'
+          '400':
+            description: Invalid group data
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: Group service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+    /api/users/{userId}:
+      get:
+        summary: Get user details
+        description: Retrieves details of a user by ID.
+        operationId: getUser
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: userId
+            in: path
+            description: ID of the user
+            required: true
+            schema:
+              type: string
+        responses:
+          '200':
+            description: User details retrieved
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: User ID
+                    username:
+                      type: string
+                      description: Username
+                    email:
+                      type: string
+                      format: email
+                      description: User email
+                  required:
+                    - id
+                    - username
+          '401':
+            description: Unauthorized - Missing or invalid token
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: User not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '502':
+            description: User service unavailable
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+  security:
+    - BearerAuth: []
