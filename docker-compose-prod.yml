@@ -1,0 +1,179 @@
+services:
+  client:
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/client-prod:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+    container_name: team-cache-me-if-you-can-client
+    networks:
+      - app-network
+
+  genai-app:
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:latest
+    ports:
+      - "8000:8000"
+    container_name: genai-app
+    environment:
+      - WEAVIATE_URL=http://genai-weaviate:8080
+      - CELERY_BROKER_URL=redis://genai-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://genai-redis:6379/0
+      - QUERY_DEFAULTS_LIMIT=${WEAVIATE_QUERY_DEFAULTS_LIMIT}
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=${WEAVIATE_AUTH_ANONYMOUS_ENABLED}
+      - DEFAULT_VECTORIZER_MODULE=${WEAVIATE_DEFAULT_VECTORIZER_MODULE}
+      - ENABLE_MODULES=${WEAVIATE_ENABLE_MODULES}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - genai-weaviate
+      - genai-redis
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  genai-celery-worker:
+    build:
+      context: ./genai
+      dockerfile: Dockerfile
+    container_name: genai-celery-worker
+    command: celery -A app.celery_app:celery_app worker --loglevel=info
+    volumes:
+      - ./genai:/app
+    environment:
+      - WEAVIATE_URL=http://genai-weaviate:8080
+      - CELERY_BROKER_URL=redis://genai-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://genai-redis:6379/0
+      - QUERY_DEFAULTS_LIMIT=${WEAVIATE_QUERY_DEFAULTS_LIMIT}
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=${WEAVIATE_AUTH_ANONYMOUS_ENABLED}
+      - DEFAULT_VECTORIZER_MODULE=${WEAVIATE_DEFAULT_VECTORIZER_MODULE}
+      - ENABLE_MODULES=${WEAVIATE_ENABLE_MODULES}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - genai-app
+      - genai-redis
+    networks:
+      - app-network
+
+  genai-redis:
+    image: redis:7-alpine
+    container_name: genai-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  genai-weaviate:
+    image: semitechnologies/weaviate:1.23.7
+    container_name: genai-weaviate
+    ports:
+      - "8084:8080"
+      - "50051:50051" # gRPC
+    volumes:
+      - genai-weaviate-data:/var/lib/weaviate
+    restart: on-failure:0
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "text2vec-openai" # Using OpenAI for vectorization
+      ENABLE_MODULES: "text2vec-openai,generative-openai"
+      CLUSTER_HOSTNAME: "node1"
+    networks:
+      - app-network
+
+  user:
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/user-service:latest
+    ports:
+      - "8081:8081"
+    container_name: user-service
+    env_file: "environment/.env.docker.user"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  gateway:
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/gateway-service:latest
+    ports:
+      - "8080:8080"
+    container_name: gateway-service
+    depends_on:
+      - user
+      - files
+    environment:
+      USER_SERVICE_URL: http://user-service:8081
+      FILES_SERVICE_URL: http://files-service:8082
+      GENAI_SERVICE_URL: http://genai-app:8000
+      GROUP_SERVICE_URL: http://group:8083
+    networks:
+      - app-network
+
+  files:
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/files-service:latest
+    ports:
+      - "8082:8082"
+    container_name: files-service
+    env_file: "environment/.env.docker.files"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./server/files/uploads:/uploads
+    networks:
+      - app-network
+
+  group:
+    image: ghcr.io/aet-devops25/team-cache-me-if-you-can/group-service:latest
+    ports:
+      - "8083:8083"
+    container_name: group-service
+    env_file: "environment/.env.docker.group"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+  mysql:
+    image: mysql:8.0.33
+    container_name: mysql
+    user: "999:999"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./environment/db_init:/docker-entrypoint-initdb.d
+      - ./environment/volume/conf.d:/etc/mysql/conf.d
+    env_file: "environment/.env.docker.mysql"
+    command:
+      - --lower-case-table-names=1
+      - --socket=/tmp/mysql.sock
+      - --pid-file=/tmp/mysql.pid
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  mysql_data:
+  genai-weaviate-data:
+
+networks:
+  app-network:
+    driver: bridge

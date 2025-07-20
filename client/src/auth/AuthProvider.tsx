@@ -1,4 +1,10 @@
-import { useContext, createContext, useState, ReactNode, useEffect } from "react";
+import {
+  useContext,
+  createContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import { message } from "antd";
 import { LoginFormData } from "../models/LoginFormData";
 
@@ -35,8 +41,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const response = await fetch("/api/auth/validate", {
           method: "GET",
           headers: {
-            "Authorization": `Bearer ${storedToken}`
-          }
+            Authorization: `Bearer ${storedToken}`,
+          },
         });
 
         if (response.ok) {
@@ -110,15 +116,17 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-      <AuthContext.Provider value={{
+    <AuthContext.Provider
+      value={{
         token,
         user,
         loginAction,
         logOut,
-        isTokenValidating
-      }}>
-        {children}
-      </AuthContext.Provider>
+        isTokenValidating,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
 };
 

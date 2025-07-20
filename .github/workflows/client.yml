@@ -2,11 +2,11 @@ name: Client Code Quality & Testing
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
     paths:
       - "client/**"
   pull_request:
-    branches: ['**']
+    branches: ["**"]
     paths:
       - "client/**"
 
