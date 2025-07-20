@@ -4,6 +4,8 @@ import com.devops25.group.dto.CreateGroupRequest;
 import com.devops25.group.dto.GroupResponse;
 import com.devops25.group.dto.UpdateGroupRequest;
 import com.devops25.group.dto.GenaiQueryRequest;
+import com.devops25.group.dto.ChatMessageRequest;
+import com.devops25.group.dto.ChatMessageResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -184,20 +186,54 @@ public class GroupController {
     }
 
     @PostMapping("/{groupId}/chat")
-    public Mono<ResponseEntity<Object>> chat(
+    public Mono<ResponseEntity<String>> genaiChat(
             @PathVariable Long groupId,
-            @RequestBody GenaiQueryRequest queryRequest,
-            HttpServletRequest httpRequest) {
-        extractUsername(httpRequest);
-        return genaiService.query(String.valueOf(groupId), queryRequest.getQuestion())
+            @Valid @RequestBody GenaiQueryRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = extractUsername(httpRequest);
+        logger.info("Received chat query for group ID: {}. Question: {}", groupId, request.getQuestion());
+
+        return genaiService.query(String.valueOf(groupId), request.getQuestion())
                 .map(response -> {
                     try {
-                        return ResponseEntity.ok(objectMapper.readTree(response));
+                        return ResponseEntity.ok(objectMapper.writeValueAsString(objectMapper.readTree(response)));
                     } catch (JsonProcessingException e) {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
                     }
                 })
-                .map(response -> (ResponseEntity<Object>) response)
                 .defaultIfEmpty(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+    }
+
+    // Group chat endpoints
+    @GetMapping("/{groupId}/messages")
+    public ResponseEntity<List<ChatMessageResponse>> getGroupChatMessages(
+            @PathVariable Long groupId,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = extractUsername(httpRequest);
+        List<ChatMessageResponse> messages = groupService.getGroupChatMessages(groupId, authenticatedUsername);
+        return ResponseEntity.ok(messages);
+    }
+
+    @PostMapping("/{groupId}/messages")
+    public ResponseEntity<ChatMessageResponse> sendChatMessage(
+            @PathVariable Long groupId,
+            @Valid @RequestBody ChatMessageRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = extractUsername(httpRequest);
+        ChatMessageResponse response = groupService.sendChatMessage(groupId, request, authenticatedUsername);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{groupId}/messages")
+    public ResponseEntity<Void> deleteGroupChat(
+            @PathVariable Long groupId,
+            HttpServletRequest httpRequest
+    ) {
+        String authenticatedUsername = extractUsername(httpRequest);
+        groupService.deleteGroupChat(groupId, authenticatedUsername);
+        return ResponseEntity.noContent().build();
     }
 }

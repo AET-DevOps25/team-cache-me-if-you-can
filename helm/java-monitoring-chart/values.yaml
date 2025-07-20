@@ -1,0 +1,16 @@
+monitoring:
+  enabled: true
+  prometheus:
+    name: prometheus-java
+    service_name: prometheus-java-service
+    image: prom/prometheus:v2.37.0
+  grafana:
+    name: grafana-java
+    image: grafana/grafana:9.1.0
+    adminPassword: "password" # Should be set via secret or CI/CD
+  loki:
+    name: loki-java
+    image: grafana/loki:2.6.1
+  promtail:
+    name: promtail-java
+    image: grafana/promtail:2.6.1 

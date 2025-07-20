@@ -1,0 +1,24 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_datasource: "1"
+data:
+  datasources.yaml: |-
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://{{ .Values.monitoring.prometheus.service_name }}:9090
+      isDefault: true
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://{{ .Values.monitoring.loki.name }}-service:3100
+      jsonData:
+        maxLines: 1000
+{{- end }} 

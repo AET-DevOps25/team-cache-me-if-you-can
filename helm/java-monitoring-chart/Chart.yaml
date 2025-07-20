@@ -1,0 +1,5 @@
+apiVersion: v2
+name: java-monitoring-chart
+description: A Helm chart for deploying Prometheus, Grafana, and Loki for Java services
+version: 0.1.0
+appVersion: "1.0" 
