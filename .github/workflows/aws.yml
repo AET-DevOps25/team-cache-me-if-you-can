@@ -54,7 +54,7 @@ jobs:
             echo "WEAVIATE_AUTH_ANONYMOUS_ENABLED=${{ secrets.WEAVIATE_AUTH_ANONYMOUS_ENABLED }}" >> .env.prod
             echo "WEAVIATE_DEFAULT_VECTORIZER_MODULE=${{ secrets.WEAVIATE_DEFAULT_VECTORIZER_MODULE }}" >> .env.prod
             echo "WEAVIATE_ENABLE_MODULES=${{ secrets.WEAVIATE_ENABLE_MODULES }}" >> .env.prod
-            echo "OPENAI_APIKEY=${{ secrets.OPENAI_APIKEY }}" >> .env.prod
+            echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env.prod
 
       - name: SSH to VM and Execute Docker-Compose Up
         uses: appleboy/ssh-action@v1.0.3
