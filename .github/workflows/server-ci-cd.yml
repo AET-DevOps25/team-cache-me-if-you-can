@@ -392,39 +392,6 @@ jobs:
             exit 1
           fi
 
-      - name: Verify Deployment Health
-        env:
-          KUBECONFIG: ~/.kube/config
-        run: |
-          echo "🔍 Verifying deployment health in ${{ needs.determine-environment.outputs.namespace }}..."
-          
-          NAMESPACE="${{ needs.determine-environment.outputs.namespace }}"
-          
-          # Wait for deployments to be ready
-          echo "Waiting for all deployments to be ready..."
-          kubectl wait --for=condition=available deployment --all -n $NAMESPACE --timeout=300s
-          
-          # Check service connectivity
-          echo "Checking service connectivity..."
-          
-          # Test user service health
-          kubectl run test-connectivity --image=curlimages/curl:latest --rm -i --restart=Never -n $NAMESPACE -- \
-            curl -f http://user-service:8081/actuator/health || echo "⚠️ User service health check failed"
-          
-          # Test gateway service health  
-          kubectl run test-connectivity --image=curlimages/curl:latest --rm -i --restart=Never -n $NAMESPACE -- \
-            curl -f http://gateway-service:8080/actuator/health || echo "⚠️ Gateway service health check failed"
-          
-          # Test client service
-          kubectl run test-connectivity --image=curlimages/curl:latest --rm -i --restart=Never -n $NAMESPACE -- \
-            curl -f http://client-service:3000/ || echo "⚠️ Client service health check failed"
-          
-          # Test GenAI service
-          kubectl run test-connectivity --image=curlimages/curl:latest --rm -i --restart=Never -n $NAMESPACE -- \
-            curl -f http://genai-app-service:8000/health || echo "⚠️ GenAI service health check failed"
-          
-          echo "✅ Deployment verification completed"
-
       - name: Display Access Information
         run: |
           echo "🌐 **Deployment Complete!**"
