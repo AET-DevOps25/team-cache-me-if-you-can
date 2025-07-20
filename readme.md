@@ -14,7 +14,7 @@ Get up and running in under **10 seconds** with just **3 simple commands**. No d
 ```bash
 git clone https://github.com/aet-devops25/team-cache-me-if-you-can.git \
 ```
-# 2️⃣ Build all services
+# 2️⃣ Build all services (!!!Important!!! Docker must be running for this step!!!)
 ```bash
 ./build-all.sh 
 ```
