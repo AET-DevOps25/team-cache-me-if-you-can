@@ -1,5 +1,5 @@
 ---
 # Settings for the development environment
-kubernetes_namespace: "developmentv1"
+kubernetes_namespace: "devel"
 release_name: "genai-dev"
 helm_values_file: "{{ helm_chart_path }}/values-development.yaml" 

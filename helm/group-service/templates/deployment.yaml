@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "user-service.fullname" . }}
-  namespace: cache-me-if-you-can-genai
+  name: {{ include "group-service.fullname" . }}
+  namespace: devel
   labels:
-    app.kubernetes.io/name: {{ include "user-service.name" . }}
+    app.kubernetes.io/name: {{ include "group-service.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-    chart: {{ include "user-service.chart" . }}
+    chart: {{ include "group-service.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "user-service.name" . }}
+      app.kubernetes.io/name: {{ include "group-service.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/actuator/prometheus"
-        prometheus.io/port: "8081"
+        prometheus.io/port: "8083"
       labels:
-        app.kubernetes.io/name: {{ include "user-service.name" . }}
+        app.kubernetes.io/name: {{ include "group-service.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       # (Optionally wait for MySQL to be reachable)
@@ -39,7 +39,7 @@ spec:
               done
               echo "MySQL is up!"
       containers:
-        - name: user-service
+        - name: group-service
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
          # imagePullPolicy: {{ .Values.image.pullPolicy }}
           imagePullPolicy: Always # <--- CHANGE THIS TO 'Always' TEMPORARILY

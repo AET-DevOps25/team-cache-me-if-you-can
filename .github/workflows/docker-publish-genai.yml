@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - 'genai/**'
+      - 'helm/genai-chart/**'
+      - 'infra/**'
+      - '.github/workflows/genai-ci-cd.yml'
 
 jobs:
   build-and-push-image:

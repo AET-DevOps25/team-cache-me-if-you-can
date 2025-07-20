@@ -2,7 +2,7 @@
 variable "namespace" {
   description = "Kubernetes namespace to deploy into"
   type        = string
-  default     = "developmentv1"
+  default     = "pre-prod"
 }
 
 # Docker image tags
@@ -18,6 +18,25 @@ variable "image_tag_group" {
 }
 variable "image_tag_gateway" {
   description = "Image tag for gateway-service"
+  type        = string
+  default     = "latest"
+}
+variable "image_tag_files" {
+  description = "Image tag for files-service"
+  type        = string
+  default     = "latest"
+}
+
+# GenAI image tags
+variable "image_tag_genai" {
+  description = "Image tag for genai-app"
+  type        = string
+  default     = "latest"
+}
+
+# Client image tags
+variable "image_tag_client" {
+  description = "Image tag for client"
   type        = string
   default     = "latest"
 }
@@ -90,12 +109,14 @@ variable "jwt_secret_key" {
 variable "spring_profile" {
   description = "Active Spring profile"
   type        = string
-  default     = "developmentv1"
+  default     = "pre-prod"
 }
 
-variable "image_tag_files" {
-  description = "Image tag for files-service"
+# OpenAI API Key for GenAI service
+variable "openai_api_key" {
+  description = "OpenAI API key for GenAI service"
   type        = string
-  default     = "latest"
+  sensitive   = true
+  default     = ""  # Should be provided via environment variable or terraform.tfvars
 }
 

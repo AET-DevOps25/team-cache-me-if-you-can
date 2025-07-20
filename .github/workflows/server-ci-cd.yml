@@ -1,46 +1,110 @@
-name: Server CI/CD
+name: Unified CI/CD Pipeline
 
 on:
   push:
     branches:
-      - '**'
+      - main
+    paths:
+      - 'server/**'
+      - 'genai/**'
+      - 'infra/**'
+      - 'environment/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'server/**'
+      - 'genai/**'
+      - 'infra/**'
+      - 'environment/**'
 
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAMESPACE: aet-devops25/team-cache-me-if-you-can
 
 jobs:
+  determine-environment:
+    name: Determine Target Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      namespace: ${{ steps.env.outputs.namespace }}
+      deploy: ${{ steps.env.outputs.deploy }}
+    steps:
+      - name: Determine environment and namespace
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "environment=pre-prod" >> $GITHUB_OUTPUT
+            echo "namespace=pre-prod" >> $GITHUB_OUTPUT
+            echo "deploy=true" >> $GITHUB_OUTPUT
+            echo "🔄 Pull Request → Deploying to pre-prod namespace"
+          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "namespace=prod" >> $GITHUB_OUTPUT
+            echo "deploy=true" >> $GITHUB_OUTPUT
+            echo "🚀 Main branch push → Deploying to prod namespace"
+          else
+            echo "environment=none" >> $GITHUB_OUTPUT
+            echo "namespace=none" >> $GITHUB_OUTPUT
+            echo "deploy=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No deployment needed for this trigger"
+          fi
+
+  test-genai:
+    name: Test GenAI
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    if: needs.determine-environment.outputs.deploy == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r genai/requirements.txt
+
+      - name: Run tests
+        run: pytest genai/tests
+
   build-and-push:
     name: Build & Push Service Images
     runs-on: ubuntu-latest
+    needs: determine-environment
+    if: needs.determine-environment.outputs.deploy == 'true'
     permissions:
       contents: read
       packages: write
     strategy:
       matrix:
-        service: [user, group, gateway, files]
+        service: [user, group, gateway, files, genai]
       fail-fast: false
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 17 (for Java services)
+        if: matrix.service != 'genai'
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: temurin
 
-      - name: Build service (skip tests)
+      - name: Build Java service (skip tests)
+        if: matrix.service != 'genai'
         working-directory: ./server/${{ matrix.service }}
         run: |
           export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
           ./gradlew clean build -x test
 
-      - name: Run tests (allow failures)
+      - name: Run Java tests (allow failures)
+        if: matrix.service != 'genai'
         working-directory: ./server/${{ matrix.service }}
         continue-on-error: true
         run: ./gradlew test --info
@@ -55,7 +119,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push image
+      - name: Build & push Java service image
+        if: matrix.service != 'genai'
         uses: docker/build-push-action@v5
         with:
           context: ./server/${{ matrix.service }}
@@ -65,12 +130,83 @@ jobs:
           tags: |
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:latest
             ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:${{ github.sha }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}-service:${{ needs.determine-environment.outputs.environment }}
+
+      - name: Build & push GenAI service image
+        if: matrix.service == 'genai'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./genai
+          file: ./genai/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:latest
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:${{ github.sha }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genai-app:${{ needs.determine-environment.outputs.environment }}
+
+  build-and-push-client:
+    name: Build & Push Client Image
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    if: needs.determine-environment.outputs.deploy == 'true'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ./client
+        run: npm test
+
+      - name: Build client
+        working-directory: ./client
+        run: npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push Client image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          file: ./client/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:latest
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:${{ github.sha }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/client:${{ needs.determine-environment.outputs.environment }}
 
   terraform-deploy:
-    name: Terraform Deploy to Kubernetes
-    needs: build-and-push
+    name: Deploy to ${{ needs.determine-environment.outputs.environment }} Environment
+    needs: [determine-environment, build-and-push, build-and-push-client, test-genai]
     runs-on: ubuntu-latest
-    if: needs.build-and-push.result == 'success'
+    if: needs.determine-environment.outputs.deploy == 'true' && needs.build-and-push.result == 'success' && needs.build-and-push-client.result == 'success' && needs.test-genai.result == 'success'
+    
+    environment:
+      name: ${{ needs.determine-environment.outputs.environment }}
+      url: https://cache-me-if-you-can-client-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -89,21 +225,186 @@ jobs:
           echo '${{ secrets.KUBE_CONFIG_DATA }}' > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      - name: Prepare environment-specific Terraform backend
+        working-directory: ./infra
+        run: |
+          # Create environment-specific backend configuration
+          cat > backend-${{ needs.determine-environment.outputs.environment }}.tf << EOF
+          terraform {
+            backend "local" {
+              path = "./terraform-${{ needs.determine-environment.outputs.environment }}.tfstate"
+            }
+          }
+          EOF
+          
+          # Remove any existing backend configuration
+          rm -f backend.tf || true
 
       - name: Terraform Init
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
-        run: terraform init -input=false
+        run: |
+          # Initialize with environment-specific state
+          terraform init -reconfigure -input=false
+
+      - name: Smart Resource Import Strategy
+        working-directory: ./infra
+        env:
+          KUBECONFIG: ~/.kube/config
+          TF_VAR_namespace: ${{ needs.determine-environment.outputs.namespace }}
+          TF_VAR_spring_profile: ${{ needs.determine-environment.outputs.environment }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_image_tag_user: ${{ github.sha }}
+          TF_VAR_image_tag_group: ${{ github.sha }}
+          TF_VAR_image_tag_gateway: ${{ github.sha }}
+          TF_VAR_image_tag_files: ${{ github.sha }}
+          TF_VAR_image_tag_genai: ${{ github.sha }}
+          TF_VAR_image_tag_client: ${{ github.sha }}
+        run: |
+          echo "🔄 Importing existing resources for ${{ needs.determine-environment.outputs.namespace }} namespace..."
+          
+          NAMESPACE="${{ needs.determine-environment.outputs.namespace }}"
+          
+          # Function to safely import resources
+          safe_import() {
+            local tf_resource=$1
+            local k8s_resource=$2
+            
+            echo "Checking $tf_resource..."
+            if kubectl get $k8s_resource -n $NAMESPACE >/dev/null 2>&1; then
+              echo "Found existing $k8s_resource, importing..."
+              terraform import $tf_resource $NAMESPACE/$k8s_resource 2>/dev/null || echo "Import attempted for $tf_resource"
+            else
+              echo "No existing $k8s_resource found"
+            fi
+          }
+          
+          # Import services
+          safe_import "kubernetes_service.user" "service/user-service"
+          safe_import "kubernetes_service.group" "service/group-service"
+          safe_import "kubernetes_service.group_alias" "service/group"
+          safe_import "kubernetes_service.gateway" "service/gateway-service"
+          safe_import "kubernetes_service.files" "service/files-service"
+          safe_import "kubernetes_service.genai_app" "service/genai-app-service"
+          safe_import "kubernetes_service.client" "service/client-service"
+          safe_import "kubernetes_service.redis" "service/redis"
+          safe_import "kubernetes_service.weaviate" "service/weaviate-service"
+          safe_import "kubernetes_service.mysql" "service/mysql"
+          safe_import "kubernetes_service.prometheus" "service/prometheus"
+          safe_import "kubernetes_service.grafana" "service/grafana"
+          safe_import "kubernetes_service.loki" "service/loki"
+          
+          # Import deployments
+          safe_import "kubernetes_deployment.user" "deployment/user-service"
+          safe_import "kubernetes_deployment.group" "deployment/group-service"
+          safe_import "kubernetes_deployment.gateway" "deployment/gateway-service"
+          safe_import "kubernetes_deployment.files" "deployment/files-service"
+          safe_import "kubernetes_deployment.genai_app" "deployment/genai-app"
+          safe_import "kubernetes_deployment.genai_celery_worker" "deployment/genai-celery-worker"
+          safe_import "kubernetes_deployment.client" "deployment/client"
+          safe_import "kubernetes_deployment.genai_redis" "deployment/redis"
+          safe_import "kubernetes_deployment.weaviate" "deployment/weaviate"
+          safe_import "kubernetes_deployment.mysql" "deployment/mysql"
+          safe_import "kubernetes_deployment.prometheus" "deployment/prometheus"
+          safe_import "kubernetes_deployment.grafana" "deployment/grafana"
+          safe_import "kubernetes_deployment.loki" "deployment/loki"
+          safe_import "kubernetes_deployment.promtail" "deployment/promtail"
+          
+          # Import secrets
+          safe_import "kubernetes_secret.user_env" "secret/user-env-secret"
+          safe_import "kubernetes_secret.group_env" "secret/group-env-secret"
+          safe_import "kubernetes_secret.gateway_env" "secret/gateway-env-secret"
+          safe_import "kubernetes_secret.files_env" "secret/files-env-secret"
+          safe_import "kubernetes_secret.openai_credentials" "secret/openai-credentials"
+          safe_import "kubernetes_secret.mysql_root" "secret/mysql-root-password"
+          safe_import "kubernetes_secret.grafana_admin" "secret/grafana-admin"
+          
+          # Import ConfigMaps
+          safe_import "kubernetes_config_map.mysql_init" "configmap/mysql-initdb-config"
+          safe_import "kubernetes_config_map.prometheus_config" "configmap/prometheus-config"
+          safe_import "kubernetes_config_map.grafana_datasources" "configmap/grafana-datasources"
+          safe_import "kubernetes_config_map.grafana_dashboards_config" "configmap/grafana-dashboards-config"
+          safe_import "kubernetes_config_map.grafana_dashboards_json" "configmap/grafana-dashboards-json"
+          safe_import "kubernetes_config_map.loki_config" "configmap/loki-config"
+          safe_import "kubernetes_config_map.promtail_config" "configmap/promtail-config"
+          
+          # Import ingress resources
+          safe_import "kubernetes_ingress_v1.grafana_ingress" "ingress/grafana-ingress"
+          safe_import "kubernetes_ingress_v1.genai_ingress" "ingress/genai-dev-ingress"
+          safe_import "kubernetes_ingress_v1.client_ingress" "ingress/client-ingress"
+          safe_import "kubernetes_ingress_v1.client_api_ingress" "ingress/client-api-ingress"
+          safe_import "kubernetes_ingress_v1.prometheus_ingress" "ingress/prometheus-ingress"
+          safe_import "kubernetes_ingress_v1.loki_ingress" "ingress/loki-ingress"
+          
+          # Import PVCs
+          safe_import "kubernetes_persistent_volume_claim.mysql_data" "pvc/mysql-pvc"
+          
+          echo "✅ Import phase completed"
 
       - name: Terraform Plan
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
-        run: terraform plan -input=false
+          TF_VAR_namespace: ${{ needs.determine-environment.outputs.namespace }}
+          TF_VAR_spring_profile: ${{ needs.determine-environment.outputs.environment }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_image_tag_user: ${{ github.sha }}
+          TF_VAR_image_tag_group: ${{ github.sha }}
+          TF_VAR_image_tag_gateway: ${{ github.sha }}
+          TF_VAR_image_tag_files: ${{ github.sha }}
+          TF_VAR_image_tag_genai: ${{ github.sha }}
+          TF_VAR_image_tag_client: ${{ github.sha }}
+        run: |
+          echo "📋 Planning deployment to ${{ needs.determine-environment.outputs.namespace }}..."
+          terraform plan -input=false -detailed-exitcode
+          PLAN_EXIT_CODE=$?
+          
+          if [ $PLAN_EXIT_CODE -eq 0 ]; then
+            echo "✅ No changes needed - infrastructure is up to date"
+          elif [ $PLAN_EXIT_CODE -eq 2 ]; then
+            echo "🔄 Changes detected - will proceed with apply"
+          else
+            echo "❌ Plan failed with exit code $PLAN_EXIT_CODE"
+            exit 1
+          fi
 
       - name: Terraform Apply
         working-directory: ./infra
         env:
           KUBECONFIG: ~/.kube/config
-        run: terraform apply -auto-approve
+          TF_VAR_namespace: ${{ needs.determine-environment.outputs.namespace }}
+          TF_VAR_spring_profile: ${{ needs.determine-environment.outputs.environment }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_image_tag_user: ${{ github.sha }}
+          TF_VAR_image_tag_group: ${{ github.sha }}
+          TF_VAR_image_tag_gateway: ${{ github.sha }}
+          TF_VAR_image_tag_files: ${{ github.sha }}
+          TF_VAR_image_tag_genai: ${{ github.sha }}
+          TF_VAR_image_tag_client: ${{ github.sha }}
+        run: |
+          echo "🚀 Applying infrastructure to ${{ needs.determine-environment.outputs.namespace }}..."
+          
+          if terraform apply -auto-approve -input=false; then
+            echo "✅ Terraform apply completed successfully"
+          else
+            echo "❌ Terraform apply failed, checking for specific issues..."
+            exit 1
+          fi
+
+      - name: Display Access Information
+        run: |
+          echo "🌐 **Deployment Complete!**"
+          echo ""
+          echo "**Environment**: ${{ needs.determine-environment.outputs.environment }}"
+          echo "**Namespace**: ${{ needs.determine-environment.outputs.namespace }}"
+          echo ""
+          echo "**🎯 Application URLs:**"
+          echo "- **Frontend**: https://cache-me-if-you-can-client-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          echo "- **GenAI API**: https://genai-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          echo "- **Grafana**: https://grafana-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          echo "- **Prometheus**: https://prometheus-${{ needs.determine-environment.outputs.namespace }}.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+          echo ""
+          echo "**📊 Monitoring Credentials:**"
+          echo "- **Username**: admin"
+          echo "- **Password**: password"
