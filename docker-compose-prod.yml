@@ -12,7 +12,7 @@ services:
   genai-app:
     image: ghcr.io/aet-devops25/team-cache-me-if-you-can/genai-app:latest
     ports:
-      - "8001:8000"
+      - "8000:8000"
     container_name: genai-app
     environment:
       - WEAVIATE_URL=http://genai-weaviate:8080
@@ -22,7 +22,7 @@ services:
       - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=${WEAVIATE_AUTH_ANONYMOUS_ENABLED}
       - DEFAULT_VECTORIZER_MODULE=${WEAVIATE_DEFAULT_VECTORIZER_MODULE}
       - ENABLE_MODULES=${WEAVIATE_ENABLE_MODULES}
-      - OPENAI_APIKEY=${OPENAI_APIKEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       - genai-weaviate
       - genai-redis
@@ -47,7 +47,7 @@ services:
       - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=${WEAVIATE_AUTH_ANONYMOUS_ENABLED}
       - DEFAULT_VECTORIZER_MODULE=${WEAVIATE_DEFAULT_VECTORIZER_MODULE}
       - ENABLE_MODULES=${WEAVIATE_ENABLE_MODULES}
-      - OPENAI_APIKEY=${OPENAI_APIKEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       - genai-app
       - genai-redis

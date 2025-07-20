@@ -2,14 +2,14 @@ name: build and push React App
 
 on:
   push:
-  # workflow_run:
-  #   workflows: ["check React App"]
-  #   types:
-  #     - completed
+  workflow_run:
+    workflows: ["check React App"]
+    types:
+      - completed
 
 jobs:
   aws-client-docker-build-push:
-    # if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
