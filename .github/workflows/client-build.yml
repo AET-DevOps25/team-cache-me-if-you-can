@@ -1,10 +1,11 @@
 name: build and push React App
 
 on:
-  workflow_run:
-    workflows: ["check React App"]
-    types:
-      - completed
+  push:
+  # workflow_run:
+  #   workflows: ["check React App"]
+  #   types:
+  #     - completed
 
 jobs:
   aws-client-docker-build-push:
