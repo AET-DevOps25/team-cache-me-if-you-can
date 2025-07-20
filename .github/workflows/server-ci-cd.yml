@@ -40,10 +40,10 @@ jobs:
             echo "deploy=true" >> $GITHUB_OUTPUT
             echo "🔄 Pull Request → Deploying to pre-prod namespace"
           elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "environment=prod" >> $GITHUB_OUTPUT
-            echo "namespace=prod" >> $GITHUB_OUTPUT
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "namespace=production" >> $GITHUB_OUTPUT
             echo "deploy=true" >> $GITHUB_OUTPUT
-            echo "🚀 Main branch push → Deploying to prod namespace"
+            echo "🚀 Main branch push → Deploying to production namespace"
           else
             echo "environment=none" >> $GITHUB_OUTPUT
             echo "namespace=none" >> $GITHUB_OUTPUT

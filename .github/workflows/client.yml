@@ -87,7 +87,7 @@ jobs:
             echo "- URL: https://cache-me-if-you-can-client-pre-prod.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "🚀 **Main branch push detected**"
-            echo "- Client will be deployed to **prod** environment"
+            echo "- Client will be deployed to **production** environment"
             echo "- Deployment handled by unified server-ci-cd.yml pipeline"
-            echo "- URL: https://cache-me-if-you-can-client-prod.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
+            echo "- URL: https://cache-me-if-you-can-client-production.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de"
           fi
