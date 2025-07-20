@@ -1,9 +1,7 @@
 name: Deploy Project to AWS
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -13,54 +11,6 @@ jobs:
       url: "https://client.${{ vars.EC2_PUBLIC_IP }}.nip.io"
 
     steps:
-      - name: Check all workflows status
-        id: check_status
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          echo "Checking workflows status for commit $COMMIT_SHA"
-
-          required_workflows=(
-            "Server CI/CD"
-            "Docker Publish Genai App"
-            "build and push React App"
-          )
-
-          response=$(curl -s \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/$REPO/actions/runs?branch=main&event=workflow_run&status=completed&per_page=100")
-
-          failed=0
-
-          for wf_name in "${required_workflows[@]}"; do
-            # Find the workflow run for this workflow name and commit SHA
-            conclusion=$(echo "$response" | jq -r --arg wf "$wf_name" --arg sha "$COMMIT_SHA" '
-              .workflow_runs[]
-              | select(.name == $wf and .head_sha == $sha)
-              | .conclusion
-              ' | head -n 1)
-
-            if [ -z "$conclusion" ]; then
-              echo "Workflow '$wf_name' has no completed run for commit $COMMIT_SHA - assuming skipped, treating as success"
-              continue
-            elif [ "$conclusion" != "success" ]; then
-              echo "Workflow '$wf_name' concluded with status: $conclusion"
-              failed=1
-            else
-              echo "Workflow '$wf_name' succeeded"
-            fi
-          done
-
-          if [ $failed -eq 1 ]; then
-            echo "One or more required workflows did not succeed."
-            exit 1
-          fi
-
-          echo "All required workflows succeeded or skipped."
-
       - name: Checkout Code
         uses: actions/checkout@v4
 
