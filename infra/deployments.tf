@@ -131,7 +131,7 @@ resource "kubernetes_deployment" "gateway" {
               cpu    = "100m"
             }
             limits = {
-              memory = "1Gi" # Increase memory for large file handling
+              memory = "1Gi"
               cpu    = "500m"
             }
           }
@@ -203,6 +203,7 @@ resource "kubernetes_deployment" "files" {
               memory = "1Gi"
               cpu    = "500m"
             }
+          }
         }
       }
     }
