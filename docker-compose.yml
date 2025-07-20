@@ -4,7 +4,7 @@ services:
       context: ./client
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "3000:3000"
     depends_on:
       - gateway
     container_name: team-cache-me-if-you-can-client
@@ -19,7 +19,7 @@ services:
       - /app/node_modules
     networks:
       - app-network # Add to network
-      
+
   genai-app:
     build:
       context: ./genai
@@ -83,11 +83,11 @@ services:
       - environment/.env.docker.genai
     environment:
       QUERY_DEFAULTS_LIMIT: 25
-      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
-      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
-      DEFAULT_VECTORIZER_MODULE: 'text2vec-openai' # Using OpenAI for vectorization
-      ENABLE_MODULES: 'text2vec-openai,generative-openai'
-      CLUSTER_HOSTNAME: 'node1'
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "text2vec-openai" # Using OpenAI for vectorization
+      ENABLE_MODULES: "text2vec-openai,generative-openai"
+      CLUSTER_HOSTNAME: "node1"
     networks:
       - app-network
 
@@ -204,7 +204,7 @@ services:
     volumes:
       - ./environment/prometheus:/etc/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - "--config.file=/etc/prometheus/prometheus.yml"
     networks:
       - app-network
 
@@ -233,7 +233,7 @@ services:
       - ./environment/loki:/etc/loki
       - loki-data:/tmp/loki
     command: -config.file=/etc/loki/loki-config.yaml
-    user: "0:0"  # Run as root to avoid permission issues
+    user: "0:0" # Run as root to avoid permission issues
     networks:
       - app-network
 
