@@ -25,7 +25,7 @@ jobs:
           required_workflows=(
             "Server CI/CD"
             "Docker Publish Genai App"
-            "deploy React App"
+            "build and push React App"
           )
 
           response=$(curl -s \
@@ -55,11 +55,11 @@ jobs:
           done
 
           if [ $failed -eq 1 ]; then
-            echo "One or more required workflows did not succeed or are missing."
+            echo "One or more required workflows did not succeed."
             exit 1
           fi
 
-          echo "All required workflows succeeded."
+          echo "All required workflows succeeded or skipped."
 
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -114,7 +114,9 @@ jobs:
           key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
           script: |
             echo "Cleaning up Docker system..."
+            docker compose -f docker-compose-prod.yml down
             docker system prune -af --volumes
+            sudo rm -rf /tmp/*
             echo "Logging into Docker registry..."
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "Starting Docker Compose..."
