@@ -26,15 +26,21 @@ docker-compose up --build
 #  Explore the app & API docs
 ```bash
 open http://localhost:3000          # React UI
-# Gateway: http://localhost:8080/swagger-ui.html  # All routes pass through here
-# User:    http://localhost:8081/swagger-ui.html  # Auth endpoints
-# Files:   http://localhost:8082/swagger-ui.html  # File upload/download
-# Group:   http://localhost:8083/swagger-ui.html  # Group mgmt & GenAI chat
+Gateway: http://localhost:8080/swagger-ui.html  # All routes pass through here
+Files:   http://localhost:8082/swagger-ui.html  # File upload/download
+Group:   http://localhost:8083/swagger-ui.html  # Group mgmt & GenAI chat
 ```
 
 *Pro Tip*: If `open` isn’t available on your shell, just copy-paste the URLs into your browser.
 
 ---
+### 🏅 Bonus Features
+
+- Advanced Kubernetes use 
+- Full RAG pipeline implementation 
+- Real-world-grade observability 
+- Beautiful, original UI or impactful project topic	
+- Advanced monitoring setup with extensive and meaningful metrics 
 
 ### 🏗️ Architecture Overview
 
@@ -53,7 +59,7 @@ Visualize how components interact at runtime:
 * **React Frontend** (Port 3000) : Intuitive SPA built with TypeScript and Tailwind, consuming REST endpoints.
 * **Monitoring Stack** :
 
-  * **Prometheus** collects metrics from each service’s `/actuator/prometheus` endpoint.
+  * **Prometheus** collects metrics from each service.
   * **Loki** gathers application logs and error traces.
   * **Grafana** visualizes both metrics and logs in customizable dashboards.
 
@@ -102,30 +108,29 @@ Follow these steps to unlock collaboration power:
 **GenAI Document Flow:**
 
 1. **Upload** your file: `POST /api/v1/groups/{groupId}/documents`  
-2. **Ingestion**: Files Service streams data to GenAI Service.
-3. **Embedding**: GenAI processes text into vector store.
-4. **Query**: `POST /api/v1/groups/{groupId}/chat` with a prompt. 
-5. **Response**: GenAI Service returns answers with snippet citations and confidence scores.
+2. **Embedding**: GenAI processes text into vector store.
+3. **Query**: `POST /api/v1/groups/{groupId}/chat` with a prompt. 
+4. **Response**: GenAI Service returns answers with snippet citations and confidence scores.
 
 ---
 
 ### 📈 Monitoring
 
-All monitoring configuration files live under `monitoring/`:
+All monitoring configuration files live under `environment/`:
 
-* **Prometheus**: `prometheus.yml` for scrape targets and `prometheus-rules.yml` for alert definitions.
+* **Prometheus**: `prometheus.yml` for scrape targets.
 * **Loki**: `loki-config.yml` for log collection from containers.
-* **Grafana**: JSON dashboards—import `java-services.json` for service metrics and `genai-services.json` for AI metrics.
+* **Grafana**: JSON dashboards—import `java-dashboard.json` for service metrics and `genai-dashboard.json` for AI metrics. Additionally, under `environment/grafana/alerting` you can find `alert-rules.yml and `rules.yml`.
 
 ---
 
 ### 👩‍💻 Student Responsibilities
 
 | Name    | Role                | Responsibilities                                                      |
-| ------- | ------------------- | --------------------------------------------------------------------- |
-| Jasmina | **Server Engineer** | Develop backend services, secure JWT flows, Kubernetes deployments 🤖 |
-| Xiyue   | **Client Engineer** | Build React UI, configure ESLint/tests, Terraform apply (client) 🎨   |
-| Igor    | **GenAI Engineer**  | Integrate LLM, manage vector DB, monitor AI service, alert tuning 🧠  |
+| ------- | ------------------- |-----------------------------------------------------------------------|
+| Jasmina | **Server Engineer** | Develop server services, secure JWT flows, and deployments 🤖         |
+| Xiyue   | **Client Engineer** | Build React UI, configure ESLint/tests, and deplyoment 🎨             |
+| Igor    | **GenAI Engineer**  | Integrate LLM, manage vector DB, monitor services, and deployments 🧠 |
 
 ---
 
