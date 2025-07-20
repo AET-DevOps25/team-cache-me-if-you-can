@@ -5,7 +5,7 @@
 
 set -e
 
-NAMESPACE="developmentv1"
+NAMESPACE="develv1"
 OPENAI_API_KEY="${OPENAI_API_KEY:-}"
 
 echo "🚀 Kubernetes Deployment Script"
@@ -113,7 +113,8 @@ deploy_terraform() {
         -var="image_tag_group=latest" \
         -var="image_tag_gateway=latest" \
         -var="image_tag_files=latest" \
-        -var="image_tag_genai=latest"
+        -var="image_tag_genai=latest" \
+        -var="image_tag_client=latest"
     
     echo "🚀 Applying Terraform configuration..."
     terraform apply \
@@ -123,7 +124,8 @@ deploy_terraform() {
         -var="image_tag_group=latest" \
         -var="image_tag_gateway=latest" \
         -var="image_tag_files=latest" \
-        -var="image_tag_genai=latest"
+        -var="image_tag_genai=latest" \
+        -var="image_tag_client=latest"
     
     cd ..
     echo "✅ Terraform deployment completed"
