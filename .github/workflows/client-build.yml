@@ -2,8 +2,13 @@ name: build and push React App
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
+    paths:
+      - "client/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "client/**"
 
 jobs:
   aws-client-docker-build-push:

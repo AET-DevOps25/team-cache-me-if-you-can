@@ -25,13 +25,13 @@ public class AuthController {
         try {
             AuthResponse response = authService.register(request);
             return ResponseEntity.ok(response);
-        } catch (UsernameTakenException e) { // Catch the specific exception
+        } catch (UsernameTakenException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(
-                    Map.of("message", "Username already exists") // Changed 'error' to 'message' for consistency with AuthResponse
+                    Map.of("message", "Username already exists")
             );
         } catch (InvalidRequestException e) {
             return ResponseEntity.badRequest().body(
-                    Map.of("message", e.getMessage()) // Changed 'error' to 'message'
+                    Map.of("message", e.getMessage())
             );
         }
     }
@@ -54,6 +54,6 @@ public class AuthController {
         if (authentication != null && authentication.isAuthenticated()) {
             return ResponseEntity.ok(Map.of("message", "Token is valid", "username", authentication.getName()));
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or missing token")); // Changed 'error' to 'message'
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or missing token"));
     }
 }
