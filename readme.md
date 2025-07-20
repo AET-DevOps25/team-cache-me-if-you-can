@@ -5,6 +5,16 @@
 The core idea is for students to share their notes, course files and chat within one study group. The StudySync AI is a smart assistant- students can ask questions, and based on documents within the group, AI will answer. 
 No more fake-news on google, get your answers directly from your notes, even faster than ctrl+f.
 
+
+### 🚀 Visit our app:
+
+[StudySync App](https://cache-me-if-you-can-client-production.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de/)
+
+Monitoring:
+- [Prometheus](https://prometheus-production.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de/)
+- [Grafana](https://grafana-production.team-cache-me-if-you-can.student.k8s.aet.cit.tum.de/) (username: `admin`, password: `password`)
+
+
 ### 🚀 Quick Start (Local)
 
 Get up and running in under **10 seconds** with just **3 simple commands**. No deep DevOps knowledge required!
